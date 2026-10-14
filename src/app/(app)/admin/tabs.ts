@@ -1,0 +1,1 @@
+export const ADMIN_TABS = [{ href: "/admin", label: "Users" }, { href: "/admin/setup", label: "College setup" }, { href: "/admin/settings", label: "Branding & settings" }, { href: "/admin/rules", label: "Rules" }, { href: "/admin/email", label: "Email outbox" }, { href: "/admin/audit", label: "Audit log" }, { href: "/admin/health", label: "System health" }];

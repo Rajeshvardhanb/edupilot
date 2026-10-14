@@ -1,0 +1,226 @@
+@import "tailwindcss";
+
+/* Light theme only. */
+:root {
+  color-scheme: light;
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f2f4f9;
+  --fg: #0c1222;
+  --muted: #505b74;
+  --line: #e7eaf2;
+  --brand: #3440e6;
+  --brand-2: #5b2ff0;
+  --brand-fg: #ffffff;
+  --brand-soft: #edf1ff;
+  --success: #116932;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  /* Categorical chart slots (validated: dataviz reference palette, light surface) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  /* Layered, low-contrast elevation: a tight contact shadow plus a wide soft one. */
+  --shadow: 0 1px 1px rgb(16 24 64 / 0.03), 0 2px 4px -1px rgb(16 24 64 / 0.04), 0 14px 28px -14px rgb(16 24 64 / 0.10);
+  --shadow-lift: 0 1px 1px rgb(16 24 64 / 0.04), 0 10px 20px -8px rgb(16 24 64 / 0.10), 0 28px 48px -20px rgb(40 50 160 / 0.22);
+  --glow: 0.07;
+}
+
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-display-face), var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lift);
+  --animate-fade-up: fade-up 0.35s ease-out both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+body {
+  /* A faint brand-tinted wash at the top of every page, fixed so it doesn't scroll away. */
+  background:
+    radial-gradient(1100px 520px at 105% -12%, color-mix(in oklab, var(--brand-end, #4a28e6) calc(var(--glow) * 100%), transparent), transparent 62%),
+    radial-gradient(900px 480px at 18% -18%, color-mix(in oklab, var(--brand-start, #1668f5) calc(var(--glow) * 100%), transparent), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--fg);
+}
+
+h1, h2 { font-family: var(--font-display); }
+
+@layer base {
+  /* Grid and flex children refuse to shrink below their content by default, which lets a wide
+     table push the whole page sideways on a phone. Let them shrink; the table scrolls inside its card. */
+  main .grid > *, main .tile { min-width: 0; }
+}
+
+/* Links inside running text are underlined, so they don't rely on colour alone. */
+p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
+
+::selection { background: color-mix(in oklab, var(--brand) 22%, transparent); }
+
+/* Slim, quiet scrollbars. */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--muted) 35%, transparent) transparent; }
+
+/* Text size preference (My account → text size): everything is sized in rem, so this scales the whole UI. */
+:root[data-text="lg"] { font-size: 112.5%; }
+:root[data-text="xl"] { font-size: 125%; }
+
+/* Keyboard users always see where they are. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute; left: 12px; top: -48px; z-index: 100;
+  background: var(--brand); color: var(--brand-fg); padding: 8px 14px; border-radius: 8px; font-size: 14px; transition: top .15s;
+}
+.skip-link:focus { top: 12px; }
+
+@layer components {
+  .input {
+    @apply w-full max-w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-fg outline-none transition placeholder:text-muted/70 focus:border-brand focus:ring-4 focus:ring-brand/12 disabled:opacity-60;
+    box-shadow: 0 1px 2px rgb(16 24 64 / 0.04);
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-muted;
+  }
+  .brand-gradient {
+    /* Fixed deep hues in both themes so white text on it always has contrast. */
+    background-image: linear-gradient(135deg, var(--brand-start, #1668f5) 0%, var(--brand-end, #4a28e6) 100%);
+  }
+
+  /* The app's card surface. */
+  .tile {
+    @apply min-w-0 rounded-[20px] border border-line bg-surface shadow-card;
+  }
+  .tile-hover {
+    @apply transition duration-300 hover:-translate-y-1 hover:shadow-lift;
+  }
+
+  /* Gradient icon chip with a soft glow in its own colour. Colour comes from --c1/--c2. */
+  .chip {
+    @apply grid shrink-0 place-items-center rounded-[14px] text-white;
+    --c1: var(--brand-start, #1668f5); --c2: var(--brand-end, #4a28e6);
+    background-image: linear-gradient(135deg, var(--c1), var(--c2));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 8px 16px -6px color-mix(in oklab, var(--c2) 60%, transparent);
+  }
+  .chip-success { --c1: #34d399; --c2: #059669; }
+  .chip-warning { --c1: #fbbf24; --c2: #ea8a05; }
+  .chip-danger { --c1: #fb7185; --c2: #e11d48; }
+  .chip-info { --c1: #38bdf8; --c2: #0284c7; }
+  .chip-neutral { --c1: #94a3b8; --c2: #475569; }
+
+  /* Primary button: gradient, inner highlight, coloured shadow. */
+  .btn-primary {
+    @apply text-white;
+    background-image: linear-gradient(135deg, var(--brand-start, #1668f5), var(--brand-end, #4a28e6));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(16 24 64 / 0.2), 0 8px 18px -8px var(--brand-end, #4a28e6);
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); filter: brightness(0.97); }
+  .btn-secondary {
+    @apply border border-line bg-surface text-fg;
+    box-shadow: 0 1px 2px rgb(16 24 64 / 0.05);
+  }
+  .btn-secondary:hover:not(:disabled) { @apply bg-surface-2; border-color: color-mix(in oklab, var(--muted) 35%, var(--line)); }
+
+  /* Sidebar: a white floating panel with a faint brand wash. */
+  .sidebar {
+    background:
+      radial-gradient(360px 220px at 0% 0%, color-mix(in oklab, var(--brand-start, #1668f5) 9%, transparent), transparent 70%),
+      radial-gradient(340px 260px at 100% 100%, color-mix(in oklab, var(--brand-end, #4a28e6) 8%, transparent), transparent 70%),
+      var(--surface);
+    box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--line);
+  }
+  .side-link { @apply relative mb-0.5 flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] text-muted transition; }
+  .side-link:hover { @apply bg-surface-2 text-fg; }
+  .side-link[aria-current="page"] {
+    @apply font-semibold text-brand;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--brand) 13%, transparent), color-mix(in oklab, var(--brand) 4%, transparent));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 14%, transparent);
+  }
+  .side-link[aria-current="page"]::before {
+    content: ""; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, var(--brand-start, #1668f5), var(--brand-end, #4a28e6));
+  }
+}
+
+/* On a phone a table becomes a list of cards: one card per row, each cell on its own line with its
+   column heading in front (the server Table in ui-server.tsx puts the heading on each cell as data-label). */
+@media (max-width: 640px) {
+  table[data-stack] { display: block; }
+  table[data-stack] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  table[data-stack] tbody, table[data-stack] tfoot { display: block; }
+  table[data-stack] tr { display: block; margin-bottom: 0.625rem; padding: 0.5rem 0.875rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+  table[data-stack] tr:last-child { margin-bottom: 0; }
+  table[data-stack] td { display: grid; grid-template-columns: 1fr; justify-items: end; row-gap: 0.125rem; width: auto !important; max-width: none !important; padding: 0.3rem 0 !important; border: 0 !important; text-align: right; white-space: normal; }
+  table[data-stack] td[data-label] { grid-template-columns: minmax(5.5rem, 38%) 1fr; column-gap: 0.75rem; row-gap: 0; }
+  table[data-stack] td[data-label]::before { content: attr(data-label); grid-column: 1; grid-row: 1 / span 12; justify-self: start; padding-top: 0.125rem; text-align: left; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  table[data-stack] td[data-label] > * { grid-column: 2; }
+  table[data-stack] td:empty { display: none; }
+  table[data-stack] td:first-child { font-weight: 600; }
+  table[data-stack] td[colspan] { justify-items: stretch; text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  /* Lists and reports print as plain full-width pages: no shadows, no clipped tables, rows kept whole. */
+  body { background: #fff !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  .tile { box-shadow: none !important; border-color: #d4d8e1 !important; break-inside: auto; }
+  .overflow-x-auto, .overflow-auto { overflow: visible !important; max-height: none !important; }
+  table { font-size: 11px; }
+  thead { display: table-header-group; }
+  tr, li { break-inside: avoid; }
+  .animate-fade-up { animation: none !important; }
+  h1, h2, h3 { break-after: avoid; }
+  @page { margin: 14mm 12mm; }
+  :root { --bg: #fff; --surface: #fff; --fg: #000; }
+}
+
+/* Items under a page's "More" button: plain full-width rows instead of buttons. Outside any layer so it
+   wins over the button utility classes the items carry. */
+.more-menu > *, .more-menu form, .more-menu form > * { width: 100%; }
+.more-menu a, .more-menu button {
+  width: 100%; justify-content: flex-start; text-align: left; border: 0; border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem; background: transparent; box-shadow: none; filter: none; transform: none;
+  color: var(--fg); font-size: 0.875rem; font-weight: 500;
+}
+.more-menu a:hover, .more-menu button:hover:not(:disabled) { background: var(--surface-2); transform: none; filter: none; }
