@@ -38,7 +38,7 @@ export default async function HelpdeskPage(props: PageProps<"/helpdesk">) {
           {tickets.length === 0 ? <EmptyState title="No tickets" /> : (
             <ul className="space-y-3">{tickets.map((t) => (
               <li key={t.id}>
-                <Link href={`/helpdesk/${t.id}`} className="block rounded-2xl border border-line bg-surface p-4 shadow-card transition hover:border-brand/40">
+                <Link href={`/helpdesk/${t.id}`} className="block rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-card transition hover:border-brand/40">
                   <div className="flex items-start justify-between gap-3"><p className="font-medium">{t.subject}</p><Badge tone={TONE[t.status]}>{titleCase(t.status)}</Badge></div>
                   <p className="mt-1 line-clamp-1 text-sm text-muted">{t.body}</p>
                   <p className="mt-2 text-xs text-muted">{t.category}{admin && ` · ${t.user.name} (${ROLE_LABEL[t.user.role]})`} · {fmtDateTime(t.updatedAt)} · {t._count.replies} repl{t._count.replies === 1 ? "y" : "ies"}</p>

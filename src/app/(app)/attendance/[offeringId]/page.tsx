@@ -8,7 +8,7 @@ import { attendanceSummary } from "@/lib/attendance";
 import { deleteSession } from "@/actions/teaching";
 import { batchLabel, fmtDate, isoDate, pct } from "@/lib/format";
 import { ActionButton } from "@/components/forms";
-import { Badge } from "@/components/ui";
+import { Badge, buttonClass } from "@/components/ui";
 import { Card, PageHeader } from "@/components/ui-server";
 import { AttendanceSheet } from "./sheet";
 import { holidayOn } from "@/lib/attendance-core";
@@ -67,7 +67,7 @@ export default async function MarkAttendancePage(props: PageProps<"/attendance/[
                 {[1, 2, 3, 4, 5, 6, 7].map((p) => <option key={p} value={p}>P{p}{slots.some((s) => s.period === p) ? " (scheduled)" : ""}</option>)}
               </select>
             </div>
-            <button className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">Load</button>
+            <button className={buttonClass("secondary")}>Load</button>
             {slots.length === 0 && <span className="text-xs text-warning">Not scheduled on this day in the timetable.</span>}
           </form>
           {holiday && <p className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{fmtDate(day)} is a holiday ({holiday.title}). Attendance cannot be marked.</p>}

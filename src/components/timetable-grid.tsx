@@ -43,7 +43,7 @@ export function TimetableGrid({ slots }: { slots: GridSlot[] }) {
               {PERIODS.map((p) => (
                 <th key={p} scope="col" className={cn("pb-1 text-center font-normal", p === LUNCH_AFTER + 1 && "pl-6")}>
                   <span className={cn("inline-flex flex-col items-center rounded-xl px-3 py-1.5", p === livePeriod ? "bg-brand text-white shadow-card" : "bg-surface-2/80 text-muted")}>
-                    <span className={cn("font-display text-[13px] font-bold", p !== livePeriod && "text-fg")}>P{p}</span>
+                    <span className={cn("text-[13px] font-semibold", p !== livePeriod && "text-fg")}>P{p}</span>
                     <span className="text-[10.5px] tabular-nums">{PERIOD_TIMES[p]}–{endOf(PERIOD_TIMES[p])}</span>
                   </span>
                 </th>
@@ -54,7 +54,7 @@ export function TimetableGrid({ slots }: { slots: GridSlot[] }) {
             {WEEKDAYS.map((d) => (
               <tr key={d}>
                 <th scope="row" className="pr-1 text-left align-middle">
-                  <span className={cn("grid h-[4.5rem] place-items-center rounded-xl font-display text-[13px] font-bold", d === today ? "brand-gradient text-white shadow-card" : "bg-surface-2/80 text-fg")}>{DAYS[d]}</span>
+                  <span className={cn("grid h-[4.5rem] place-items-center rounded-xl text-[13px] font-semibold", d === today ? "bg-brand-soft text-brand ring-1 ring-brand/25 ring-inset" : "bg-surface-2/80 text-fg")}>{DAYS[d]}</span>
                 </th>
                 {PERIODS.map((p) => {
                   const s = at.get(`${d}:${p}`);
@@ -64,7 +64,7 @@ export function TimetableGrid({ slots }: { slots: GridSlot[] }) {
                   return (
                     <td key={p} className={cn("h-[4.5rem] p-0 align-top", p === LUNCH_AFTER + 1 && "pl-6")}>
                       {s && k ? (
-                        <div className={cn("relative h-full overflow-hidden rounded-xl border py-2 pr-2 pl-3.5 transition duration-200 hover:-translate-y-0.5 hover:shadow-card", k.card, live && "ring-2 ring-brand ring-offset-2 ring-offset-surface")}>
+                        <div className={cn("relative h-full overflow-hidden rounded-xl border py-2 pr-2 pl-3.5 transition-shadow duration-150 hover:shadow-card", k.card, live && "ring-2 ring-brand ring-offset-2 ring-offset-surface")}>
                           <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1.5", k.bar)} />
                           <p className="line-clamp-2 text-[12.5px] leading-tight font-semibold">{s.title}</p>
                           <p className="mt-1 truncate text-[11px] text-muted">{s.subtitle}</p>

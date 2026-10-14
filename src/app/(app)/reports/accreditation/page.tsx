@@ -6,7 +6,7 @@ import { Td } from "@/components/ui";
 import { Card, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
 import { PrintButton } from "@/components/print-button";
 import { Letterhead } from "@/components/letterhead";
-import { REPORT_TABS } from "../tabs";
+import { reportTabs } from "../tabs";
 
 export const metadata = { title: "Accreditation data" };
 const median = (xs: number[]) => { if (!xs.length) return 0; const s = [...xs].sort((a, b) => a - b); return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2; };
@@ -42,7 +42,7 @@ export default async function AccreditationPage() {
   return (
     <>
       <PageHeader title="Reports" subtitle="Figures commonly asked for in AICTE, NAAC and NBA submissions. Print this page or copy the numbers into the official forms." actions={<PrintButton />} />
-      <Tabs active="/reports/accreditation" items={REPORT_TABS} />
+      <Tabs active="/reports/accreditation" items={reportTabs(user.role)} />
       <div className="mb-6 hidden print:block"><Letterhead title="Accreditation data" /></div>
       <p className="no-print mb-6 rounded-xl bg-surface-2 px-4 py-3 text-xs text-muted">These tables are computed live from the records in this system. They are data sheets, not the agencies&apos; official templates: check each figure against the definition in the form you are filling.</p>
       <div className="space-y-6">

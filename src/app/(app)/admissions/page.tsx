@@ -52,7 +52,7 @@ export default async function AdmissionsPage() {
       <BoardDnD>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {STAGES.map(([key, label], i) => (
-            <section key={key} data-drop-stage={key} className="flex flex-col overflow-hidden rounded-[20px] border border-line bg-surface-2/60 transition data-[drop-over]:border-brand data-[drop-over]:bg-brand-soft data-[drop-over]:ring-4 data-[drop-over]:ring-brand/15">
+            <section key={key} data-drop-stage={key} className="flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-2/60 transition data-[drop-over]:border-brand data-[drop-over]:bg-brand-soft data-[drop-over]:ring-4 data-[drop-over]:ring-brand/15">
               <header className="relative px-4 pt-4 pb-3">
                 <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: STAGE_COLOR[i] }} />
                 <h2 className="flex items-center gap-2 text-[13px] font-bold tracking-tight">
@@ -66,7 +66,7 @@ export default async function AdmissionsPage() {
                   const overdue = e.followUpDate && e.followUpDate < today && key !== "ADMITTED";
                   const dueToday = e.followUpDate && e.followUpDate.getTime() === today.getTime() && key !== "ADMITTED";
                   return (
-                    <li key={e.id} draggable data-enquiry={e.id} data-stage={key} data-name={e.name} className="tile tile-hover cursor-grab rounded-2xl p-3.5 active:cursor-grabbing">
+                    <li key={e.id} draggable data-enquiry={e.id} data-stage={key} data-name={e.name} className="tile tile-hover cursor-grab rounded-[var(--radius-card)] p-3.5 active:cursor-grabbing">
                       <div className="flex items-start gap-2.5">
                         <span className="grid size-9 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white" style={{ background: STAGE_COLOR[i] }}>{e.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
                         <div className="min-w-0 flex-1">
@@ -82,13 +82,13 @@ export default async function AdmissionsPage() {
                         </p>
                       )}
                       <div className="mt-3 flex items-center gap-1.5 border-t border-line/70 pt-2.5">
-                        {NEXT[key] && <ActionButton action={moveEnquiry} fields={{ id: e.id, stage: NEXT[key] }} variant="primary" className="flex-1">{STAGES.find(([k]) => k === NEXT[key])![1].split(" ")[0]} →</ActionButton>}
+                        {NEXT[key] && <ActionButton action={moveEnquiry} fields={{ id: e.id, stage: NEXT[key] }} variant="secondary" className="flex-1">{STAGES.find(([k]) => k === NEXT[key])![1].split(" ")[0]} →</ActionButton>}
                         {key === "ADMITTED" ? <Link href="/students/new" className={buttonClass("secondary", "sm") + " flex-1"}>Create student record →</Link> : <ActionButton action={moveEnquiry} fields={{ id: e.id, stage: "LOST" }} variant="ghost" undoable={`Marking ${e.name} as lost`}>Lost</ActionButton>}
                       </div>
                     </li>
                   );
                 })}
-                {by(key).length === 0 && <li className="rounded-2xl border border-dashed border-line px-3 py-8 text-center text-xs text-muted">Nobody at this stage</li>}
+                {by(key).length === 0 && <li className="rounded-[var(--radius-card)] border border-dashed border-line px-3 py-8 text-center text-xs text-muted">Nobody at this stage</li>}
               </ul>
             </section>
           ))}

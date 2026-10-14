@@ -61,13 +61,13 @@ export async function MyTasks({ user }: { user: CurrentUser }) {
   return (
     <Card title={t("My tasks")} className="mb-6" actions={<span className="text-xs text-muted">{tasks.length ? `${tasks.reduce((s, x) => s + x.count, 0)} waiting` : ""}</span>}>
       {tasks.length === 0 ? <p className="flex items-center gap-2 text-sm text-success"><CheckCircle2 className="size-4" /> Nothing is waiting on you.</p> : (
-        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="-m-2 grid gap-x-4 sm:grid-cols-2 xl:grid-cols-3">
           {tasks.map((x) => (
             <li key={x.label}>
-              <Link href={x.href} className="group flex items-center gap-3 rounded-2xl border border-line bg-surface-2/40 p-3 transition duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:bg-surface hover:shadow-card">
-                <span className={`chip size-10 text-[13px] font-bold tabular-nums ${x.urgent ? "chip-danger" : ""}`}>{x.count > 99 ? "99+" : x.count}</span>
-                <span className="flex-1 text-sm font-medium">{x.label}</span>
-                <ChevronRight className="size-4 text-muted transition group-hover:translate-x-0.5" />
+              <Link href={x.href} className="group flex items-center gap-3 rounded-[var(--radius-control)] p-2 transition-colors hover:bg-surface-2">
+                <span className={`chip h-7 min-w-9 px-1.5 text-[13px] font-semibold tabular-nums ${x.urgent ? "chip-danger" : ""}`}>{x.count > 99 ? "99+" : x.count}</span>
+                <span className="min-w-0 flex-1 text-sm text-fg-2 group-hover:text-fg">{x.label}{x.urgent && <span className="sr-only"> (urgent)</span>}</span>
+                <ChevronRight className="size-4 shrink-0 text-muted" />
               </Link>
             </li>
           ))}

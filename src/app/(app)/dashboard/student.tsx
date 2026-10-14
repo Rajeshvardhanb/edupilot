@@ -36,7 +36,7 @@ async function StudentHero({ user }: { user: CurrentUser }) {
       art={<GraduationIllustration className="w-full [--brand-soft:rgba(255,255,255,.15)] [--brand:#ffffff] [--brand-2:#c7d2fe] [--surface:rgba(255,255,255,.9)] [--line:rgba(255,255,255,.3)]" />}
     >
       <div className="flex flex-wrap items-center gap-4">
-        <Avatar name={student.user.name} userId={student.user.id} hasPhoto={!!student.user.photoType} size={56} className="ring-white/40" />
+        <Avatar name={student.user.name} userId={student.user.id} hasPhoto={!!student.user.photoType} size={56} className="ring-line" />
         <TermProgress {...termProgress(term)} />
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
@@ -135,7 +135,7 @@ async function StudentBody({ user }: { user: CurrentUser }) {
             <ul className="space-y-3">
               {eligibleDrives.map((d) => (
                 <li key={d.id} className="flex items-center gap-3">
-                  <span className="brand-gradient grid size-10 shrink-0 place-items-center rounded-xl text-sm font-bold text-white">{d.company.name[0]}</span>
+                  <span className="chip size-10 text-sm font-semibold">{d.company.name[0]}</span>
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{d.company.name} · {d.role}</p><p className="text-xs text-muted">{d.ctcLpa} LPA · drive on {fmtDate(d.driveDate)}</p></div>
                   <Badge tone="success">Eligible</Badge>
                 </li>

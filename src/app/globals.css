@@ -27,10 +27,17 @@
   --series-3: #1baf7a;
   --series-4: #eda100;
   --series-5: #e87ba4;
-  /* Layered, low-contrast elevation: a tight contact shadow plus a wide soft one. */
-  --shadow: 0 1px 1px rgb(16 24 64 / 0.03), 0 2px 4px -1px rgb(16 24 64 / 0.04), 0 14px 28px -14px rgb(16 24 64 / 0.10);
-  --shadow-lift: 0 1px 1px rgb(16 24 64 / 0.04), 0 10px 20px -8px rgb(16 24 64 / 0.10), 0 28px 48px -20px rgb(40 50 160 / 0.22);
-  --glow: 0.07;
+  /* Elevation, kept quiet: surfaces separate by border first, shadow second. */
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
+  --shadow-lift: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 12px 24px -6px rgb(16 24 40 / 0.10);
+  /* Corner radii: controls 8px, cards 12px, large panels 16px. */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  /* Text that must stay readable on any surface. */
+  --fg-2: #2b3346;
+  --line-strong: #d6dbe6;
 }
 
 
@@ -41,6 +48,8 @@
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg-2: var(--fg-2);
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
   --color-brand-fg: var(--brand-fg);
@@ -56,29 +65,28 @@
   --font-sans: var(--font-geist-sans);
   --font-display: var(--font-display-face), var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --shadow-xs: var(--shadow-xs);
   --shadow-card: var(--shadow);
   --shadow-lift: var(--shadow-lift);
-  --animate-fade-up: fade-up 0.35s ease-out both;
+  /* Content appears with a short fade only; nothing slides around. */
+  --animate-fade-up: fade-in 0.15s ease-out both;
 
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }
 
 body {
-  /* A faint brand-tinted wash at the top of every page, fixed so it doesn't scroll away. */
-  background:
-    radial-gradient(1100px 520px at 105% -12%, color-mix(in oklab, var(--brand-end, #4a28e6) calc(var(--glow) * 100%), transparent), transparent 62%),
-    radial-gradient(900px 480px at 18% -18%, color-mix(in oklab, var(--brand-start, #1668f5) calc(var(--glow) * 100%), transparent), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--fg);
+  -webkit-font-smoothing: antialiased;
 }
 
-h1, h2 { font-family: var(--font-display); }
-
 @layer base {
+  /* Page titles use the display face; utilities (e.g. a card title set in the body face) can still override it. */
+  h1 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h2 { font-family: var(--font-display); }
   /* Grid and flex children refuse to shrink below their content by default, which lets a wide
      table push the whole page sideways on a phone. Let them shrink; the table scrolls inside its card. */
   main .grid > *, main .tile { min-width: 0; }
@@ -110,72 +118,66 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
 .skip-link:focus { top: 12px; }
 
 @layer components {
+  /* Form controls: one height and one radius everywhere; a clear focus ring. */
   .input {
-    @apply w-full max-w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-fg outline-none transition placeholder:text-muted/70 focus:border-brand focus:ring-4 focus:ring-brand/12 disabled:opacity-60;
-    box-shadow: 0 1px 2px rgb(16 24 64 / 0.04);
+    @apply w-full max-w-full rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-brand focus:ring-3 focus:ring-brand/15 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-70;
+    box-shadow: var(--shadow-xs);
+    min-height: 2.375rem;
   }
   .label {
-    @apply mb-1.5 block text-xs font-medium text-muted;
+    @apply mb-1.5 block text-[13px] font-medium text-fg-2;
   }
+  /* The brand colour as a solid fill (the name is kept: avatars, badges and banners use it). */
   .brand-gradient {
-    /* Fixed deep hues in both themes so white text on it always has contrast. */
-    background-image: linear-gradient(135deg, var(--brand-start, #1668f5) 0%, var(--brand-end, #4a28e6) 100%);
+    background-color: var(--brand);
   }
 
   /* The app's card surface. */
   .tile {
-    @apply min-w-0 rounded-[20px] border border-line bg-surface shadow-card;
+    @apply min-w-0 rounded-[var(--radius-card)] border border-line bg-surface shadow-card;
   }
+  /* Clickable tiles say so with their border, not by jumping. */
   .tile-hover {
-    @apply transition duration-300 hover:-translate-y-1 hover:shadow-lift;
+    @apply transition-[border-color,box-shadow] duration-150 hover:border-line-strong hover:shadow-lift;
   }
 
-  /* Gradient icon chip with a soft glow in its own colour. Colour comes from --c1/--c2. */
+  /* Icon chip: the colour as a soft tint behind the icon in that colour. Colour comes from --c. */
   .chip {
-    @apply grid shrink-0 place-items-center rounded-[14px] text-white;
-    --c1: var(--brand-start, #1668f5); --c2: var(--brand-end, #4a28e6);
-    background-image: linear-gradient(135deg, var(--c1), var(--c2));
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 8px 16px -6px color-mix(in oklab, var(--c2) 60%, transparent);
+    @apply grid shrink-0 place-items-center rounded-[var(--radius-control)];
+    --c: var(--brand);
+    color: var(--c);
+    background-color: color-mix(in oklab, var(--c) 11%, var(--surface));
   }
-  .chip-success { --c1: #34d399; --c2: #059669; }
-  .chip-warning { --c1: #fbbf24; --c2: #ea8a05; }
-  .chip-danger { --c1: #fb7185; --c2: #e11d48; }
-  .chip-info { --c1: #38bdf8; --c2: #0284c7; }
-  .chip-neutral { --c1: #94a3b8; --c2: #475569; }
+  .chip-success { --c: var(--success); }
+  .chip-warning { --c: var(--warning); }
+  .chip-danger { --c: var(--danger); }
+  .chip-info { --c: var(--info); }
+  .chip-neutral { --c: var(--muted); }
 
-  /* Primary button: gradient, inner highlight, coloured shadow. */
+  /* Buttons: solid brand for the one main action, outlined white for the rest. */
   .btn-primary {
     @apply text-white;
-    background-image: linear-gradient(135deg, var(--brand-start, #1668f5), var(--brand-end, #4a28e6));
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(16 24 64 / 0.2), 0 8px 18px -8px var(--brand-end, #4a28e6);
+    background-color: var(--brand);
+    box-shadow: var(--shadow-xs), inset 0 -1px 0 rgb(0 0 0 / 0.08);
   }
-  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-  .btn-primary:active:not(:disabled) { transform: translateY(0); filter: brightness(0.97); }
+  .btn-primary:hover:not(:disabled) { background-color: color-mix(in oklab, var(--brand) 88%, black); }
+  .btn-primary:active:not(:disabled) { background-color: color-mix(in oklab, var(--brand) 80%, black); }
   .btn-secondary {
-    @apply border border-line bg-surface text-fg;
-    box-shadow: 0 1px 2px rgb(16 24 64 / 0.05);
+    @apply border border-line-strong bg-surface text-fg;
+    box-shadow: var(--shadow-xs);
   }
-  .btn-secondary:hover:not(:disabled) { @apply bg-surface-2; border-color: color-mix(in oklab, var(--muted) 35%, var(--line)); }
+  .btn-secondary:hover:not(:disabled) { @apply bg-surface-2; }
 
-  /* Sidebar: a white floating panel with a faint brand wash. */
+  /* Sidebar: a plain white column with a hairline edge. */
   .sidebar {
-    background:
-      radial-gradient(360px 220px at 0% 0%, color-mix(in oklab, var(--brand-start, #1668f5) 9%, transparent), transparent 70%),
-      radial-gradient(340px 260px at 100% 100%, color-mix(in oklab, var(--brand-end, #4a28e6) 8%, transparent), transparent 70%),
-      var(--surface);
-    box-shadow: var(--shadow-lift), inset 0 0 0 1px var(--line);
+    background: var(--surface);
+    border-right: 1px solid var(--line);
   }
-  .side-link { @apply relative mb-0.5 flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] text-muted transition; }
+  .side-link { @apply relative flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-[7px] text-sm text-fg-2 transition-colors; }
+  .side-link svg { color: var(--muted); }
   .side-link:hover { @apply bg-surface-2 text-fg; }
-  .side-link[aria-current="page"] {
-    @apply font-semibold text-brand;
-    background: linear-gradient(90deg, color-mix(in oklab, var(--brand) 13%, transparent), color-mix(in oklab, var(--brand) 4%, transparent));
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 14%, transparent);
-  }
-  .side-link[aria-current="page"]::before {
-    content: ""; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0;
-    background: linear-gradient(180deg, var(--brand-start, #1668f5), var(--brand-end, #4a28e6));
-  }
+  .side-link[aria-current="page"] { @apply bg-brand-soft font-medium text-brand; }
+  .side-link[aria-current="page"] svg { color: var(--brand); }
 }
 
 /* On a phone a table becomes a list of cards: one card per row, each cell on its own line with its
@@ -184,11 +186,11 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
   table[data-stack] { display: block; }
   table[data-stack] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   table[data-stack] tbody, table[data-stack] tfoot { display: block; }
-  table[data-stack] tr { display: block; margin-bottom: 0.625rem; padding: 0.5rem 0.875rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+  table[data-stack] tr { display: block; margin-bottom: 0.625rem; padding: 0.5rem 0.875rem; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
   table[data-stack] tr:last-child { margin-bottom: 0; }
   table[data-stack] td { display: grid; grid-template-columns: 1fr; justify-items: end; row-gap: 0.125rem; width: auto !important; max-width: none !important; padding: 0.3rem 0 !important; border: 0 !important; text-align: right; white-space: normal; }
   table[data-stack] td[data-label] { grid-template-columns: minmax(5.5rem, 38%) 1fr; column-gap: 0.75rem; row-gap: 0; }
-  table[data-stack] td[data-label]::before { content: attr(data-label); grid-column: 1; grid-row: 1 / span 12; justify-self: start; padding-top: 0.125rem; text-align: left; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  table[data-stack] td[data-label]::before { content: attr(data-label); grid-column: 1; grid-row: 1 / span 12; justify-self: start; padding-top: 0.125rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: var(--muted); }
   table[data-stack] td[data-label] > * { grid-column: 2; }
   table[data-stack] td:empty { display: none; }
   table[data-stack] td:first-child { font-weight: 600; }

@@ -111,7 +111,7 @@ async function FacultyBody({ user }: { user: CurrentUser }) {
                 const v = perOffering.get(o.id)!;
                 const p = pct(v.a, v.t);
                 return (
-                  <div key={o.id} className="rounded-2xl border border-line p-4 transition hover:border-brand/40 hover:shadow-md">
+                  <div key={o.id} className="rounded-[var(--radius-card)] border border-line p-4 transition hover:border-brand/40 hover:shadow-lift">
                     <div className="flex items-start gap-3">
                       <Gauge value={v.t ? p : 0} size={64} tone={v.t ? attendanceTone(p) : "neutral"}><span className="text-xs font-semibold tabular-nums">{v.t ? `${Math.round(p)}%` : "—"}</span></Gauge>
                       <div className="min-w-0">

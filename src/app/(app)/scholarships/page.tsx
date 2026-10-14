@@ -38,7 +38,7 @@ export default async function ScholarshipsPage() {
                   <Td className="whitespace-nowrap">
                     <span className="flex gap-1">
                       {r.status === "APPLIED" && <ActionButton action={setScholarshipStatus} fields={{ id: r.id, status: "SANCTIONED" }}>Sanctioned</ActionButton>}
-                      {(r.status === "APPLIED" || r.status === "SANCTIONED") && <ActionButton action={setScholarshipStatus} fields={{ id: r.id, status: "RECEIVED" }} variant="primary" confirm={`Mark ${inr(r.amount)} as received and credit it to the student's invoice?`}>Received</ActionButton>}
+                      {(r.status === "APPLIED" || r.status === "SANCTIONED") && <ActionButton action={setScholarshipStatus} fields={{ id: r.id, status: "RECEIVED" }} variant="secondary" confirm={`Mark ${inr(r.amount)} as received and credit it to the student's invoice?`}>Received</ActionButton>}
                       {r.status === "APPLIED" && <ActionButton action={setScholarshipStatus} fields={{ id: r.id, status: "REJECTED" }} variant="ghost" confirm="Mark this claim rejected?">Reject</ActionButton>}
                     </span>
                   </Td>

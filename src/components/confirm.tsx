@@ -18,7 +18,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       {state && (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={() => close(false)}>
-          <div role="alertdialog" aria-modal className="w-full max-w-sm animate-fade-up rounded-2xl border border-line bg-surface p-6 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+          <div role="alertdialog" aria-modal className="w-full max-w-sm animate-fade-up rounded-[var(--radius-panel)] border border-line bg-surface p-6 shadow-lift" onMouseDown={(e) => e.stopPropagation()}>
             <div className="flex gap-3">
               <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${state.danger ? "bg-danger-soft text-danger" : "bg-warning-soft text-warning"}`}><AlertTriangle className="size-5" /></span>
               <p className="pt-1.5 text-sm">{state.message}</p>

@@ -32,7 +32,7 @@ export default async function ProfileChangesPage() {
                 <Td className="max-w-48 font-medium">{r.newValue}</Td>
                 <Td className="text-xs whitespace-nowrap">{fmtDateTime(r.createdAt)}</Td>
                 <Td className="text-right whitespace-nowrap">{r.status === "PENDING"
-                  ? <span className="inline-flex gap-1"><ActionButton action={decideProfileChange} fields={{ id: r.id, decision: "approve" }} variant="primary">Approve</ActionButton><ActionButton action={decideProfileChange} fields={{ id: r.id, decision: "reject" }} variant="ghost">Reject</ActionButton></span>
+                  ? <span className="inline-flex gap-1"><ActionButton action={decideProfileChange} fields={{ id: r.id, decision: "approve" }} variant="secondary">Approve</ActionButton><ActionButton action={decideProfileChange} fields={{ id: r.id, decision: "reject" }} variant="ghost">Reject</ActionButton></span>
                   : <Badge tone={r.status === "APPROVED" ? "success" : "danger"}>{r.status === "APPROVED" ? "Applied" : "Rejected"}</Badge>}</Td>
               </tr>
             ))}</tbody>

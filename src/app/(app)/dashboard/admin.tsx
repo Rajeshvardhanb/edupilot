@@ -151,7 +151,7 @@ async function AdminBody({ user, searchParams: sp }: { user: CurrentUser; search
         </Filters>
         <details className="relative">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm hover:bg-surface-2"><SlidersHorizontal className="size-4" /> Customise</summary>
-          <div className="absolute right-0 z-20 mt-2 w-72 rounded-2xl border border-line bg-surface p-4 shadow-xl">
+          <div className="absolute right-0 z-20 mt-2 w-72 rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-lift">
             <p className="mb-2 text-sm font-semibold">Show on my dashboard</p>
             <ActionForm action={saveDashboardPrefs} className="space-y-2">
               <input type="hidden" name="all" value={SECTIONS.map(([k]) => k).join(",")} />
@@ -195,7 +195,7 @@ async function AdminBody({ user, searchParams: sp }: { user: CurrentUser; search
         </Card>
       </div>}
 
-      {show("demographics") && <><h2 className="mt-8 mb-3 text-sm font-semibold tracking-wider text-muted uppercase">Student demographics</h2>
+      {show("demographics") && <><h2 className="mt-8 mb-3 text-base font-semibold">Student demographics</h2>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Gender ratio">
           <DonutChart centerLabel="students" data={[
@@ -212,26 +212,26 @@ async function AdminBody({ user, searchParams: sp }: { user: CurrentUser; search
         </Card>
       </div></>}
 
-      {show("departments") && <><h2 className="mt-8 mb-3 text-sm font-semibold tracking-wider text-muted uppercase">Departments</h2>
+      {show("departments") && <><h2 className="mt-8 mb-3 text-base font-semibold">Departments</h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {depts.map((d) => {
           const Icon = DEPT_ICON[d.code] ?? Building2;
           return (
-            <Link key={d.id} href={`/students?dept=${d.id}`} className="group animate-fade-up rounded-2xl border border-line bg-surface p-5 shadow-card transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg">
+            <Link key={d.id} href={`/students?dept=${d.id}`} className="tile tile-hover group animate-fade-up p-5">
               {deptPhoto[d.code] && (
-                <div className="relative -mx-5 -mt-5 mb-4 h-28 overflow-hidden rounded-t-2xl">
+                <div className="relative -mx-5 -mt-5 mb-4 h-24 overflow-hidden rounded-t-[11px] border-b border-line">
                   <Image src={deptPhoto[d.code]!} alt="" fill sizes="(min-width: 1280px) 240px, 50vw" className="object-cover transition duration-500 group-hover:scale-105" />
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="brand-gradient grid size-11 place-items-center rounded-xl text-white shadow-md shadow-indigo-500/20"><Icon className="size-5" /></span>
+                <span className="chip size-9"><Icon className="size-4" /></span>
                 <span className="text-xs font-semibold text-muted">{d.code}</span>
               </div>
               <p className="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-snug">{d.name}</p>
               <p className="mt-1 truncate text-xs text-muted">HOD: {d.hod ?? "—"}</p>
               <dl className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-lg bg-surface-2 py-2"><dd className="text-base font-semibold tabular-nums">{d.students}</dd><dt className="text-[10px] text-muted uppercase">Students</dt></div>
-                <div className="rounded-lg bg-surface-2 py-2"><dd className="text-base font-semibold tabular-nums">{d.faculty}</dd><dt className="text-[10px] text-muted uppercase">Faculty</dt></div>
+                <div className="rounded-lg bg-surface-2 py-2"><dd className="text-base font-semibold tabular-nums">{d.students}</dd><dt className="text-[11px] text-muted">Students</dt></div>
+                <div className="rounded-lg bg-surface-2 py-2"><dd className="text-base font-semibold tabular-nums">{d.faculty}</dd><dt className="text-[11px] text-muted">Faculty</dt></div>
               </dl>
               <div className="mt-3 space-y-2 text-xs">
                 <div><div className="mb-1 flex justify-between"><span className="text-muted">Attendance</span><span className="font-medium">{d.attendance}%</span></div><div className="h-1.5 rounded-full bg-surface-2"><div className="h-full rounded-full bg-success" style={{ width: `${d.attendance}%` }} /></div></div>

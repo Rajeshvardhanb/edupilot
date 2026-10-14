@@ -292,7 +292,7 @@ test("accounts and parent: payment at the counter, receipt, child's record on a 
 
   const p = await session(browser, "parent@edupilot.edu", { viewport: { width: 390, height: 844 } });
   ok("parent sees the child's dashboard", await seen(p, "You are viewing"));
-  ok("phones get a bottom tab bar", await p.locator("nav.fixed.bottom-3").isVisible());
+  ok("phones get a bottom tab bar", await p.getByRole("navigation", { name: "Quick links" }).isVisible());
   await go(p, "/results");
   ok("parent can read results", await seen(p, "CGPA"));
   await go(p, "/leave");

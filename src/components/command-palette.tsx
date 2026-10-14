@@ -44,7 +44,7 @@ export function CommandPalette({ role, onClose }: { role: Role; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-[60] grid items-start justify-items-center bg-slate-900/40 p-4 pt-[12vh] backdrop-blur-sm" onMouseDown={onClose}>
-      <div role="dialog" aria-label="Search" className="w-full max-w-xl animate-fade-up overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-label="Search" className="w-full max-w-xl animate-fade-up overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lift" onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-line px-4">
           <Search className="size-5 text-muted" />
           <input

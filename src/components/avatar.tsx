@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 
-const GRADIENTS = [
-  "from-indigo-500 to-violet-500", "from-sky-500 to-indigo-500", "from-emerald-500 to-teal-500",
-  "from-amber-500 to-orange-500", "from-rose-500 to-pink-500", "from-fuchsia-500 to-purple-500",
-  "from-cyan-500 to-blue-500", "from-lime-500 to-emerald-600",
+// Initials sit on a soft tint of one of a few calm colours, picked from the name so a person keeps theirs.
+const TINTS = [
+  "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-emerald-100 text-emerald-800",
+  "bg-amber-100 text-amber-900", "bg-rose-100 text-rose-800", "bg-sky-100 text-sky-800",
+  "bg-teal-100 text-teal-800", "bg-slate-200 text-slate-800",
 ];
 
 function hash(s: string) {
@@ -16,14 +17,14 @@ export function initials(name: string) {
   return name.replace(/^(Dr|Mr|Mrs|Ms|Prof)\.?\s+/i, "").split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
-/** User photo when uploaded (served from /photo/[userId]), otherwise gradient initials. */
+/** User photo when uploaded (served from /photo/[userId]), otherwise initials on a soft tint. */
 export function Avatar({ name, userId, hasPhoto, size = 36, className }: { name: string; userId?: string; hasPhoto?: boolean; size?: number; className?: string }) {
   const style = { width: size, height: size, fontSize: Math.max(10, size * 0.38) };
   if (hasPhoto && userId)
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={`/photo/${userId}`} alt={name} style={style} className={cn("shrink-0 rounded-full object-cover ring-2 ring-surface", className)} />;
   return (
-    <span style={style} aria-hidden className={cn("grid shrink-0 place-items-center rounded-full bg-gradient-to-br font-semibold text-white ring-2 ring-surface", GRADIENTS[hash(name) % GRADIENTS.length], className)}>
+    <span style={style} aria-hidden className={cn("grid shrink-0 place-items-center rounded-full font-semibold ring-2 ring-surface", TINTS[hash(name) % TINTS.length], className)}>
       {initials(name)}
     </span>
   );

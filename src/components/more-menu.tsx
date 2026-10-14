@@ -23,7 +23,7 @@ export function MoreMenu({ children, label = "More" }: { children: ReactNode; la
         <MoreHorizontal className="size-4" /> {label}
       </summary>
       <div
-        className="more-menu absolute left-0 z-30 mt-2 flex w-64 max-w-[calc(100vw-2rem)] flex-col gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-xl"
+        className="more-menu absolute left-0 z-30 mt-2 flex w-64 max-w-[calc(100vw-2rem)] flex-col gap-0.5 rounded-[var(--radius-panel)] border border-line bg-surface p-1.5 shadow-lift"
         onClick={(e) => { if ((e.target as HTMLElement).closest("a")) ref.current!.open = false; }}
       >
         {children}

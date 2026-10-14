@@ -60,7 +60,7 @@ export function OfflineSync() {
 
   if (!offline && !pending) return null;
   return (
-    <div className="no-print fixed top-20 left-1/2 z-[65] flex -translate-x-1/2 items-center gap-2 rounded-full border border-warning/40 bg-warning-soft px-4 py-1.5 text-xs font-medium text-warning shadow-lg">
+    <div className="no-print fixed top-20 left-1/2 z-[65] flex -translate-x-1/2 items-center gap-2 rounded-full border border-warning/40 bg-warning-soft px-4 py-1.5 text-xs font-medium text-warning shadow-lift">
       <WifiOff className="size-3.5" />
       {offline ? "You're offline" : "Syncing"}{pending > 0 && ` · ${pending} attendance sheet${pending > 1 ? "s" : ""} waiting to upload`}
     </div>

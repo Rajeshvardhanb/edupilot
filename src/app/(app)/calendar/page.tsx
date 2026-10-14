@@ -62,7 +62,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
               <ul className="space-y-3">
                 {upcoming.map((e) => (
                   <li key={e.id} className="flex items-start gap-3">
-                    <div className="w-12 shrink-0 rounded-lg bg-surface-2 py-1 text-center"><p className="text-sm font-semibold">{e.date.getUTCDate()}</p><p className="text-[10px] text-muted uppercase">{e.date.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</p></div>
+                    <div className="w-12 shrink-0 rounded-lg bg-surface-2 py-1 text-center"><p className="text-sm font-semibold">{e.date.getUTCDate()}</p><p className="text-[11px] text-muted">{e.date.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</p></div>
                     <div className="min-w-0 flex-1"><p className="text-sm font-medium">{e.title}</p><p className="text-xs text-muted">{e.endDate ? `until ${fmtDate(e.endDate)}` : e.description ?? ""}</p></div>
                     <Badge tone={TONE[e.type]}>{titleCase(e.type)}</Badge>
                     {user.role === "ADMIN" && <ActionButton action={deleteEvent} fields={{ id: e.id }} variant="ghost" undoable={`Removing “${e.title}”`}>×</ActionButton>}

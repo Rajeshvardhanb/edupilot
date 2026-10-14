@@ -27,11 +27,11 @@ export default async function ElectivesPage() {
             {options.map((o) => {
               const full = o._count.choices >= o.seatLimit, chosen = mine.has(o.id);
               return (
-                <div key={o.id} className={`rounded-2xl border bg-surface p-5 shadow-card ${chosen ? "border-brand ring-2 ring-brand/20" : "border-line"}`}>
+                <div key={o.id} className={`rounded-[var(--radius-card)] border bg-surface p-5 shadow-card ${chosen ? "border-brand ring-2 ring-brand/20" : "border-line"}`}>
                   <div className="flex items-start justify-between gap-2"><p className="font-semibold">{o.subject.name}</p>{chosen && <Badge tone="brand">Your choice</Badge>}</div>
                   <p className="mt-1 text-xs text-muted">{o.subject.code} · Semester {o.subject.semester} · {o.subject.credits} credits</p>
                   <div className="mt-4"><div className="mb-1 flex justify-between text-xs"><span className="text-muted">Seats filled</span><span>{o._count.choices}/{o.seatLimit}</span></div><Progress value={(o._count.choices / o.seatLimit) * 100} tone={full ? "danger" : "brand"} /></div>
-                  <div className="mt-4">{chosen ? <span className="text-sm text-success">Enrolled</span> : full ? <Badge tone="danger">Full</Badge> : <ActionButton action={chooseElective} fields={{ optionId: o.id }} variant="primary" size="md">Select this elective</ActionButton>}</div>
+                  <div className="mt-4">{chosen ? <span className="text-sm text-success">Enrolled</span> : full ? <Badge tone="danger">Full</Badge> : <ActionButton action={chooseElective} fields={{ optionId: o.id }} variant="secondary" size="md">Select this elective</ActionButton>}</div>
                 </div>
               );
             })}

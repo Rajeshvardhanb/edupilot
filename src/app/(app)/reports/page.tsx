@@ -7,7 +7,7 @@ import { allowedDatasets, DATASETS } from "@/lib/reports";
 import { Td, buttonClass } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
 import { PrintButton } from "@/components/print-button";
-import { REPORT_TABS } from "./tabs";
+import { reportTabs } from "./tabs";
 
 export const metadata = { title: "Report builder" };
 const PREVIEW = 50;
@@ -33,7 +33,7 @@ export default async function ReportsPage(props: PageProps<"/reports">) {
   return (
     <>
       <PageHeader title="Reports" subtitle="Pick what you need, choose the columns, then download for Excel or as a PDF." />
-      <Tabs active="/reports" items={REPORT_TABS} />
+      <Tabs active="/reports" items={reportTabs(user.role)} />
       <div className="grid gap-6 lg:grid-cols-4">
         <Card title="Build a report" className="no-print h-fit">
           <form className="space-y-4">

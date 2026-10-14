@@ -6,10 +6,10 @@ import { saveStaffAttendance } from "@/actions/staff";
 import { ActionForm, SubmitButton } from "@/components/forms";
 import { Avatar } from "@/components/avatar";
 import { ROLE_LABEL } from "@/components/nav";
-import { Badge, Td, type Tone } from "@/components/ui";
+import { Badge, Td, type Tone, buttonClass } from "@/components/ui";
 import { Card, EmptyState, PageHeader, StatCard, Tabs, Th, Table } from "@/components/ui-server";
 import { Filters } from "@/components/filters";
-import { STAFF_TABS } from "./tabs";
+import { staffTabs } from "./tabs";
 import { SavedFilters } from "@/components/saved-filters";
 
 export const metadata = { title: "Staff attendance" };
@@ -33,7 +33,7 @@ export default async function StaffAttendancePage(props: PageProps<"/staff">) {
   return (
     <>
       <PageHeader title="Staff" subtitle={manager ? "Daily attendance for the staff you manage" : "Your attendance this month"} />
-      <Tabs active="/staff" items={STAFF_TABS} />
+      <Tabs active="/staff" items={staffTabs(user.role)} />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {manager ? (
           <>
@@ -51,7 +51,7 @@ export default async function StaffAttendancePage(props: PageProps<"/staff">) {
       </div>
       {manager ? (
         <Card title={`Mark attendance · ${fmtDate(new Date(`${date}T00:00:00Z`))}`}>
-          <Filters><div><label className="label">Date</label><input type="date" name="date" aria-label="Date" defaultValue={date} max={today} className="input" /></div><button className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">Load</button></Filters>
+          <Filters><div><label className="label">Date</label><input type="date" name="date" aria-label="Date" defaultValue={date} max={today} className="input" /></div><button className={buttonClass("secondary")}>Load</button></Filters>
       <SavedFilters storageKey="edupilot-filters-staff" />
           {staff.length === 0 ? <EmptyState title="No staff to manage" /> : (
             <ActionForm key={date} action={saveStaffAttendance}>

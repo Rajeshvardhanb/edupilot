@@ -76,7 +76,7 @@ export default async function DrivePage(props: PageProps<"/placements/[driveId]"
                     <span className="inline-flex items-center gap-1">
                       {drive.rounds.length > 0 && a.status !== "REJECTED" && a.roundNo < drive.rounds.length ? (
                         <>
-                          <ActionButton action={advanceRound} fields={{ id: a.id, result: "pass" }} variant="primary">Cleared {drive.rounds[a.roundNo].name.split(" ")[0]}</ActionButton>
+                          <ActionButton action={advanceRound} fields={{ id: a.id, result: "pass" }} variant="secondary">Cleared {drive.rounds[a.roundNo].name.split(" ")[0]}</ActionButton>
                           <ActionButton action={advanceRound} fields={{ id: a.id, result: "fail" }} variant="ghost">Not cleared</ActionButton>
                         </>
                       ) : (["SHORTLISTED", "SELECTED", "REJECTED"] as const).filter((s) => s !== a.status).map((s) => (

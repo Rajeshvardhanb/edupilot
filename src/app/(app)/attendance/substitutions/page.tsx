@@ -5,7 +5,7 @@ import { batchLabel, fmtDate, isoDate, DAYS } from "@/lib/format";
 import { assignSubstitute, removeSubstitute } from "@/actions/daily";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { Field, Td } from "@/components/ui";
+import { Field, Td, buttonClass } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Th, Table } from "@/components/ui-server";
 import { Filters } from "@/components/filters";
 import { SavedFilters } from "@/components/saved-filters";
@@ -37,7 +37,7 @@ export default async function SubstitutionsPage(props: PageProps<"/attendance/su
       <PageHeader title="Substitute classes" subtitle="When a teacher is absent, assign another for that period. The substitute can take attendance for it." />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Assign a substitute">
-          <Filters><div><label className="label">Date</label><input type="date" name="date" aria-label="Date" defaultValue={date} className="input" /></div><button className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">Load classes</button></Filters>
+          <Filters><div><label className="label">Date</label><input type="date" name="date" aria-label="Date" defaultValue={date} className="input" /></div><button className={buttonClass("secondary")}>Load classes</button></Filters>
       <SavedFilters storageKey="edupilot-filters-attendance-substitutions" />
           {slots.length === 0 ? <p className="text-sm text-muted">No classes are scheduled on {DAYS[d.getUTCDay()] || "Sunday"}, {fmtDate(d)}.</p> : (
             <ActionForm action={assignSubstitute} className="space-y-3" resetOnSuccess>

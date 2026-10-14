@@ -17,7 +17,7 @@ const title = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 function Th({ href, active, desc, children, className }: { href?: string; active?: boolean; desc?: boolean; children?: React.ReactNode; className?: string }) {
   return (
-    <th className={cn("border-b border-line bg-surface-2/70 px-3 py-3 text-left text-[10.5px] font-semibold tracking-[0.08em] text-muted uppercase first:rounded-l-xl last:rounded-r-xl", className)} aria-sort={active ? (desc ? "descending" : "ascending") : undefined}>
+    <th className={cn("border-b border-line bg-surface-2/60 px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap text-muted", className)} aria-sort={active ? (desc ? "descending" : "ascending") : undefined}>
       {href ? <Link href={href} className="inline-flex items-center gap-1 hover:text-fg">{children}<span className={active ? "text-brand" : "opacity-30"}>{active && desc ? "▼" : "▲"}</span></Link> : children}
     </th>
   );
@@ -100,11 +100,11 @@ function QuickView({ id, onClose }: { id: string; onClose: () => void }) {
     window.addEventListener("keydown", esc);
     return () => { ctl.abort(); window.removeEventListener("keydown", esc); };
   }, [id, onClose]);
-  const tile = (label: string, value: React.ReactNode, tone = "") => <div className="rounded-xl bg-surface-2 p-3 text-center"><p className={cn("text-lg font-semibold tabular-nums", tone)}>{value}</p><p className="text-[10px] tracking-wider text-muted uppercase">{label}</p></div>;
+  const tile = (label: string, value: React.ReactNode, tone = "") => <div className="rounded-xl bg-surface-2 p-3 text-center"><p className={cn("text-lg font-semibold tabular-nums", tone)}>{value}</p><p className="text-xs text-muted">{label}</p></div>;
   return (
     <div className="fixed inset-0 z-[60]" onMouseDown={onClose}>
       <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px]" />
-      <aside role="dialog" aria-label="Student quick view" className="absolute inset-y-0 right-0 w-full max-w-sm animate-fade-up overflow-y-auto border-l border-line bg-surface p-6 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+      <aside role="dialog" aria-label="Student quick view" className="absolute inset-y-0 right-0 w-full max-w-sm animate-fade-up overflow-y-auto border-l border-line bg-surface p-6 shadow-lift" onMouseDown={(e) => e.stopPropagation()}>
         <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 rounded-lg p-1.5 hover:bg-surface-2"><X className="size-4" /></button>
         {failed ? <p className="text-sm text-danger">Could not load this student.</p> : !data ? (
           <div className="animate-pulse space-y-4"><div className="size-20 rounded-full bg-surface-2" /><div className="h-5 w-40 rounded bg-surface-2" /><div className="h-24 rounded-xl bg-surface-2" /></div>

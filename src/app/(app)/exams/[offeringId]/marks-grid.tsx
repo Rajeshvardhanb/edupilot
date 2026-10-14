@@ -62,18 +62,18 @@ export function MarksGrid({ offeringId, assessments, students, locked }: {
   return (
     <ActionForm action={saveMarks} className="space-y-4" onResult={(s) => { if (s.ok) setDirty(false); }}>
       <input type="hidden" name="offeringId" value={offeringId} />
-      <div className="max-h-[70vh] overflow-auto rounded-2xl border border-line" tabIndex={0} role="region" aria-label="Marks">
+      <div className="max-h-[70vh] overflow-auto rounded-[var(--radius-card)] border border-line" tabIndex={0} role="region" aria-label="Marks">
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="[&>th]:border-b [&>th]:border-line [&>th]:bg-surface-2">
-              <th scope="col" className="sticky left-0 z-10 px-4 py-3 text-left text-[10.5px] font-semibold tracking-[0.08em] text-muted uppercase">Student</th>
+              <th scope="col" className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium text-muted">Student</th>
               {assessments.map((a) => (
                 <th key={a.id} scope="col" className="px-2 py-2.5 text-center">
                   <span className="block text-xs font-semibold text-fg">{a.name}</span>
                   <span className="mt-0.5 inline-block rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-medium text-muted ring-1 ring-line ring-inset">out of {a.maxMarks}</span>
                 </th>
               ))}
-              <th scope="col" className="px-4 py-3 text-right text-[10.5px] font-semibold tracking-[0.08em] text-muted uppercase">Entered so far</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-muted">Entered so far</th>
             </tr>
           </thead>
           <tbody>

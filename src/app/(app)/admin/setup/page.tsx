@@ -66,7 +66,7 @@ export default async function SetupPage() {
                 <LinkButton variant="secondary" href={s.href}><s.icon className="size-4" /> {s.action}</LinkButton>
               </div>
               {spec && s.kind && (
-                <details className="group mt-4 rounded-2xl border border-line bg-surface-2/40" open={next?.n === s.n}>
+                <details className="group mt-4 rounded-[var(--radius-card)] border border-line bg-surface-2/40" open={next?.n === s.n}>
                   <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold"><FileSpreadsheet className="size-4 text-brand" /> Import {spec.label.toLowerCase()} from a spreadsheet<span className="ml-auto text-xs font-normal text-muted group-open:hidden">Show</span><span className="ml-auto hidden text-xs font-normal text-muted group-open:inline">Hide</span></summary>
                   <div className="grid gap-5 border-t border-line p-4 lg:grid-cols-2">
                     <div className="min-w-0">

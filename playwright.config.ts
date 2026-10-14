@@ -4,6 +4,9 @@ import { loadEnvFile } from "node:process";
 try { loadEnvFile(".env"); } catch { /* CI can supply the variables directly */ }
 
 export const TEST_PORT = 3100;
+/** E2E_PROD=1 runs the tests against a production build: a few minutes to build, then every page opens at once
+ *  instead of compiling on first visit (the full run, with its every-page smoke test, needs this). */
+const PROD = process.env.E2E_PROD === "1";
 /** Same MySQL server as development, but a separate database, so tests never touch real data. */
 export const TEST_DATABASE_URL = (process.env.DATABASE_URL ?? "").replace(/\/[^/?]+(\?.*)?$/, "/edupilot_test$1");
 
@@ -21,10 +24,12 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${TEST_PORT}`, viewport: { width: 1400, height: 900 }, trace: "retain-on-failure" },
   webServer: {
     // Creates the test database on first run and brings its tables up to date, then starts the app on it.
-    command: `npx prisma migrate deploy && npx next dev -p ${TEST_PORT}`,
+    command: PROD
+      ? `npx prisma migrate deploy && npx next build && npx next start -p ${TEST_PORT}`
+      : `npx prisma migrate deploy && npx next dev -p ${TEST_PORT}`,
     url: `http://localhost:${TEST_PORT}/login`,
     reuseExistingServer: false,
-    timeout: 180_000,
+    timeout: PROD ? 600_000 : 180_000,
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       NEXT_DIST_DIR: ".next-test",

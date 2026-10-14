@@ -7,7 +7,7 @@ import { deleteSchedule, saveSchedule, sendScheduleNow } from "@/actions/reports
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field, Td } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
-import { REPORT_TABS } from "../tabs";
+import { reportTabs } from "../tabs";
 
 export const metadata = { title: "Scheduled reports" };
 
@@ -18,7 +18,7 @@ export default async function SchedulesPage() {
   return (
     <>
       <PageHeader title="Reports" subtitle={`Summaries emailed to ${user.email} automatically. HODs receive figures for their own department.`} />
-      <Tabs active="/reports/schedules" items={REPORT_TABS} />
+      <Tabs active="/reports/schedules" items={reportTabs(user.role)} />
       {!mailConfigured() && <p className="mb-6 rounded-xl border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning">No mail server is configured yet, so scheduled reports are written to Administration → Email outbox instead of being delivered.</p>}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2" title="My scheduled reports">

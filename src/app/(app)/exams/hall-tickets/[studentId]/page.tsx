@@ -30,7 +30,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
     return (
       <Sheet>
         <div className="py-8 text-center">
-          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-danger-soft text-danger"><ShieldAlert className="size-7" /></span>
+          <span className="mx-auto grid size-14 place-items-center rounded-[var(--radius-card)] bg-danger-soft text-danger"><ShieldAlert className="size-7" /></span>
           <h1 className="mt-4 text-xl font-semibold">Hall ticket withheld</h1>
           <p className="mt-1 text-sm text-muted">{s.user.name} · {s.rollNo}</p>
           <ul className="mx-auto mt-4 max-w-sm space-y-2 text-left text-sm">{st.reasons.map((r) => <li key={r} className="rounded-lg bg-danger-soft px-3 py-2 text-danger">{r}</li>)}</ul>

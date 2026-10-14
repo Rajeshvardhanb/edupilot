@@ -7,7 +7,7 @@ import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Avatar } from "@/components/avatar";
 import { Badge, Field, Progress, Td, type Tone } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
-import { STAFF_TABS } from "../tabs";
+import { staffTabs } from "../tabs";
 
 export const metadata = { title: "Staff leave" };
 const TONE: Record<string, Tone> = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" };
@@ -25,7 +25,7 @@ export default async function StaffLeavePage() {
   return (
     <>
       <PageHeader title="Staff" subtitle="Faculty leave is approved by the HOD; HOD and office-staff leave by the principal." />
-      <Tabs active="/staff/leave" items={STAFF_TABS} />
+      <Tabs active="/staff/leave" items={staffTabs(user.role)} />
       {manager && (
         <Card title={`Requests to review · ${team.filter((t) => t.status === "PENDING").length} pending`} className="mb-6">
           {team.length === 0 ? <EmptyState title="No requests" /> : (
@@ -38,7 +38,7 @@ export default async function StaffLeavePage() {
                   <Td className="whitespace-nowrap">{fmtDate(r.fromDate)} – {fmtDate(r.toDate)}<p className="text-xs text-muted">{workingDays(r.fromDate, r.toDate)} working day(s)</p></Td>
                   <Td className="max-w-xs text-sm">{r.reason}</Td>
                   <Td><Badge tone={TONE[r.status]}>{titleCase(r.status)}</Badge></Td>
-                  <Td className="whitespace-nowrap">{r.status === "PENDING" && <span className="flex gap-1"><ActionButton action={reviewStaffLeave} fields={{ id: r.id, decision: "APPROVED" }} variant="primary">Approve</ActionButton><ActionButton action={reviewStaffLeave} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost" confirm="Reject this leave request?">Reject</ActionButton></span>}</Td>
+                  <Td className="whitespace-nowrap">{r.status === "PENDING" && <span className="flex gap-1"><ActionButton action={reviewStaffLeave} fields={{ id: r.id, decision: "APPROVED" }} variant="secondary">Approve</ActionButton><ActionButton action={reviewStaffLeave} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost" confirm="Reject this leave request?">Reject</ActionButton></span>}</Td>
                 </tr>
               ))}</tbody>
             </Table>

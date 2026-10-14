@@ -8,7 +8,7 @@ import { Badge, Field, Td } from "@/components/ui";
 import { Card, EmptyState, PageHeader, StatCard, Tabs, Th, Table } from "@/components/ui-server";
 import { Filters } from "@/components/filters";
 import { PrintButton } from "@/components/print-button";
-import { STAFF_TABS } from "../tabs";
+import { staffTabs } from "../tabs";
 import { SavedFilters } from "@/components/saved-filters";
 
 export const metadata = { title: "Appraisal records" };
@@ -29,7 +29,7 @@ export default async function AchievementsPage(props: PageProps<"/staff/achievem
   return (
     <>
       <PageHeader title="Staff" subtitle="Publications, conferences, FDPs, patents and funded projects, ready for appraisal and accreditation files" actions={<PrintButton />} />
-      <Tabs active="/staff/achievements" items={STAFF_TABS} />
+      <Tabs active="/staff/achievements" items={staffTabs(user.role)} />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Publications" value={count("PUBLICATION") + count("CONFERENCE")} /><StatCard label="FDPs & workshops" value={count("FDP") + count("WORKSHOP")} tone="info" />
         <StatCard label="Patents & projects" value={count("PATENT") + count("FUNDED_PROJECT")} tone="success" /><StatCard label="Awards" value={count("AWARD")} tone="warning" />

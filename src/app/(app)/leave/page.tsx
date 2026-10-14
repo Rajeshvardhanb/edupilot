@@ -88,7 +88,7 @@ export default async function LeavePage(props: PageProps<"/leave">) {
                 <Td><Badge tone={TONE[r.status]}>{titleCase(r.status)}</Badge></Td>
                 <Td className="whitespace-nowrap">{r.status === "PENDING" && (
                   <span className="flex gap-1">
-                    <ActionButton action={reviewLeave} fields={{ id: r.id, decision: "APPROVED" }} variant="primary">Approve</ActionButton>
+                    <ActionButton action={reviewLeave} fields={{ id: r.id, decision: "APPROVED" }} variant="secondary">Approve</ActionButton>
                     <ActionButton action={reviewLeave} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost" confirm="Reject this request?">Reject</ActionButton>
                   </span>
                 )}</Td>

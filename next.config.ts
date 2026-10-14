@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // The browser tests run a second dev server beside the normal one; each needs its own build folder.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // A server deployment (scripts/deploy) builds a self-contained bundle: server.js plus only the packages it uses.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Only the app's own photo and logo folders may go through the image optimiser.
   // The development badge sat on top of the sidebar and the phone tab bar. Errors still show.
   devIndicators: false,

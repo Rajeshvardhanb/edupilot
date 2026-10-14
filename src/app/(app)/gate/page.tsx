@@ -84,9 +84,9 @@ async function OfficeView() {
                     <Td><Badge tone={STATUS[p.status][1]}>{STATUS[p.status][0]}</Badge></Td>
                     <Td className="text-right whitespace-nowrap">
                       <span className="inline-flex gap-1">
-                        {p.status === "PENDING" && <><ActionButton action={updateGatePass} fields={{ id: p.id, to: "APPROVED" }} variant="primary">Approve</ActionButton><ActionButton action={updateGatePass} fields={{ id: p.id, to: "REJECTED" }} variant="ghost">Reject</ActionButton></>}
+                        {p.status === "PENDING" && <><ActionButton action={updateGatePass} fields={{ id: p.id, to: "APPROVED" }} variant="secondary">Approve</ActionButton><ActionButton action={updateGatePass} fields={{ id: p.id, to: "REJECTED" }} variant="ghost">Reject</ActionButton></>}
                         {p.status === "APPROVED" && <ActionButton action={updateGatePass} fields={{ id: p.id, to: "OUT" }}>Mark out</ActionButton>}
-                        {p.status === "OUT" && <ActionButton action={updateGatePass} fields={{ id: p.id, to: "RETURNED" }} variant="primary">Mark returned</ActionButton>}
+                        {p.status === "OUT" && <ActionButton action={updateGatePass} fields={{ id: p.id, to: "RETURNED" }} variant="secondary">Mark returned</ActionButton>}
                       </span>
                     </Td>
                   </tr>

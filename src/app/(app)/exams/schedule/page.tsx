@@ -42,7 +42,7 @@ export default async function ExamSchedulePage() {
     <>
       <PageHeader title="Exam schedule" subtitle={`${term?.name ?? ""} · mid-term and end-semester papers`} actions={<PrintButton />} />
       {mine.length > 0 && (
-        <div className="mb-6 rounded-[20px] border border-brand/20 bg-brand-soft/60 p-4 text-sm">
+        <div className="mb-6 rounded-[var(--radius-card)] border border-brand/20 bg-brand-soft/60 p-4 text-sm">
           <p className="font-semibold">Your invigilation duties</p>
           <ul className="mt-2 flex flex-wrap gap-2">{mine.map((d) => <li key={d.id} className="rounded-full bg-surface px-3 py-1 text-xs font-medium ring-1 ring-line ring-inset">{fmtDate(d.date)} · {SESSION[d.session]} · {d.room.name}</li>)}</ul>
         </div>

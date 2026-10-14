@@ -3,7 +3,7 @@ import type { PaymentMode } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { daysAgo, fmtDate, inr, isoDate, titleCase } from "@/lib/format";
-import { Badge, Td } from "@/components/ui";
+import { Badge, Td, buttonClass } from "@/components/ui";
 import { Card, PageHeader, StatCard, Th, Table } from "@/components/ui-server";
 import { Filters } from "@/components/filters";
 import { PrintButton } from "@/components/print-button";
@@ -35,7 +35,7 @@ export default async function PaymentsPage(props: PageProps<"/fees/payments">) {
         <div><label className="label">From</label><input type="date" name="from" aria-label="From" defaultValue={from} className="input" /></div>
         <div><label className="label">To</label><input type="date" name="to" aria-label="To" defaultValue={to} className="input" /></div>
         <select name="mode" aria-label="Mode" defaultValue={mode} className="input w-auto"><option value="">All modes</option>{["CASH", "UPI", "CARD", "BANK_TRANSFER", "DD", "SCHOLARSHIP"].map((m) => <option key={m} value={m}>{titleCase(m)}</option>)}</select>
-        <button className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">Apply</button>
+        <button className={buttonClass("secondary")}>Apply</button>
       </Filters>
       <SavedFilters storageKey="edupilot-filters-fees-payments" />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -6,7 +6,7 @@ import { requestSwap, respondSwap } from "@/actions/staff";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field, Td, type Tone } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
-import { STAFF_TABS } from "../tabs";
+import { staffTabs } from "../tabs";
 
 export const metadata = { title: "Class swaps" };
 const TONE: Record<string, Tone> = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" };
@@ -25,7 +25,7 @@ export default async function SwapsPage() {
   return (
     <>
       <PageHeader title="Staff" subtitle="Ask a colleague to take one of your periods. When they accept, the class appears on their Attendance page for that date." />
-      <Tabs active="/staff/swaps" items={STAFF_TABS} />
+      <Tabs active="/staff/swaps" items={staffTabs(user.role)} />
       <div className="grid gap-6 lg:grid-cols-3">
         {user.facultyId && (
           <Card title="Request a swap" className="h-fit">
@@ -51,7 +51,7 @@ export default async function SwapsPage() {
                     <Td>{r.slot.offering.subject.name}<p className="text-xs text-muted">{batchLabel(r.slot.offering.batch)}{r.reason && ` · ${r.reason}`}</p></Td>
                     <Td>{r.from.user.name}</Td>{user.role === "ADMIN" && <Td>{r.to.user.name}</Td>}
                     <Td><Badge tone={TONE[r.status]}>{r.status === "APPROVED" ? "Accepted" : titleCase(r.status)}</Badge></Td>
-                    <Td className="whitespace-nowrap">{r.status === "PENDING" && r.toId === fid && <span className="flex gap-1"><ActionButton action={respondSwap} fields={{ id: r.id, decision: "APPROVED" }} variant="primary">Accept</ActionButton><ActionButton action={respondSwap} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost">Decline</ActionButton></span>}</Td>
+                    <Td className="whitespace-nowrap">{r.status === "PENDING" && r.toId === fid && <span className="flex gap-1"><ActionButton action={respondSwap} fields={{ id: r.id, decision: "APPROVED" }} variant="secondary">Accept</ActionButton><ActionButton action={respondSwap} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost">Decline</ActionButton></span>}</Td>
                   </tr>
                 ))}</tbody>
               </Table>

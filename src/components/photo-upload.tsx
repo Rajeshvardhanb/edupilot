@@ -16,7 +16,7 @@ export function PhotoUpload({ userId, current, compact }: { userId: string; curr
         {preview
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={preview} alt="" className={compact ? "size-24 rounded-full object-cover" : "size-20 rounded-full object-cover"} />
-          : current}
+          : <span aria-hidden>{current}</span>}
         <span className="absolute inset-0 grid place-items-center rounded-full bg-black/40 text-white opacity-0 transition group-hover:opacity-100"><Camera className="size-5" /></span>
       </button>
       <input

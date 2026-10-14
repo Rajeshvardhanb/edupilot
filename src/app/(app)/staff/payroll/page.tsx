@@ -7,7 +7,7 @@ import { runPayroll, saveSalary } from "@/actions/payroll";
 import { ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field, Td } from "@/components/ui";
 import { Card, EmptyState, PageHeader, StatCard, Tabs, Th, Table } from "@/components/ui-server";
-import { STAFF_TABS } from "../tabs";
+import { staffTabs } from "../tabs";
 
 export const metadata = { title: "Payroll" };
 
@@ -34,7 +34,7 @@ export default async function PayrollPage(props: PageProps<"/staff/payroll">) {
   return (
     <>
       <PageHeader title="Staff" subtitle={manage ? "Salaries, the monthly payroll run and payslips" : "Your payslips"} />
-      <Tabs active="/staff/payroll" items={STAFF_TABS} />
+      <Tabs active="/staff/payroll" items={staffTabs(user.role)} />
       {manage && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -72,7 +72,7 @@ export default async function PayrollPage(props: PageProps<"/staff/payroll">) {
                           {s.salary ? <span className="text-sm tabular-nums">{inr(s.salary.basic + s.salary.hra + s.salary.da + s.salary.allowances)} <span className="text-xs text-muted">gross</span></span> : <Badge tone="warning">Not set</Badge>}
                           <span className="text-xs text-brand">{s.salary ? "Change" : "Set salary"}</span>
                         </summary>
-                        <ActionForm action={saveSalary} className="mt-3 grid gap-3 rounded-2xl bg-surface-2/50 p-3 sm:grid-cols-3 lg:grid-cols-7">
+                        <ActionForm action={saveSalary} className="mt-3 grid gap-3 rounded-[var(--radius-card)] bg-surface-2/50 p-3 sm:grid-cols-3 lg:grid-cols-7">
                           <input type="hidden" name="userId" value={s.id} />
                           {([["basic", "Basic"], ["hra", "HRA"], ["da", "DA"], ["allowances", "Allowances"], ["otherDeductions", "Other deductions"]] as const).map(([k, label]) => (
                             <Field key={k} label={label}><input name={k} aria-label={`${label} for ${s.name}`} type="number" min={0} defaultValue={s.salary?.[k] ?? ""} className="input py-2" required={k === "basic"} /></Field>

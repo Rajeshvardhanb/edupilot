@@ -45,7 +45,7 @@ export function Shortcuts({ role }: { role: Role }) {
   if (!help) return null;
   return (
     <div className="no-print fixed inset-0 z-[85] grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={() => setHelp(false)}>
-      <div role="dialog" aria-label="Keyboard shortcuts" className="w-full max-w-md animate-fade-up rounded-2xl border border-line bg-surface p-6 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-label="Keyboard shortcuts" className="w-full max-w-md animate-fade-up rounded-[var(--radius-panel)] border border-line bg-surface p-6 shadow-lift" onMouseDown={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between"><h2 className="flex items-center gap-2 font-semibold"><Keyboard className="size-4 text-brand" /> Keyboard shortcuts</h2><button onClick={() => setHelp(false)} aria-label="Close" className="rounded-lg p-1.5 hover:bg-surface-2"><X className="size-4" /></button></div>
         <ul className="space-y-2 text-sm">
           <li className="flex justify-between"><span>Search students and pages</span><span className="flex gap-1"><Key>/</Key> or <Key>Ctrl</Key><Key>K</Key></span></li>

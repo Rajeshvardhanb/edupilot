@@ -32,7 +32,7 @@ export default async function TicketPage(props: PageProps<"/helpdesk/[id]">) {
           return (
             <div key={m.id} className={cn("flex gap-3", mine && "flex-row-reverse")}>
               <Avatar name={m.user.name} userId={m.user.id} hasPhoto={!!m.user.photoType} size={36} />
-              <div className={cn("max-w-[80%] rounded-2xl border border-line p-4", mine ? "bg-brand-soft" : "bg-surface")}>
+              <div className={cn("max-w-[80%] rounded-[var(--radius-card)] border border-line p-4", mine ? "bg-brand-soft" : "bg-surface")}>
                 <p className="text-xs text-muted"><b className="text-fg">{m.user.name}</b> · {ROLE_LABEL[m.user.role]} · {fmtDateTime(m.createdAt)}</p>
                 <p className="mt-1 text-sm whitespace-pre-line">{m.body}</p>
               </div>

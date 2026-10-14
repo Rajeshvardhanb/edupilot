@@ -56,7 +56,7 @@ export default async function InvoicePage(props: PageProps<"/fees/[invoiceId]">)
                     {p.amount > 0 && p.amount + p.refunds.reduce((t, r) => t + r.amount, 0) > 0 && (
                       <details className="relative inline-block text-left">
                         <summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-xs text-muted hover:bg-surface-2 hover:text-fg">Refund</summary>
-                        <div className="absolute right-0 z-20 mt-1 w-72 rounded-[20px] border border-line bg-surface p-4 shadow-lift">
+                        <div className="absolute right-0 z-20 mt-1 w-72 rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-lift">
                           <p className="mb-3 text-sm font-semibold">Refund against {p.receiptNo}</p>
                           <ActionForm action={refundPayment} className="space-y-3">
                             <input type="hidden" name="paymentId" value={p.id} />

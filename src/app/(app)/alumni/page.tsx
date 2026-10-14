@@ -67,7 +67,7 @@ export default async function AlumniPage(props: PageProps<"/alumni">) {
                 const placed = s.applications[0];
                 const company = s.alumni?.company ?? placed?.drive.company.name;
                 return (
-                  <div key={s.id} className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+                  <div key={s.id} className="rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-card">
                     <div className="flex items-center gap-3">
                       <Avatar name={s.user.name} userId={s.user.id} hasPhoto={!!s.user.photoType} size={44} />
                       <div className="min-w-0"><Link href={`/students/${s.id}`} className="block truncate font-medium hover:text-brand">{s.user.name}</Link><p className="text-xs text-muted">{s.batch.program.code} · Class of {s.alumni?.graduationYear ?? s.batch.admissionYear + s.batch.program.durationYears}</p></div>

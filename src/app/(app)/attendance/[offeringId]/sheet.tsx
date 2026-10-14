@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge } from "@/components/ui";
+import { Badge, buttonClass } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { queueAttendance } from "@/components/offline";
 import { saveAttendance } from "@/actions/teaching";
@@ -54,8 +54,8 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
             <label className="label" htmlFor="topic">Topic covered</label>
             <input id="topic" name="topic" defaultValue={topic} className="input" placeholder="e.g. Unit 2 — Process scheduling" />
           </div>
-          <button type="button" onClick={() => setAll("PRESENT")} className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">All present</button>
-          <button type="button" onClick={() => setAll("ABSENT")} className="rounded-lg border border-line px-3 py-2 text-sm hover:bg-surface-2">All absent</button>
+          <button type="button" onClick={() => setAll("PRESENT")} className={buttonClass("secondary")}>All present</button>
+          <button type="button" onClick={() => setAll("ABSENT")} className={buttonClass("secondary")}>All absent</button>
         </div>
         <p className="text-sm text-muted">
           <b className="text-fg">{students.length - absent}</b> present · <b className="text-danger">{absent}</b> absent · tap a name to toggle<span className="sm:hidden"> · swipe left = absent, right = present</span>
@@ -88,7 +88,11 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
             </li>
           ))}
         </ul>
-        <div className="sticky bottom-20 flex justify-end lg:bottom-4"><SubmitButton className="shadow-lg">Save attendance</SubmitButton></div>
+        {/* Sticky action bar: rows scroll beneath it instead of being covered by a floating button. */}
+        <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 -mx-5 -mb-5 flex items-center justify-between gap-3 rounded-b-[var(--radius-card)] border-t border-line bg-surface/95 px-5 py-3 backdrop-blur lg:bottom-0">
+          <p className="text-sm text-muted" aria-live="polite"><b className="text-fg tabular-nums">{students.length - absent}</b> present · <b className="text-danger tabular-nums">{absent}</b> absent</p>
+          <SubmitButton>Save attendance</SubmitButton>
+        </div>
       </ActionForm>
     </div>
   );

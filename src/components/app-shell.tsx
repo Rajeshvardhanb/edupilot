@@ -39,16 +39,16 @@ export function AppShell({ user, notices, unread, termName, brand, lang, dict, c
         <a href="#main" className="skip-link">Skip to main content</a>
         <div className="min-h-screen">
           <Sidebar role={user.role} open={open} onClose={() => setOpen(false)} termName={termName} brand={brand} t={t} />
-          <div className="lg:pl-[17.5rem]">
+          <div className="lg:pl-60">
             <Topbar user={user} notices={notices} unread={unread} onMenu={() => setOpen(true)} lang={lang} t={t} />
             {/* Printed pages carry the college name and the date instead of the menu and top bar. */}
             <div className="mb-4 hidden items-end justify-between border-b border-black/70 pb-2 text-xs print:flex"><span className="text-sm font-bold uppercase">{brand.name}</span><span suppressHydrationWarning>Printed {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
-            <main id="main" tabIndex={-1} className={cn("mx-auto max-w-7xl px-4 pt-4 pb-10 outline-none sm:px-6 lg:px-8", tabs.length > 0 && "pb-28 lg:pb-10")}>{children}</main>
+            <main id="main" tabIndex={-1} className={cn("mx-auto max-w-7xl px-4 pt-6 pb-12 outline-none sm:px-6 lg:px-8", tabs.length > 0 && "pb-24 lg:pb-12")}>{children}</main>
           </div>
           {tabs.length > 0 && (
-            <nav className="no-print fixed inset-x-3 bottom-3 z-40 grid rounded-2xl border border-line bg-surface/90 shadow-lift backdrop-blur-xl lg:hidden" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+            <nav aria-label="Quick links" className="no-print fixed inset-x-0 bottom-0 z-40 grid border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
               {tabs.map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} className={cn("flex flex-col items-center gap-0.5 py-2.5 text-[10px]", active === href ? "font-semibold text-brand" : "text-muted")}>
+                <Link key={href} href={href} aria-current={active === href ? "page" : undefined} className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px]", active === href ? "font-medium text-brand" : "text-muted")}>
                   <Icon className="size-5" />{t(href === "/dashboard" ? "Home" : label)}
                 </Link>
               ))}

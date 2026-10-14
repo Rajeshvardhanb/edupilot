@@ -1,6 +1,4 @@
 import { logParentContact } from "@/actions/contacts";
-import Image from "next/image";
-import { banner } from "@/lib/images";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Phone, Mail, MapPin, User } from "lucide-react";
@@ -48,7 +46,6 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
   const att = await attendanceSummary({ studentIds: [s.id], offeringIds: offerings.map((o) => o.id) });
   const admin = isOffice(user);
   const contacts = isLearner(user) ? [] : await db.parentContact.findMany({ where: { studentId: s.id }, include: { by: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 8 });
-  const cover = banner("profile-cover");
   const canSeeFees = ["ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"].includes(user.role);
   const attTotals = [...att.values()].reduce((x, v) => ({ a: x.a + v.attended, t: x.t + v.total }), { a: 0, t: 0 });
   const overallAtt = pct(attTotals.a, attTotals.t);
@@ -67,33 +64,32 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
   return (
     <>
       {user.role !== "STUDENT" && user.role !== "PARENT" && <Breadcrumbs items={[{ label: "Students", href: "/students" }, { label: s.user.name }]} />}
-      <section className="mb-6 animate-fade-up overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
-        <div className="brand-gradient relative h-32 sm:h-44">
-          {cover.image && <Image src={cover.image} alt="" fill sizes="(min-width: 1280px) 1150px, 100vw" className="object-cover" style={{ objectPosition: cover.imagePosition }} />}
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-slate-900/30 to-transparent" />
-        </div>
-        <div className="flex flex-wrap items-end gap-4 px-6 pb-6">
-          <div className="-mt-12 rounded-full bg-surface p-1">
+      {/* Record header: who this is, their identifiers and standing, and what can be done with the record. */}
+      <section className="tile mb-6 animate-fade-up">
+        <div className="flex flex-wrap items-center gap-4 p-5 sm:p-6">
+          <div className="shrink-0">
             {isOffice(user)
-              ? <PhotoUpload compact userId={s.userId} current={<Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={96} />} />
-              : <Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={96} />}
+              ? <PhotoUpload compact userId={s.userId} current={<Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={72} />} />
+              : <Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={72} />}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{s.user.name}</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">{s.user.name}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="font-mono">{s.rollNo}</span>·<span>{s.batch.program.name}</span>
               <Badge tone={STATUS_TONE[s.status]}>{titleCase(s.status)}</Badge>
               {s.admissionType === "LATERAL" && <Badge tone="brand">Lateral entry</Badge>}
             </p>
           </div>
-          <div className="flex gap-3">
-            {[["Semester", s.batch.currentSemester], ["Batch", `${s.batch.admissionYear}-${s.batch.section}`], ["Attendance", `${overallAtt}%`]].map(([k, v]) => (
-              <div key={k} className="rounded-xl bg-surface-2 px-4 py-2 text-center"><p className="text-lg font-semibold tabular-nums">{v}</p><p className="text-[10px] tracking-wider text-muted uppercase">{k}</p></div>
-            ))}
-            {(isOffice(user) || user.role === "HOD") && <LinkButton variant="secondary" href={`/students/${s.id}/id-card`} className="self-center">ID card</LinkButton>}
-            {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`} className="self-center"><Pencil className="size-4" /> Edit</LinkButton>}
+          <div className="flex flex-wrap gap-2">
+            {(isOffice(user) || user.role === "HOD") && <LinkButton variant="secondary" href={`/students/${s.id}/id-card`}>ID card</LinkButton>}
+            {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`}><Pencil className="size-4" /> Edit</LinkButton>}
           </div>
         </div>
+        <dl className="grid grid-cols-3 divide-x divide-line border-t border-line">
+          {[["Semester", s.batch.currentSemester], ["Batch", `${s.batch.admissionYear}-${s.batch.section}`], ["Attendance", `${overallAtt}%`]].map(([k, v]) => (
+            <div key={k} className="px-5 py-3 sm:px-6"><dt className="text-xs text-muted">{k}</dt><dd className="mt-0.5 text-base font-semibold tabular-nums">{v}</dd></div>
+          ))}
+        </dl>
       </section>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Profile">
@@ -164,7 +160,7 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
               {contacts.length === 0 ? <p className="mb-4 text-sm text-muted">No contact with the parent or guardian has been recorded yet. WhatsApp and email reminders are added here automatically.</p> : (
                 <ul className="mb-5 space-y-3">
                   {contacts.map((c) => (
-                    <li key={c.id} className="rounded-2xl border border-line bg-surface-2/40 p-3 text-sm">
+                    <li key={c.id} className="rounded-[var(--radius-card)] border border-line bg-surface-2/40 p-3 text-sm">
                       <p className="flex flex-wrap items-center gap-2"><Badge tone={CONTACT_TONE[c.channel] ?? "neutral"}>{titleCase(c.channel)}</Badge><Badge>{titleCase(c.purpose)}</Badge><span className="ml-auto text-xs text-muted">{fmtDateTime(c.createdAt)}{c.by && ` · ${c.by.name}`}</span></p>
                       <p className="mt-2 whitespace-pre-line text-[13px] text-muted">{c.message}</p>
                     </li>

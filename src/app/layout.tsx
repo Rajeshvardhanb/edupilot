@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "College management system for Engineering & Diploma institutions",
 };
 
-/** The college's brand colour drives the gradient and the accent colour everywhere. */
+/** The college's brand colour is the accent everywhere; its deeper shade (same hue) is used for pressed and dark states. */
 async function brandCss() {
   let c = "#4f46e5";
   try {
@@ -23,7 +23,7 @@ async function brandCss() {
     // Database unreachable (e.g. during build): keep the default colour.
   }
   if (c.toLowerCase() === "#4f46e5") return "";
-  return `:root{--brand-start:${c};--brand-end:color-mix(in oklab,${c} 65%,#a21caf);--brand:${c};--brand-soft:color-mix(in oklab,${c} 10%,white)}`;
+  return `:root{--brand-start:${c};--brand-end:color-mix(in oklab,${c} 78%,black);--brand:${c};--brand-soft:color-mix(in oklab,${c} 10%,white)}`;
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

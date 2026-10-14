@@ -24,7 +24,7 @@ export default async function PayPage(props: PageProps<"/pay/[orderId]">) {
     <div className="mx-auto max-w-lg">
       <Breadcrumbs items={[{ label: "Fees", href: "/fees" }, { label: "Pay online" }]} />
       <Card>
-        <p className="text-xs font-semibold tracking-wider text-muted uppercase">Paying {inst.name}</p>
+        <p className="text-xs font-medium text-muted">Paying {inst.name}</p>
         <p className="mt-2 text-4xl font-semibold tabular-nums">{inr(order.amount)}</p>
         <dl className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
           <div className="flex justify-between"><dt className="text-muted">For</dt><dd>{order.invoice.title}</dd></div>

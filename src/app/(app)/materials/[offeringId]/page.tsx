@@ -41,7 +41,7 @@ export default async function OfferingMaterials(props: PageProps<"/materials/[of
               </p>
               {m.kind === "ASSIGNMENT" && (
                 <div className="mt-4 border-t border-line pt-3">
-                  <p className="mb-2 text-xs font-semibold text-muted uppercase">Submissions · {m.submissions.length}/{offering.batch._count.students}</p>
+                  <p className="mb-2 text-xs font-medium text-muted">Submissions · {m.submissions.length}/{offering.batch._count.students}</p>
                   <ul className="space-y-3">
                     {m.submissions.map((s) => (
                       <li key={s.id} className="rounded-lg bg-surface-2 p-3 text-sm">

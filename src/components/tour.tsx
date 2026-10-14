@@ -63,7 +63,7 @@ export function Tour({ role, userId }: { role: Role; userId: string }) {
     <div className="no-print fixed inset-0 z-[90]">
       <div className="absolute inset-0 bg-slate-900/50" onClick={finish} />
       {rect && <div className="pointer-events-none absolute rounded-xl ring-4 ring-white/90 transition-all" style={{ top: rect.top - 4, left: rect.left - 4, width: rect.width + 8, height: Math.min(rect.height + 8, window.innerHeight - rect.top) }} />}
-      <div role="dialog" aria-label="Guided tour" className="absolute w-80 animate-fade-up rounded-2xl border border-line bg-surface p-5 shadow-2xl" style={pos}>
+      <div role="dialog" aria-label="Guided tour" className="absolute w-80 animate-fade-up rounded-[var(--radius-panel)] border border-line bg-surface p-5 shadow-lift" style={pos}>
         <p className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="size-4 text-brand" /> {s.title}</p>
         <p className="mt-2 text-sm text-muted">{s.body}</p>
         <div className="mt-4 flex items-center justify-between">

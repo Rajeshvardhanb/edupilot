@@ -75,7 +75,7 @@ export default async function PlacementsPage() {
                   <tr key={d.id}>
                     <Td>
                       <div className="flex items-center gap-3">
-                        <span className="brand-gradient grid size-9 shrink-0 place-items-center rounded-xl text-sm font-bold text-white">{d.company.name[0]}</span>
+                        <span className="chip size-9 text-sm font-semibold">{d.company.name[0]}</span>
                         <div>{user.role === "STUDENT" ? <p className="font-medium">{d.company.name}</p> : <Link href={`/placements/${d.id}`} className="font-medium hover:text-brand">{d.company.name}</Link>}<p className="text-xs text-muted">{d.role}{d.company.industry && ` · ${d.company.industry}`}</p></div>
                       </div>
                     </Td>
@@ -89,7 +89,7 @@ export default async function PlacementsPage() {
                           <span className="flex items-center gap-2"><Badge tone={APP_TONE[mine.status]}>{titleCase(mine.status)}</Badge>{mine.status === "SELECTED" && <Link href={`/placements/offer/${mine.id}`} className="text-xs text-brand">Offer letter</Link>}{mine.status === "APPLIED" && d.status === "OPEN" && <ActionButton action={withdrawApplication} fields={{ driveId: d.id }} variant="ghost">Withdraw</ActionButton>}</span>
                         ) : d.status !== "OPEN" ? <span className="text-xs text-muted">—</span>
                           : reason ? <span className="text-xs text-danger">{reason}</span>
-                          : <ActionButton action={applyToDrive} fields={{ driveId: d.id }} variant="primary">Apply</ActionButton>
+                          : <ActionButton action={applyToDrive} fields={{ driveId: d.id }} variant="secondary">Apply</ActionButton>
                       ) : (
                         <span className="text-xs">{d.applications.length} applied · <b className="text-success">{d.applications.filter((a) => a.status === "SELECTED").length}</b> selected</span>
                       )}

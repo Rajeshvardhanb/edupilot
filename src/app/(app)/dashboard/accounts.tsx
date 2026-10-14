@@ -83,7 +83,7 @@ async function AccountsBody() {
             { label: "Due", value: t.split.DUE, color: "var(--warning)" },
             { label: "Overdue", value: t.split.OVERDUE, color: "var(--danger)" },
           ]} />
-          <h3 className="mt-6 mb-2 text-xs font-semibold tracking-wider text-muted uppercase">Collection % by programme</h3>
+          <h3 className="mt-6 mb-2 text-sm font-semibold">Collection % by programme</h3>
           <BarsChart unit="%" horizontal height={Math.max(180, byProgram.size * 28)} data={[...byProgram].filter(([, v]) => v.payable).map(([label, v]) => ({ label, value: pct(v.paid, v.payable) }))} />
         </Card>
         <Card title="Recent payments" actions={<Link href="/fees/payments" className="text-xs text-brand">Day book →</Link>}>

@@ -59,7 +59,7 @@ export default async function CertificatesPage() {
                     {r.status === "APPROVED" && <Link href={`/certificates/${r.id}`} className="text-sm text-brand">View / print →</Link>}
                     {r.status === "PENDING" && isOffice(user) && (
                       <span className="flex gap-1">
-                        <ActionButton action={reviewCertificate} fields={{ id: r.id, decision: "APPROVED" }} variant="primary">Issue</ActionButton>
+                        <ActionButton action={reviewCertificate} fields={{ id: r.id, decision: "APPROVED" }} variant="secondary">Issue</ActionButton>
                         <ActionButton action={reviewCertificate} fields={{ id: r.id, decision: "REJECTED" }} variant="ghost" confirm="Reject this request?">Reject</ActionButton>
                       </span>
                     )}

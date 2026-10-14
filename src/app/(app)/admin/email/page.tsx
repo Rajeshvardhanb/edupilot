@@ -29,7 +29,7 @@ export default async function EmailPage(props: PageProps<"/admin/email">) {
     <>
       <PageHeader title="Administration" subtitle="Every email the system sends is recorded here" />
       <Tabs active="/admin/email" items={ADMIN_TABS} />
-      <div className={`mb-6 flex items-start gap-3 rounded-2xl border p-4 text-sm ${ok ? "border-success/30 bg-success-soft text-success" : "border-warning/30 bg-warning-soft text-warning"}`}>
+      <div className={`mb-6 flex items-start gap-3 rounded-[var(--radius-card)] border p-4 text-sm ${ok ? "border-success/30 bg-success-soft text-success" : "border-warning/30 bg-warning-soft text-warning"}`}>
         {ok ? <CheckCircle2 className="mt-0.5 size-5 shrink-0" /> : <AlertTriangle className="mt-0.5 size-5 shrink-0" />}
         <div>
           <p className="font-semibold">{ok ? `Mail server connected (${process.env.SMTP_HOST})` : "No mail server configured: emails are saved below but not delivered"}</p>
