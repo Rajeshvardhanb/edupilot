@@ -24,7 +24,7 @@ export default async function SyllabusPage() {
   return (
     <>
       <PageHeader title="Syllabus coverage" subtitle={`${term?.name} · ${expected}% of the term has elapsed`} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Average coverage" value={`${avg}%`} tone="info" hint={`${planned.length} of ${offerings.length} courses have a lesson plan`} />
         <StatCard label="Expected by now" value={`${expected}%`} tone="neutral" />
         <StatCard label="Courses running behind" value={behind} tone={behind ? "danger" : "success"} hint="more than 15 points behind the term" />

@@ -28,7 +28,7 @@ export default async function HelpdeskPage(props: PageProps<"/helpdesk">) {
   return (
     <>
       <PageHeader title="Helpdesk" subtitle={admin ? "Grievances and support requests from students, parents and staff" : "Raise a grievance or ask for help. The office replies here."} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Open" value={c("OPEN")} tone="warning" /><StatCard label="In progress" value={c("IN_PROGRESS")} tone="info" /><StatCard label="Resolved" value={c("RESOLVED")} tone="success" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">

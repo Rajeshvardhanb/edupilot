@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { ShieldAlert } from "lucide-react";
+import { Download, ShieldAlert } from "lucide-react";
+import { getInstitution } from "@/lib/institution";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { currentTerm, studentScope } from "@/lib/scope";
@@ -41,9 +42,11 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
     );
 
   const qr = await qrSvg(`HT|${s.rollNo}|${term?.name ?? ""}`);
+  const inst = await getInstitution();
   return (
     <>
-      <div className="no-print mx-auto mb-4 flex max-w-3xl justify-end gap-2"><a href={`/exams/hall-tickets/${s.id}/pdf`} className={buttonClass("secondary")}>Download PDF</a><PrintButton label="Print" /></div>
+      <div className="no-print mx-auto mb-4 hidden max-w-3xl justify-end gap-2 sm:flex"><a href={`/exams/hall-tickets/${s.id}/pdf`} className={buttonClass("secondary")}>Download PDF</a><PrintButton label="Print" /></div>
+      <div className="hidden sm:block print:block">
       <Sheet>
         <Letterhead title="Hall Ticket" serial={term?.name} />
         <div className="mt-5 flex gap-5">
@@ -80,6 +83,40 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
         </ol>
         <div className="mt-12 flex justify-between text-xs"><span>Signature of the candidate</span><span>Controller of Examinations</span></div>
       </Sheet>
+      </div>
+      {/* Phone: the ticket as a card; the printable sheet below is for larger screens and printing. */}
+      <div className="no-print sm:hidden">
+        <section className="overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-card">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#c026d3] px-4 py-3 text-white">
+            {inst.logoType
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src="/brand/logo" alt="" className="size-9 rounded-full bg-white object-contain p-0.5" />
+              : null}
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{inst.shortName} · Hall ticket</p><p className="truncate text-[11px] text-white/80">End semester · {term?.name}</p></div>
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">Valid</span>
+          </div>
+          <div className="flex items-center gap-3 p-4">
+            <Avatar name={s.user.name} userId={s.user.id} hasPhoto={!!s.user.photoType} size={64} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold">{s.user.name}</p>
+              <p className="font-mono text-xs font-semibold text-brand">{s.rollNo}</p>
+              <p className="truncate text-xs text-muted">{s.batch.program.code} · Semester {s.batch.currentSemester}</p>
+            </div>
+            <div className="size-20 shrink-0" dangerouslySetInnerHTML={{ __html: qr }} />
+          </div>
+          <ol className="space-y-2 border-t border-dashed border-line-strong p-4">
+            {exams.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 rounded-xl border border-line p-2.5">
+                <span className="w-10 shrink-0 text-center leading-tight"><span className="block text-lg font-bold text-brand">{String(e.date.getUTCDate()).padStart(2, "0")}</span><span className="text-[10px] text-muted">{e.date.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span></span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{e.subject.name}</span><span className="block text-[11px] text-muted">{e.subject.code} · {e.session === "FN" ? "FN 10:00–13:00" : "AN 14:00–17:00"}</span></span>
+                <span className="shrink-0 text-[11px] text-muted">{e.seats[0] ? `${e.seats[0].room.name} · ${e.seats[0].seatNo}` : "Seat TBA"}</span>
+              </li>
+            ))}
+            {exams.length === 0 && <li className="py-3 text-center text-sm text-muted">The exam time-table has not been published yet.</li>}
+          </ol>
+        </section>
+        <div className="mt-4 grid grid-cols-2 gap-3"><a href={`/exams/hall-tickets/${s.id}/pdf`} className={buttonClass("secondary")}><Download /> Download PDF</a><PrintButton label="Print" /></div>
+      </div>
     </>
   );
 }

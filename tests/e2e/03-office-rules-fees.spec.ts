@@ -8,7 +8,7 @@ test.afterAll(async () => { await db.$disconnect(); });
 test("office staff: own dashboard, admissions, certificates; kept out of money, marks and settings", async ({ browser }) => {
   const o = await session(browser, "office@edupilot.edu");
   ok("office staff land on the front-office dashboard", await seen(o, "Front office"));
-  ok("their menu has admissions", await o.locator('aside nav a[href="/admissions"]').isVisible());
+  ok("their menu has admissions", await o.locator('aside nav a[href="/admissions"]:visible').first().isVisible());
   ok("their menu has no fees, marks or administration", (await o.locator('aside nav a[href="/fees"], aside nav a[href="/exams"], aside nav a[href="/admin"]').count()) === 0);
   for (const path of ["/fees", "/exams", "/admin", "/admin/rules", "/reports", "/results", "/academics", "/fees/closing", "/scholarships"]) {
     await o.goto(path);

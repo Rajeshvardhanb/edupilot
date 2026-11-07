@@ -1,3 +1,4 @@
+import { Check, Lock, ReceiptText } from "lucide-react";
 import { getT } from "@/lib/i18n-server";
 import { learnerId } from "@/lib/learner";
 import Link from "next/link";
@@ -47,7 +48,7 @@ export default async function FeesPage(props: PageProps<"/fees">) {
     <>
       <PageHeader title="Fees" subtitle="Demand, collection and dues" actions={<><ActionButton action={emailFeeReminders} fields={{}} size="md" confirm="Email a reminder for every overdue invoice to the student and their parents?">Email overdue reminders</ActionButton><ActionButton action={applyLateFinesAction} fields={{}} size="md" confirm="Recalculate late fines on all overdue invoices using the per-day rate in Settings?">Apply late fines</ActionButton></>} />
       <FeeTabs active="/fees" />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Demand (filtered)" value={inr(totals.payable)} hint={`${filtered.length} invoices`} />
         <StatCard label="Collected" value={inr(totals.paid)} tone="success" hint={`${pct(totals.paid, totals.payable)}%`} />
         <StatCard label="Balance due" value={inr(totals.bal)} tone="warning" />
@@ -84,58 +85,82 @@ export default async function FeesPage(props: PageProps<"/fees">) {
   );
 }
 
+/** Whole days from now until `d` (negative once it has passed). */
+function daysUntil(d: Date) {
+  return Math.ceil((d.getTime() - Date.now()) / 864e5);
+}
+
 async function MyFees({ user }: { user: CurrentUser }) {
   const t = await getT();
   const invoices = await db.feeInvoice.findMany({ where: { studentId: learnerId(user) }, include: { payments: { orderBy: { paidAt: "desc" } }, instalments: { orderBy: { dueDate: "asc" } }, structure: { include: { items: true } } }, orderBy: { createdAt: "desc" } });
+  const withStatus = invoices.map((inv) => ({ inv, st: invoiceStatus(inv) }));
+  const open = withStatus.filter((x) => x.st.balance > 0);
+  const balance = open.reduce((s, x) => s + x.st.balance, 0);
+  const next = open.map((x) => ({ ...x, due: x.inv.instalments.find((i) => i.dueDate >= new Date())?.dueDate ?? x.inv.dueDate })).sort((a, b) => +a.due - +b.due)[0];
+  const daysLeft = next ? daysUntil(next.due) : 0;
   return (
     <>
       <PageHeader title={t("My fees")} subtitle="Pay online here, or at the accounts section quoting your invoice number." actions={user.studentId && <LinkButton variant="secondary" href={`/fees/statement/${user.studentId}`}>Fee statement / no-dues</LinkButton>} />
       {invoices.length === 0 && <EmptyState title="No invoices" />}
+      {/* What is owed now, and one button to pay it. */}
+      {next && (
+        <section className="relative mb-6 overflow-hidden rounded-[var(--radius-panel)] bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#c026d3] p-5 text-white shadow-[var(--shadow-brand)]">
+          <span aria-hidden className="absolute -top-12 -right-12 size-40 rounded-full bg-white/10" />
+          <p className="relative text-xs text-white/80">{t("Balance due")}{next.inv.instalments.length > 0 ? ` · ${next.inv.invoiceNo}` : ""}</p>
+          <p className="relative text-[2rem] font-bold tabular-nums">{inr(balance)}</p>
+          <p className="relative text-xs text-white/85">Due {fmtDate(next.due)} · {daysLeft >= 0 ? `${daysLeft} days left` : `${-daysLeft} days overdue`}</p>
+          <ActionForm action={startOnlinePayment} className="relative mt-4">
+            <input type="hidden" name="invoiceId" value={next.inv.id} />
+            <input type="hidden" name="amount" value={next.st.arrears > 0 ? next.st.arrears : next.st.balance} />
+            <button className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[15px] font-bold text-brand shadow-sm sm:w-auto sm:px-8"><Lock className="size-4" /> Pay {inr(next.st.arrears > 0 ? next.st.arrears : next.st.balance)}</button>
+          </ActionForm>
+        </section>
+      )}
       <div className="space-y-6">
-        {invoices.map((inv) => {
-          const st = invoiceStatus(inv);
-          return (
-            <Card key={inv.id} title={<span>{inv.title} <span className="font-mono text-xs font-normal text-muted">{inv.invoiceNo}</span></span>} actions={<Badge tone={statusTone[st.status]}>{st.status}</Badge>}>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <Table>
-                    <tbody>
-                      {inv.structure?.items.map((it) => <tr key={it.id}><Td>{it.head}</Td><Td className="text-right tabular-nums">{inr(it.amount)}</Td></tr>)}
-                      {inv.concession > 0 && <tr><Td className="text-success">Concession / scholarship</Td><Td className="text-right text-success tabular-nums">−{inr(inv.concession)}</Td></tr>}
-                      {st.fine > 0 && <tr><Td className="text-danger">Late fine</Td><Td className="text-right text-danger tabular-nums">+{inr(st.fine)}</Td></tr>}
-                      <tr><Td className="font-semibold">{t("Payable")}</Td><Td className="text-right font-semibold tabular-nums">{inr(st.payable)}</Td></tr>
-                      <tr><Td>{t("Paid")}</Td><Td className="text-right tabular-nums">{inr(st.paid)}</Td></tr>
-                      <tr><Td className="font-semibold">Balance · due {fmtDate(inv.dueDate)}</Td><Td className="text-right font-semibold tabular-nums">{inr(st.balance)}</Td></tr>
-                    </tbody>
-                  </Table>
-                </div>
-                <div>
-                  {inv.instalments.length > 0 && (
-                    <div className="mb-4">
-                      <p className="mb-2 text-sm font-medium">Instalment plan</p>
-                      <ul className="space-y-1 text-sm">{inv.instalments.map((x, n) => <li key={x.id} className="flex justify-between"><span>Instalment {n + 1} · due {fmtDate(x.dueDate)}</span><span className="tabular-nums">{inr(x.amount)}</span></li>)}</ul>
-                    </div>
-                  )}
-                  {st.balance > 0 && (
-                    <ActionForm action={startOnlinePayment} className="mb-5 flex flex-wrap items-end gap-2 rounded-xl bg-brand-soft/60 p-3">
-                      <input type="hidden" name="invoiceId" value={inv.id} />
-                      <div><label className="label" htmlFor={`amt-${inv.id}`}>Pay online (₹)</label><input id={`amt-${inv.id}`} name="amount" type="number" min={1} max={st.balance} defaultValue={st.arrears > 0 ? st.arrears : st.balance} className="input w-36" required /></div>
-                      <SubmitButton>{t("Pay now")}</SubmitButton>
-                    </ActionForm>
-                  )}
-                  <p className="mb-2 text-sm font-medium">{t("Payments")}</p>
-                  {inv.payments.length === 0 ? <p className="text-sm text-muted">No payments yet.</p> : (
-                    <ul className="space-y-2 text-sm">
-                      {inv.payments.map((p) => (
-                        <li key={p.id} className="flex justify-between"><span>{fmtDate(p.paidAt)} · {titleCase(p.mode)}</span><Link href={`/fees/receipt/${p.id}`} className="text-brand">{p.amount < 0 ? `Refund ${inr(-p.amount)} · voucher` : `${inr(p.amount)} · receipt`}</Link></li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+        {withStatus.map(({ inv, st }) => (
+          <Card key={inv.id} icon={false} title={<span className="font-mono text-sm">{inv.invoiceNo}</span>} actions={<Badge tone={statusTone[st.status]}>{st.status}</Badge>}>
+            <p className="-mt-2 mb-3 text-xs text-muted">{inv.title}</p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <ul className="divide-y divide-line text-sm">
+                {inv.structure?.items.map((it) => (
+                  <li key={it.id} className="flex items-center gap-3 py-2.5"><span className="chip-soft chip-brand size-8"><ReceiptText className="size-4" /></span><span className="flex-1">{it.head}</span><span className="tabular-nums">{inr(it.amount)}</span></li>
+                ))}
+                {inv.concession > 0 && <li className="flex justify-between py-2.5 text-success"><span>Concession / scholarship</span><span className="tabular-nums">−{inr(inv.concession)}</span></li>}
+                {st.fine > 0 && <li className="flex justify-between py-2.5 text-danger"><span>Late fine</span><span className="tabular-nums">+{inr(st.fine)}</span></li>}
+                <li className="flex justify-between py-2.5 font-semibold"><span>{t("Payable")}</span><span className="tabular-nums">{inr(st.payable)}</span></li>
+                <li className="flex justify-between py-2.5"><span className="text-muted">{t("Paid")}</span><span className="text-success tabular-nums">{inr(st.paid)}</span></li>
+                <li className="flex justify-between py-2.5 font-semibold"><span>Balance · due {fmtDate(inv.dueDate)}</span><span className="tabular-nums">{inr(st.balance)}</span></li>
+              </ul>
+              <div>
+                {inv.instalments.length > 0 && (
+                  <div className="mb-4">
+                    <p className="mb-2 text-sm font-semibold">Instalment plan</p>
+                    <ul className="space-y-1.5 text-sm">{inv.instalments.map((x, n) => <li key={x.id} className="flex justify-between"><span>Instalment {n + 1} · due {fmtDate(x.dueDate)}</span><span className="tabular-nums">{inr(x.amount)}</span></li>)}</ul>
+                  </div>
+                )}
+                {st.balance > 0 && (
+                  <ActionForm action={startOnlinePayment} className="mb-5 flex flex-wrap items-end gap-2 rounded-xl border border-[#e4e3f6] bg-brand-soft/50 p-3">
+                    <input type="hidden" name="invoiceId" value={inv.id} />
+                    <div><label className="label" htmlFor={`amt-${inv.id}`}>Pay a different amount (₹)</label><input id={`amt-${inv.id}`} name="amount" type="number" min={1} max={st.balance} defaultValue={st.arrears > 0 ? st.arrears : st.balance} className="input w-36" required /></div>
+                    <SubmitButton variant="secondary">{t("Pay now")}</SubmitButton>
+                  </ActionForm>
+                )}
+                <p className="mb-2 text-sm font-semibold">{t("Payments")}</p>
+                {inv.payments.length === 0 ? <p className="text-sm text-muted">No payments yet.</p> : (
+                  <ul className="space-y-2.5 text-sm">
+                    {inv.payments.map((p) => (
+                      <li key={p.id} className="flex items-center gap-3">
+                        <span className="chip chip-success size-8"><Check className="size-4" /></span>
+                        <span className="min-w-0 flex-1"><span className="block font-semibold tabular-nums">{inr(Math.abs(p.amount))} · {titleCase(p.mode)}</span><span className="block text-xs text-muted">{fmtDate(p.paidAt)}{p.amount < 0 ? " · refund" : ""}</span></span>
+                        <Link href={`/fees/receipt/${p.id}`} className="text-sm font-semibold text-brand">{p.amount < 0 ? "Voucher" : "Receipt"}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            </Card>
-          );
-        })}
+            </div>
+          </Card>
+        ))}
       </div>
     </>
   );

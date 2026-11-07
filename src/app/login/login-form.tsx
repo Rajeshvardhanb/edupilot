@@ -7,13 +7,13 @@ import { ActionForm, SubmitButton } from "@/components/forms";
 import { login } from "@/actions/auth";
 
 const DEMO = [
-  { role: "Admin", email: "admin@edupilot.edu", icon: ShieldCheck },
-  { role: "HOD", email: "hod.cse@edupilot.edu", icon: Users },
-  { role: "Faculty", email: "faculty@edupilot.edu", icon: BookOpen },
-  { role: "Accounts", email: "accounts@edupilot.edu", icon: Wallet },
-  { role: "Office", email: "office@edupilot.edu", icon: ClipboardList },
-  { role: "Student", email: "student@edupilot.edu", icon: GraduationCap },
-  { role: "Parent", email: "parent@edupilot.edu", icon: HeartHandshake },
+  { role: "Admin", email: "admin@edupilot.edu", icon: ShieldCheck, chip: "chip-brand" },
+  { role: "HOD", email: "hod.cse@edupilot.edu", icon: Users, chip: "chip-violet" },
+  { role: "Faculty", email: "faculty@edupilot.edu", icon: BookOpen, chip: "chip-pink" },
+  { role: "Accounts", email: "accounts@edupilot.edu", icon: Wallet, chip: "chip-success" },
+  { role: "Office", email: "office@edupilot.edu", icon: ClipboardList, chip: "chip-warning" },
+  { role: "Student", email: "student@edupilot.edu", icon: GraduationCap, chip: "chip-info" },
+  { role: "Parent", email: "parent@edupilot.edu", icon: HeartHandshake, chip: "chip-danger" },
 ];
 
 export function LoginForm({ searchParams, showDemo }: { searchParams: Promise<Record<string, string | string[] | undefined>>; showDemo: boolean }) {
@@ -50,13 +50,13 @@ export function LoginForm({ searchParams, showDemo }: { searchParams: Promise<Re
         <div className="mt-7">
           <div className="mb-3 flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-line" />Explore the demo as<span className="h-px flex-1 bg-line" /></div>
           <div className="flex flex-wrap justify-center gap-2">
-            {DEMO.map(({ role, email: e, icon: Icon }) => (
+            {DEMO.map(({ role, email: e, icon: Icon, chip }) => (
               <button
                 key={e} type="button" title={e}
                 onClick={() => { if (email.current && password.current) { email.current.value = e; password.current.value = "password123"; password.current.form?.requestSubmit(); } }}
-                className="flex w-[calc(25%-6px)] flex-col items-center gap-1 rounded-[var(--radius-control)] border border-line-strong bg-surface px-1 py-2.5 text-xs font-medium text-fg-2 transition-colors hover:border-brand/50 hover:bg-brand-soft hover:text-brand"
+                className={`flex w-[calc(25%-6px)] flex-col items-center gap-1.5 rounded-xl border border-line bg-gradient-to-b from-white to-[#f8f8fd] px-1 py-3 text-xs font-semibold text-fg transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-card`}
               >
-                <Icon className="size-4" />{role}
+                <span className={`chip size-8 ${chip}`}><Icon className="size-4" /></span>{role}
               </button>
             ))}
           </div>

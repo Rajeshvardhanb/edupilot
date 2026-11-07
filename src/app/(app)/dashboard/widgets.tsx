@@ -1,6 +1,6 @@
 import { getT } from "@/lib/i18n-server";
 import Link from "next/link";
-import { Pin, Megaphone } from "lucide-react";
+import { Pin, Megaphone, ClipboardCheck } from "lucide-react";
 import type { NoticeAudience } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui";
@@ -9,6 +9,16 @@ import { ScheduleIllustration } from "@/components/illustrations";
 import { PERIOD_TIMES } from "@/components/timetable-grid";
 import { DAYS, fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+/** A notice's tag and colour: from its subject when it is about exams or fees, otherwise its audience. */
+export function noticeTag(title: string, audience: NoticeAudience) {
+  if (/exam|hall ticket|result/i.test(title)) return { label: "Exams", color: "#6366f1" };
+  if (/fee|payment|scholarship/i.test(title)) return { label: "Fees", color: "#10a26b" };
+  if (/hackathon|fest|event|sports|workshop/i.test(title)) return { label: "Events", color: "#0ea5e9" };
+  if (audience === "FACULTY") return { label: "Faculty", color: "#8b5cf6" };
+  if (audience === "STUDENTS") return { label: "Students", color: "#e11d48" };
+  return { label: "Everyone", color: "#6366f1" };
+}
 
 export async function RecentNotices({ audiences }: { audiences: NoticeAudience[] }) {
   const t = await getT();
@@ -19,19 +29,26 @@ export async function RecentNotices({ audiences }: { audiences: NoticeAudience[]
     take: 4,
   });
   return (
-    <Card title={<span className="flex items-center gap-2"><Megaphone className="size-4 text-brand" /> {t("Notice board")}</span>} actions={<Link href="/notices" className="text-xs text-brand">View all →</Link>}>
+    <Card title={t("Notice board")} actions={<Link href="/notices" className="text-sm font-semibold text-brand">View all →</Link>}>
       {notices.length === 0 ? <p className="text-sm text-muted">No notices.</p> : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {notices.map((n) => (
-            <li key={n.id} className={cn("rounded-xl border p-4", n.pinned ? "border-brand/30 bg-brand-soft/40" : "border-line")}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-medium">{n.title}</p>
-                {n.pinned && <Pin className="size-3.5 shrink-0 text-brand" />}
-              </div>
-              <p className="mt-1 line-clamp-2 text-xs text-muted">{n.body}</p>
-              <p className="mt-2 text-[11px] text-muted">{fmtDate(n.createdAt)} · {n.createdBy?.name ?? "Office"}</p>
-            </li>
-          ))}
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {notices.map((n) => {
+            const tag = noticeTag(n.title, n.audience);
+            return (
+              <li key={n.id} className="flex flex-col rounded-xl border p-3.5" style={{ borderColor: `color-mix(in oklab, ${tag.color} 22%, white)`, backgroundImage: n.pinned ? `linear-gradient(160deg, color-mix(in oklab, ${tag.color} 10%, white), white 70%)` : undefined }}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5">
+                    <Megaphone aria-hidden className="size-3.5" style={{ color: tag.color }} />
+                    <span className="rounded-full px-2 py-px text-[11px] font-semibold" style={{ color: `color-mix(in oklab, ${tag.color} 72%, black)`, background: `color-mix(in oklab, ${tag.color} 12%, white)` }}>{t(tag.label)}</span>
+                  </span>
+                  {n.pinned && <Pin aria-label="Pinned" className="size-3.5 shrink-0" style={{ color: tag.color }} />}
+                </div>
+                <p className="mt-2.5 text-sm leading-snug font-semibold">{n.title}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-muted">{n.body}</p>
+                <p className="mt-auto pt-2.5 text-[11px] text-muted">{fmtDate(n.createdAt)} · {n.createdBy?.name ?? "Office"}</p>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>
@@ -85,5 +102,40 @@ export function TodaySchedule({ slots, showBatch }: { slots: SlotWithOffering[];
         </ol>
       )}
     </Card>
+  );
+}
+
+type NowSlot = { period: number; room: string | null; offering: { id: string; subject: { code: string; name: string }; batch?: { admissionYear: number; section: string; program: { code: string } }; faculty?: { user: { name: string } } | null } };
+
+/** Phones: the class happening now (or next) as a gradient card; teachers get a Take attendance button for it. */
+export async function NowCard({ slots, teacher, students }: { slots: NowSlot[]; teacher?: boolean; students?: number }) {
+  const t = await getT();
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const sorted = [...slots].sort((a, b) => a.period - b.period);
+  const end = (p: number) => PERIOD_TIMES[p + 1] ?? "17:00";
+  const live = sorted.find((s) => hhmm >= PERIOD_TIMES[s.period] && hhmm < end(s.period));
+  const next = sorted.find((s) => PERIOD_TIMES[s.period] > hhmm && s !== live);
+  const show = live ?? next;
+  if (!show) return null;
+  const batch = show.offering.batch ? `${show.offering.batch.program.code} ${show.offering.batch.admissionYear}-${show.offering.batch.section}` : null;
+  const sub = [show.offering.subject.code, teacher ? batch : show.offering.faculty?.user.name, show.room, teacher && students ? `${students} students` : null].filter(Boolean).join(" · ");
+  const following = live ? next : sorted.find((s) => s.period > show.period);
+  return (
+    <section className="relative overflow-hidden rounded-[var(--radius-panel)] bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#c026d3] p-4 text-white shadow-[var(--shadow-brand)]">
+      <span aria-hidden className="absolute -top-8 -right-8 size-28 rounded-full bg-white/10" />
+      <p className="relative flex items-center gap-1.5 text-xs text-white/85">
+        <span className={cn("size-1.5 rounded-full", live ? "bg-emerald-300" : "bg-white/70")} />{live ? t("In class now") : t("Next class")} · P{show.period} · {PERIOD_TIMES[show.period]}
+      </p>
+      <div className="relative mt-1 flex items-end justify-between gap-3">
+        <div className="min-w-0"><p className="truncate text-lg font-bold">{show.offering.subject.name}</p><p className="truncate text-xs text-white/80">{sub}</p></div>
+        {!teacher && following && following !== show && <p className="shrink-0 text-right text-[11px] text-white/80">Next<br /><b className="text-white">{following.offering.subject.name.split(" ")[0]} {PERIOD_TIMES[following.period]}</b></p>}
+      </div>
+      {teacher && (
+        <Link href={`/attendance/${show.offering.id}?date=${new Date().toISOString().slice(0, 10)}&period=${show.period}`} className="relative mt-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-brand">
+          <ClipboardCheck className="size-4" /> {t("Take attendance")}
+        </Link>
+      )}
+    </section>
   );
 }

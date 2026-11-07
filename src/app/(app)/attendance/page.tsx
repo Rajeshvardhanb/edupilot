@@ -10,7 +10,7 @@ import { attendanceSummary } from "@/lib/attendance";
 import { getRules, toneFor } from "@/lib/rules";
 import { classesToReach } from "@/lib/grading";
 import { batchLabel, fmtDate, isoDate, pct, titleCase } from "@/lib/format";
-import { Badge, LinkButton, Progress, Td } from "@/components/ui";
+import { Badge, LinkButton, Progress, Ring, Td } from "@/components/ui";
 import { Card, EmptyState, PageHeader, Th, Table } from "@/components/ui-server";
 
 export const metadata = { title: "Attendance" };
@@ -88,18 +88,32 @@ async function StudentAttendance({ user }: { user: CurrentUser }) {
   });
   const totals = [...summary.values()].reduce((a, v) => ({ a: a.a + v.attended, t: a.t + v.total }), { a: 0, t: 0 });
   const overall = pct(totals.a, totals.t);
+  const safe = overall >= ATTENDANCE_REQUIRED;
+  const canMiss = Math.max(0, Math.floor(totals.a / (ATTENDANCE_REQUIRED / 100) - totals.t));
+  const mustAttend = classesToReach(ATTENDANCE_REQUIRED, totals.a, totals.t);
+  const who = user.role === "PARENT" ? (await db.user.findFirst({ where: { student: { id: student.id } }, select: { name: true } }))?.name.split(" ")[0] ?? "Your child" : null;
   return (
     <>
-      <PageHeader title={t("My attendance")} subtitle={`${term?.name} · overall ${overall}% (${totals.a}/${totals.t} classes)`} />
-      {overall < ATTENDANCE_REQUIRED && (
-        <div className="mb-6 rounded-xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
-          Your attendance is below {ATTENDANCE_REQUIRED}%. You may be detained from end-semester exams. Attend regularly or apply for condonation ({ATTENDANCE_CONDONABLE}–{ATTENDANCE_REQUIRED}%) with supporting documents.
+      <PageHeader title={who ? `${who}'s attendance` : t("My attendance")} subtitle={`${term?.name} · overall ${overall}% (${totals.a}/${totals.t} classes)`} />
+      {/* Where the student stands against the attendance rule, in one sentence. */}
+      <section className={`mb-6 flex items-center gap-4 rounded-[var(--radius-panel)] border p-4 sm:p-5 ${safe ? "border-[#d6f0ec] bg-gradient-to-r from-[#f0fbf9] via-white to-[#f0f7ff]" : "border-[#fbd5dd] bg-gradient-to-r from-[#fff5f7] via-white to-[#fffaf0]"}`}>
+        <Ring value={overall} size={84} stroke={8} tone={safe ? "success" : overall >= ATTENDANCE_CONDONABLE ? "warning" : "danger"}>
+          <span><span className="block text-lg font-bold tabular-nums">{overall}%</span><span className="text-[10px] text-muted">overall</span></span>
+        </Ring>
+        <div className="min-w-0">
+          <p className="text-lg font-bold">{safe ? (who ? `${who} is safe` : "You're safe") : `Below ${ATTENDANCE_REQUIRED}%`}</p>
+          <p className="text-sm text-fg-2">
+            {totals.a} of {totals.t} classes.{" "}
+            {safe
+              ? <>{who ? `${who} can` : "You can"} miss <b>{canMiss} more</b> and stay above {ATTENDANCE_REQUIRED}%.</>
+              : <>{Number.isFinite(mustAttend) ? <>Attend the next <b>{mustAttend}</b> classes to reach {ATTENDANCE_REQUIRED}%. </> : null}Condonation is possible from {ATTENDANCE_CONDONABLE}% with supporting documents.</>}
+          </p>
         </div>
-      )}
+      </section>
       {term && <Card title={t("Attendance calendar")} className="mb-6"><AttendanceHeatmap studentId={student.id} termId={term.id} from={term.startDate} to={term.endDate} /></Card>}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title={t("Subject-wise")} className="lg:col-span-2">
-          <Table>
+          <div className="hidden sm:block"><Table>
             <thead><tr><Th>{t("Subject")}</Th><Th>{t("Faculty")}</Th><Th className="text-right">{t("Attended")}</Th><Th className="w-40">{t("Percentage")}</Th><Th>{t("Status")}</Th></tr></thead>
             <tbody>
               {offerings.map((o) => {
@@ -117,7 +131,20 @@ async function StudentAttendance({ user }: { user: CurrentUser }) {
                 );
               })}
             </tbody>
-          </Table>
+          </Table></div>
+          {/* Phones: one line per subject with its ring. */}
+          <ul className="divide-y divide-line sm:hidden">
+            {offerings.map((o) => {
+              const v = summary.get(`${student.id}:${o.id}`) ?? { attended: 0, total: 0 };
+              const p = pct(v.attended, v.total);
+              return (
+                <li key={o.id} className="flex items-center gap-3 py-2.5">
+                  <Ring value={v.total ? p : 0} size={44} stroke={5} tone={p >= ATTENDANCE_REQUIRED ? "brand" : p >= ATTENDANCE_CONDONABLE ? "warning" : "danger"}><span className="text-[10.5px] font-bold tabular-nums">{v.total ? `${Math.round(p)}%` : "—"}</span></Ring>
+                  <span className="min-w-0"><span className="block truncate text-sm font-semibold">{o.subject.name}</span><span className="block truncate text-xs text-muted">{o.faculty?.user.name ?? "—"} · {v.attended}/{v.total}</span></span>
+                </li>
+              );
+            })}
+          </ul>
         </Card>
         <Card title={t("Recent absences")}>
           {absences.length === 0 ? <p className="text-sm text-muted">No absences. 🎉</p> : (

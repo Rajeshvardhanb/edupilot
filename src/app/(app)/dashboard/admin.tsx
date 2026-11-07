@@ -47,8 +47,8 @@ async function AdminHero({ user }: { user: CurrentUser }) {
     >
       <TermProgress {...progress} />
       <div className="mt-5 flex flex-wrap gap-2">
-        {user.role === "ADMIN" && <HeroAction href="/students/new"><UserPlus className="size-4" /> Admit student</HeroAction>}
-        <HeroAction href="/attendance/report"><FileWarning className="size-4" /> Shortage report</HeroAction>
+        {user.role === "ADMIN" && <HeroAction primary href="/students/new"><UserPlus className="size-4" /> Admit student</HeroAction>}
+        <HeroAction primary={user.role !== "ADMIN"} href="/attendance/report"><FileWarning className="size-4" /> Shortage report</HeroAction>
         <HeroAction href="/notices"><Megaphone className="size-4" /> Post notice</HeroAction>
         {user.role === "ADMIN" && <HeroAction href="/fees"><IndianRupee className="size-4" /> Fees</HeroAction>}
       </div>
@@ -267,9 +267,9 @@ async function AdminBody({ user, searchParams: sp }: { user: CurrentUser; search
         </Card>
         <Card title="Placement funnel" actions={<Link href="/placements" className="text-xs text-brand">Placements →</Link>}>
           <Funnel stages={[
-            { label: "Applications", value: applied, color: "var(--series-1)" },
-            { label: "Shortlisted + selected", value: appCount("SHORTLISTED") + appCount("SELECTED"), color: "var(--series-3)" },
-            { label: "Offers", value: appCount("SELECTED"), color: "var(--success)" },
+            { label: "Applications", value: applied, color: "linear-gradient(90deg,#6366f1,#818cf8)" },
+            { label: "Shortlisted + selected", value: appCount("SHORTLISTED") + appCount("SELECTED"), color: "linear-gradient(90deg,#8b5cf6,#c084fc)" },
+            { label: "Offers", value: appCount("SELECTED"), color: "linear-gradient(90deg,#db2777,#f472b6)" },
           ]} />
           <ul className="mt-5 space-y-2 border-t border-line pt-4">
             {drives.map((d) => (

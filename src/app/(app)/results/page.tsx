@@ -27,7 +27,7 @@ export default async function ResultsPage(props: PageProps<"/results">) {
     const s = await db.student.findUniqueOrThrow({ where: { id: learnerId(user) }, include: { user: true, batch: { include: { program: true } } } });
     return (
       <>
-        <Hero {...banner("results")} eyebrow={`${s.rollNo} · ${s.batch.program.code}`} title={(await getT())("My academic record")} subtitle={s.batch.program.name} art={<GraduationIllustration className="w-full [--brand-soft:rgba(255,255,255,.15)] [--brand:#ffffff] [--brand-2:#c7d2fe] [--surface:rgba(255,255,255,.9)] [--line:rgba(255,255,255,.3)]" />} className="no-print">
+        <Hero phone={false} {...banner("results")} eyebrow={`${s.rollNo} · ${s.batch.program.code}`} title={(await getT())("My academic record")} subtitle={s.batch.program.name} art={<GraduationIllustration className="w-full [--brand-soft:rgba(255,255,255,.15)] [--brand:#ffffff] [--brand-2:#c7d2fe] [--surface:rgba(255,255,255,.9)] [--line:rgba(255,255,255,.3)]" />} className="no-print">
           <PrintButton label="Print grade card" />
         </Hero>
         <div className="mb-6 hidden print:block"><Letterhead title="Grade card" serial={s.rollNo} /><p className="mt-3 text-sm"><b>{s.user.name}</b> · {s.batch.program.name}</p></div>
@@ -70,7 +70,7 @@ async function BatchResults({ user, searchParams: sp }: { user: CurrentUser; sea
       <SavedFilters storageKey="edupilot-filters-results" />
       {!offerings.length ? <EmptyState title="No published results for this batch yet" action={<LinkButton variant="secondary" href="/exams">Go to marks entry</LinkButton>}>Results appear here when a course&apos;s marks are published.</EmptyState> : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard label="Students appeared" value={rows.length} />
             <StatCard label="All-clear pass %" value={`${pct(allPass, rows.length)}%`} tone="success" hint={`${allPass} passed all subjects`} />
             <StatCard label="Average SGPA" value={avg.toFixed(2)} tone="info" />

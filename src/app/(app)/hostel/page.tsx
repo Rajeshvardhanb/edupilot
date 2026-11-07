@@ -1,5 +1,4 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import { BedDouble } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,7 +6,7 @@ import { fmtDate, inr, pct } from "@/lib/format";
 import { allotRoom, saveHostelRoom, vacateRoom } from "@/actions/campus";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui-server";
+import { Card, EmptyState, StatCard, PageBanner } from "@/components/ui-server";
 
 export const metadata = { title: "Hostel" };
 
@@ -20,8 +19,7 @@ export default async function HostelPage() {
     });
     return (
       <>
-        <PhotoBanner {...banner("hostel")} />
-        <PageHeader title="Hostel" />
+        <PageBanner {...banner("hostel")} eyebrow="Your hostel" tint="#7f1d45" title="Hostel" />
         {!a ? <EmptyState title="You are not a hostel resident">Contact the hostel office to apply for accommodation.</EmptyState> : (
           <Card title={`${a.room.hostel.name} · Room ${a.room.number}`} className="max-w-xl">
             <dl className="space-y-2 text-sm">
@@ -43,9 +41,8 @@ export default async function HostelPage() {
   const beds = rooms.reduce((s, r) => s + r.capacity, 0), used = rooms.reduce((s, r) => s + r.allocations.length, 0);
   return (
     <>
-      <PhotoBanner {...banner("hostel")} />
-      <PageHeader title="Hostel" subtitle="Rooms, occupancy and allotment" />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <PageBanner {...banner("hostel")} eyebrow="Rooms, occupancy and allotment" tint="#7f1d45" title="Hostel" subtitle="Rooms, occupancy and mess" />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Hostels" value={hostels.length} icon={<BedDouble className="size-5" />} /><StatCard label="Beds" value={beds} tone="info" />
         <StatCard label="Occupied" value={used} tone="warning" hint={`${pct(used, beds)}% occupancy`} /><StatCard label="Vacant beds" value={beds - used} tone="success" />
       </div>

@@ -30,7 +30,7 @@ async function AccountsHero({ user }: { user: CurrentUser }) {
       art={<StudyIllustration className="w-full [--surface:rgba(255,255,255,.95)] [--brand-soft:#e0e7ff] [--line:rgba(255,255,255,.35)]" />}
     >
       <div className="flex flex-wrap gap-2">
-        <HeroAction href="/fees?status=OVERDUE"><AlertTriangle className="size-4" /> Overdue invoices</HeroAction>
+        <HeroAction primary href="/fees?status=OVERDUE"><AlertTriangle className="size-4" /> Overdue invoices</HeroAction>
         <HeroAction href="/fees/payments"><BookOpen className="size-4" /> Day book</HeroAction>
         <HeroAction href="/fees/structures"><Layers className="size-4" /> Fee structures</HeroAction>
       </div>

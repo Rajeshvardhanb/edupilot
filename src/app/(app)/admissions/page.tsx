@@ -1,5 +1,4 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import Link from "next/link";
 import { Phone, CalendarClock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
@@ -10,7 +9,7 @@ import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Funnel } from "@/components/infographics";
 import { BoardDnD } from "./board-dnd";
 import { Badge, Field, buttonClass } from "@/components/ui";
-import { Card, PageHeader, StatCard } from "@/components/ui-server";
+import { Card, StatCard, PageBanner } from "@/components/ui-server";
 
 export const metadata = { title: "Admissions" };
 const STAGES = [["ENQUIRY", "Enquiry"], ["APPLIED", "Applied"], ["DOCUMENTS", "Documents verified"], ["ADMITTED", "Admitted"]] as const;
@@ -29,9 +28,8 @@ export default async function AdmissionsPage() {
   const reached = (i: number) => rows.filter((r) => r.stage !== "LOST" && STAGES.findIndex(([k]) => k === r.stage) >= i).length;
   return (
     <>
-      <PhotoBanner {...banner("admissions")} />
-      <PageHeader title="Admissions pipeline" subtitle="Track every enquiry from first call to admission." />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <PageBanner {...banner("admissions")} eyebrow="Admissions 2026-27" tint="#3b2a8f" title="Admissions pipeline" subtitle="Track every enquiry from first call to admission." />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Active enquiries" value={rows.filter((r) => !["ADMITTED", "LOST"].includes(r.stage)).length} />
         <StatCard label="Follow-ups due" value={due.length} tone={due.length ? "danger" : "success"} icon={<CalendarClock className="size-5" />} />
         <StatCard label="Admitted" value={by("ADMITTED").length} tone="success" />

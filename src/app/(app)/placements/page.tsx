@@ -57,7 +57,7 @@ export default async function PlacementsPage() {
         {...banner("placements")}
         art={<CareerIllustration className="w-full [--brand-soft:rgba(255,255,255,.15)] [--brand:#ffffff] [--brand-2:#c7d2fe] [--surface:#ffffff]" />}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Students placed" value={placedStudents} icon={<Trophy className="size-4" />} tone="success" />
         <StatCard label="Offers" value={selected.length} icon={<Briefcase className="size-4" />} />
         <StatCard label="Highest CTC" value={`${highest} LPA`} icon={<IndianRupee className="size-4" />} tone="warning" />
@@ -65,7 +65,7 @@ export default async function PlacementsPage() {
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card title="Drives" className={user.role === "STUDENT" ? "lg:col-span-3" : "lg:col-span-2"}>
-          <Table>
+          <div className={student ? "hidden sm:block" : undefined}><Table>
             <thead><tr><Th>Company / role</Th><Th>CTC</Th><Th>Date</Th><Th>Eligibility</Th><Th>Status</Th><Th>{student ? "Your application" : "Applicants"}</Th></tr></thead>
             <tbody>
               {drives.map((d) => {
@@ -98,7 +98,26 @@ export default async function PlacementsPage() {
                 );
               })}
             </tbody>
-          </Table>
+          </Table></div>
+          {/* Phones (students): each drive as a card with its company badge and the one action that applies. */}
+          {student && (
+            <ul className="space-y-2.5 sm:hidden">
+              {drives.filter((d) => d.status !== "CLOSED").map((d, n) => {
+                const mine = d.applications.find((a) => a.studentId === student.id);
+                const reason = ineligibility(d, student, standing!, rules.placementSemestersLeft);
+                return (
+                  <li key={d.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
+                    <span className={`chip size-10 ${["chip-danger", "chip-info", "chip-violet", "chip-success", "chip-warning"][n % 5]}`}><Building2 className="size-5" /></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{d.company.name}</span><span className="line-clamp-2 text-[11px] text-muted">{d.role} · {d.ctcLpa} LPA · {fmtDate(d.driveDate)}</span></span>
+                    {mine ? <Badge tone={APP_TONE[mine.status]}>{titleCase(mine.status)}</Badge>
+                      : d.status !== "OPEN" ? <Badge tone="info">Soon</Badge>
+                      : reason ? <span className="max-w-20 text-right text-[11px] text-danger">{reason}</span>
+                      : <ActionButton action={applyToDrive} fields={{ driveId: d.id }} variant="primary" size="sm">Apply</ActionButton>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </Card>
         {student && (
           <Card title="My placement profile" className="lg:col-span-3">

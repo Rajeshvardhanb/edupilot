@@ -33,7 +33,7 @@ export default async function HallTicketsPage(props: PageProps<"/exams/hall-tick
       <PageHeader title="Hall tickets" subtitle={`Issued only when attendance is ${rules.attendanceRequired}% or more (or condoned) and no fee is overdue.`} actions={eligible > 0 && batchId && <a href={`/exams/hall-tickets/batch/${batchId}/pdf`} className={buttonClass("secondary")}><Download className="size-4" /> All {eligible} hall tickets (PDF)</a>} />
       <Filters><select name="batch" aria-label="Batch" defaultValue={batchId} className="input w-auto">{batches.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select></Filters>
       <SavedFilters storageKey="edupilot-filters-exams-hall-tickets" />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Students" value={students.length} />
         <StatCard label="Eligible" value={eligible} tone="success" />
         <StatCard label="Withheld" value={students.length - eligible} tone="danger" />

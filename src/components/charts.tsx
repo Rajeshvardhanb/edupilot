@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Download, Maximize2, Minimize2 } from "lucide-react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const axis = { stroke: "var(--muted)", fontSize: 11, tickLine: false, axisLine: false } as const;
 const tooltipStyle = {
@@ -37,7 +38,7 @@ function ChartFrame({ children, name }: { children: ReactNode; name: string }) {
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup.includes("xmlns=") ? markup : markup.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"'))}`;
   }
 
-  return (
+  const frame = (
     <div ref={box} className={full ? "fixed inset-0 z-[75] flex flex-col bg-surface p-6 [&_.recharts-responsive-container]:!h-[82vh]" : "group/chart relative"}>
       <div className={full ? "mb-3 flex justify-end gap-2" : "no-print absolute -top-1 right-0 z-10 flex gap-1 opacity-0 transition group-hover/chart:opacity-100 focus-within:opacity-100"}>
         <button type="button" onClick={download} title="Download as image" aria-label="Download chart as image" className="rounded-md border border-line bg-surface p-1.5 text-muted hover:text-brand"><Download className="size-3.5" /></button>
@@ -46,6 +47,8 @@ function ChartFrame({ children, name }: { children: ReactNode; name: string }) {
       {children}
     </div>
   );
+  // Full screen is drawn at the top level of the page, so cards and the sticky top bar cannot cover it.
+  return full ? createPortal(frame, document.body) : frame;
 }
 
 /** Single-series bars. `color` per row lets status charts use reserved status tokens. */
@@ -89,13 +92,19 @@ export function TrendChart({ data, unit = "", height = 260, domain }: {
   return (
     <ChartFrame name="trend">
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#6366f1" stopOpacity={0.22} />
+            <stop offset="1" stopColor="#8b5cf6" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
         <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="label" {...axis} minTickGap={24} />
         <YAxis {...axis} unit={unit} width={44} domain={domain ?? ["auto", "auto"]} />
         <Tooltip {...tooltipStyle} cursor={{ stroke: "var(--muted)", strokeDasharray: "3 3" }} formatter={(v) => [`${v}${unit}`, "Attendance"]} />
-        <Line type="monotone" dataKey="value" stroke="var(--brand)" strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: "var(--surface)", strokeWidth: 2 }} />
-      </LineChart>
+        <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2.2} fill="url(#trend-fill)" dot={false} activeDot={{ r: 4, stroke: "var(--surface)", strokeWidth: 2 }} />
+      </AreaChart>
     </ResponsiveContainer>
     </ChartFrame>
   );

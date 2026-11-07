@@ -1,5 +1,4 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { requireUser } from "@/lib/auth";
@@ -8,7 +7,7 @@ import { fmtDate, isoDate, titleCase } from "@/lib/format";
 import { saveEvent, deleteEvent } from "@/actions/daily";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field, type Tone } from "@/components/ui";
-import { Card, PageHeader } from "@/components/ui-server";
+import { Card, PageBanner } from "@/components/ui-server";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Academic calendar" };
@@ -34,8 +33,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
 
   return (
     <>
-      <PhotoBanner {...banner("calendar")} />
-      <PageHeader title="Academic calendar" subtitle="Holidays block attendance marking for that day." />
+      <PageBanner {...banner("calendar")} eyebrow="2026-27 academic year" tint="#4c1d95" title="Academic calendar" subtitle="Holidays block attendance marking for that day." />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2" title={first.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" })}
           actions={<span className="flex gap-1"><Link href={`/calendar?m=${shift(-1)}`} aria-label="Previous month" className="rounded-lg p-1.5 hover:bg-surface-2"><ChevronLeft className="size-4" /></Link><Link href="/calendar" className="rounded-lg px-2 py-1 text-xs hover:bg-surface-2">Today</Link><Link href={`/calendar?m=${shift(1)}`} aria-label="Next month" className="rounded-lg p-1.5 hover:bg-surface-2"><ChevronRight className="size-4" /></Link></span>}>

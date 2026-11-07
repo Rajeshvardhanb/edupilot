@@ -1,12 +1,16 @@
-import { Download, Upload, UserPlus, MessagesSquare } from "lucide-react";
+import { Download, Upload, UserPlus, MessagesSquare, GraduationCap, ClipboardCheck, AlertTriangle, PencilLine } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { isOffice, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { studentScope, programScope } from "@/lib/scope";
+import { studentScope, programScope, currentTerm } from "@/lib/scope";
+import { attendanceSummary } from "@/lib/attendance";
+import { studentStandings } from "@/lib/results";
+import { getRules } from "@/lib/rules";
+import { pct } from "@/lib/format";
 import { batchOptions } from "@/lib/options";
 import { batchLabel, titleCase } from "@/lib/format";
 import { LinkButton, Pagination } from "@/components/ui";
-import { Card, EmptyState, PageHeader } from "@/components/ui-server";
+import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui-server";
 import { Filters, SearchInput } from "@/components/filters";
 import { StudentTable } from "./student-table";
 import { SavedFilters } from "@/components/saved-filters";
@@ -39,6 +43,22 @@ export default async function StudentsPage(props: PageProps<"/students">) {
     db.program.findMany({ where: programScope(user), orderBy: { code: "asc" } }),
     batchOptions(user),
   ]);
+  // Headline figures across everyone this person can see, and attendance and CGPA for the rows on this page.
+  const [term, rules, scopeIds, programCount, corrections] = await Promise.all([
+    currentTerm(), getRules(),
+    db.student.findMany({ where: { AND: [studentScope(user), { status: "ACTIVE" }] }, select: { id: true } }),
+    db.program.count({ where: programScope(user) }),
+    isOffice(user) ? db.profileChange.count({ where: { status: "PENDING" } }) : Promise.resolve(null),
+  ]);
+  const ids = scopeIds.map((x) => x.id);
+  const offerings = term ? (await db.courseOffering.findMany({ where: { termId: term.id }, select: { id: true } })).map((o) => o.id) : [];
+  const [summary, standings] = await Promise.all([attendanceSummary({ studentIds: ids, offeringIds: offerings }), studentStandings(ids)]);
+  const overall = new Map<string, { a: number; t: number }>();
+  for (const [k, v] of summary) { const sid = k.split(":")[0]; const c = overall.get(sid) ?? { a: 0, t: 0 }; overall.set(sid, { a: c.a + v.attended, t: c.t + v.total }); }
+  const attOf = (sid: string) => { const v = overall.get(sid); return v && v.t ? pct(v.a, v.t) : null; };
+  const below = ids.filter((sid) => { const a = attOf(sid); return a !== null && a < rules.attendanceRequired; }).length;
+  const withBacklogs = ids.filter((sid) => (standings.get(sid)?.backlogs ?? 0) > 0).length;
+
   const query = new URLSearchParams(Object.entries(sp).filter(([, v]) => typeof v === "string") as [string, string][]);
   const href = (p: number) => { query.set("page", String(p)); return `/students?${query}`; };
   query.delete("page");
@@ -64,6 +84,14 @@ export default async function StudentsPage(props: PageProps<"/students">) {
           </>
         }
       />
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <StatCard label="Active" value={ids.length.toLocaleString("en-IN")} icon={<GraduationCap className="size-5" />} hint={`${programCount} programmes`} href="/students?status=ACTIVE" />
+        <StatCard label={`Below ${rules.attendanceRequired}% attendance`} value={below} tone="danger" icon={<ClipboardCheck className="size-5" />} hint="across all batches" href="/attendance/report" />
+        <StatCard label="With backlogs" value={withBacklogs} tone="warning" icon={<AlertTriangle className="size-5" />} hint="one or more" />
+        {corrections !== null
+          ? <StatCard label="Profile corrections" value={corrections} tone="brand" icon={<PencilLine className="size-5" />} hint="waiting for approval" href="/students/changes" />
+          : <StatCard label="Average CGPA" value={(ids.reduce((s, sid) => s + (standings.get(sid)?.cgpa ?? 0), 0) / Math.max(1, ids.length)).toFixed(2)} tone="brand" icon={<PencilLine className="size-5" />} hint="active students" />}
+      </div>
       <Filters>
         <SearchInput placeholder="Search by name, roll no, email or phone" defaultValue={sp.q as string} />
         <select name="program" aria-label="Program" defaultValue={(sp.program as string) ?? ""} className="input w-auto">
@@ -91,7 +119,8 @@ export default async function StudentsPage(props: PageProps<"/students">) {
         {students.length === 0 ? <EmptyState title="No students found" action={<><LinkButton variant="secondary" href="/students">Clear the filters</LinkButton>{isOffice(user) && <LinkButton href="/students/new">New admission</LinkButton>}</>}>Nobody matches this search and these filters.</EmptyState> : (
           <StudentTable
             canEdit={isOffice(user)} batches={batches} sortHref={sortHref} sort={sort} dir={dir}
-            rows={students.map((x) => ({ id: x.id, userId: x.userId, hasPhoto: !!x.user.photoType, rollNo: x.rollNo, name: x.user.name, email: x.user.email, phone: x.user.phone, batch: batchLabel(x.batch), semester: x.batch.currentSemester, admissionType: x.admissionType, status: x.status }))}
+            rows={students.map((x) => ({ id: x.id, userId: x.userId, hasPhoto: !!x.user.photoType, rollNo: x.rollNo, name: x.user.name, email: x.user.email, phone: x.user.phone, batch: batchLabel(x.batch), semester: x.batch.currentSemester, admissionType: x.admissionType, status: x.status, attendance: attOf(x.id), cgpa: standings.get(x.id)?.cgpa ?? null }))}
+            attendanceRequired={rules.attendanceRequired}
           />
         )}
         <Pagination page={page} pages={Math.ceil(total / PAGE_SIZE)} makeHref={href} />

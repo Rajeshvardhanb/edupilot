@@ -17,14 +17,22 @@ import { Gauge } from "@/components/infographics";
 import { ScheduleIllustration } from "@/components/illustrations";
 import { MyTasks } from "@/components/my-tasks";
 import { Hero, HeroAction, TermProgress } from "@/components/hero";
-import { RecentNotices, TodaySchedule } from "./widgets";
+import { NowCard, RecentNotices, TodaySchedule } from "./widgets";
 
 async function FacultyHero({ user }: { user: CurrentUser }) {
   const term = await currentTerm();
   const mine = { facultyId: user.facultyId ?? "-", termId: term?.id };
-  const [classes, courses] = await Promise.all([db.timetableSlot.count({ where: { dayOfWeek: new Date().getDay(), offering: mine } }), db.courseOffering.count({ where: mine })]);
+  const [slots, courses] = await Promise.all([
+    db.timetableSlot.findMany({ where: { dayOfWeek: new Date().getDay(), offering: mine }, include: { offering: { include: { subject: true, batch: { include: { program: true, _count: { select: { students: true } } } } } } } }),
+    db.courseOffering.count({ where: mine }),
+  ]);
+  const classes = slots.length;
   return (
     <Hero
+      phone={<>
+        <p className="mb-3 text-[1.35rem] font-bold">{greeting(user.name)}</p>
+        <NowCard teacher slots={slots} students={slots[0]?.offering.batch._count.students} />
+      </>}
       eyebrow={new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
       title={greeting(user.name)}
       subtitle={<>You have <b>{classes}</b> class{classes === 1 ? "" : "es"} today across <b>{courses}</b> courses · {term?.name}</>}
@@ -33,7 +41,7 @@ async function FacultyHero({ user }: { user: CurrentUser }) {
     >
       <TermProgress {...termProgress(term)} />
       <div className="mt-5 flex flex-wrap gap-2">
-        <HeroAction href="/attendance"><ClipboardCheck className="size-4" /> Take attendance</HeroAction>
+        <HeroAction primary href="/attendance"><ClipboardCheck className="size-4" /> Take attendance</HeroAction>
         <HeroAction href="/exams"><FileSpreadsheet className="size-4" /> Enter marks</HeroAction>
         <HeroAction href="/timetable"><CalendarDays className="size-4" /> My timetable</HeroAction>
         <HeroAction href="/notices"><Megaphone className="size-4" /> Post notice</HeroAction>

@@ -34,7 +34,7 @@ export default async function StaffAttendancePage(props: PageProps<"/staff">) {
     <>
       <PageHeader title="Staff" subtitle={manager ? "Daily attendance for the staff you manage" : "Your attendance this month"} />
       <Tabs active="/staff" items={staffTabs(user.role)} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {manager ? (
           <>
             <StatCard label="Staff managed" value={staff.length} />

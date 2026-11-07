@@ -22,13 +22,38 @@ import { Gauge } from "@/components/infographics";
 import { GraduationIllustration } from "@/components/illustrations";
 import { MyTasks } from "@/components/my-tasks";
 import { Hero, HeroAction, TermProgress } from "@/components/hero";
-import { RecentNotices, TodaySchedule } from "./widgets";
+import { NowCard, RecentNotices, TodaySchedule } from "./widgets";
 
 async function StudentHero({ user }: { user: CurrentUser }) {
-  const [term, student] = await Promise.all([currentTerm(), db.student.findUniqueOrThrow({ where: { id: user.studentId ?? "-" }, select: { rollNo: true, user: { select: { id: true, name: true, photoType: true } }, batch: { include: { program: true } } } })]);
+  const [term, student] = await Promise.all([currentTerm(), db.student.findUniqueOrThrow({ where: { id: user.studentId ?? "-" }, select: { rollNo: true, batchId: true, user: { select: { id: true, name: true, photoType: true } }, batch: { include: { program: true } } } })]);
   const parent = user.role === "PARENT";
+  const tp = termProgress(term);
+  // Parents see the next amount due on their phone home.
+  const due = parent ? await (async () => {
+    const inv = await db.feeInvoice.findMany({ where: { studentId: user.studentId ?? "-" }, include: { payments: true, instalments: true }, orderBy: { dueDate: "asc" } });
+    const open = inv.map((i) => ({ i, st: invoiceStatus(i) })).filter((x) => x.st.balance > 0);
+    if (!open.length) return null;
+    return { balance: open.reduce((s, x) => s + x.st.balance, 0), dueDate: open[0].i.dueDate, overdue: open.some((x) => x.st.status === "OVERDUE") };
+  })() : null;
+  const todaySlots = await db.timetableSlot.findMany({
+    where: { batchId: student.batchId, dayOfWeek: new Date().getDay(), offering: { termId: term?.id } },
+    include: { offering: { include: { subject: true, faculty: { include: { user: { select: { name: true } } } } } } },
+  });
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   return (
     <Hero
+      phoneLine={parent ? `Viewing ${student.user.name} · ${student.rollNo}` : `${today} · Week ${tp.week} of ${tp.weeks}`}
+      progress={tp.percent}
+      phoneAfter={<div className="space-y-3">
+        <NowCard slots={todaySlots} />
+        {parent && due && (
+          <Link href="/fees" className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[#fde3c4] bg-gradient-to-r from-[#fff7ed] to-white p-3">
+            <span className="chip chip-warning size-9"><Wallet className="size-[18px]" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm font-bold tabular-nums">{inr(due.balance)} due {fmtDate(due.dueDate)}</span><span className="block text-xs text-warning">{due.overdue ? "Overdue" : "Fees"}</span></span>
+            <span className="brand-gradient rounded-lg px-3.5 py-2 text-sm font-semibold text-white">Pay</span>
+          </Link>
+        )}
+      </div>}
       eyebrow={`${student.rollNo} · ${batchLabel(student.batch)} · Semester ${student.batch.currentSemester}`}
       title={`${greeting(user.name)} 👋`}
       subtitle={parent ? <>You are viewing <b>{student.user.name}</b>&apos;s record · {student.batch.program.name}</> : student.batch.program.name}
@@ -40,7 +65,7 @@ async function StudentHero({ user }: { user: CurrentUser }) {
         <TermProgress {...termProgress(term)} />
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
-        <HeroAction href="/results"><FileText className="size-4" /> Grade card</HeroAction>
+        <HeroAction primary href="/results"><FileText className="size-4" /> Grade card</HeroAction>
         <HeroAction href="/timetable"><CalendarDays className="size-4" /> Timetable</HeroAction>
         {!parent && <HeroAction href="/placements"><Briefcase className="size-4" /> Placements</HeroAction>}
       </div>

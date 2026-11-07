@@ -3,41 +3,52 @@
 /* Light theme only. */
 :root {
   color-scheme: light;
-  --bg: #f5f6fa;
+  /* ICL theme: indigo to violet, on a soft lavender canvas. */
+  --bg: #f4f4fb;
   --surface: #ffffff;
-  --surface-2: #f2f4f9;
-  --fg: #0c1222;
-  --muted: #505b74;
-  --line: #e7eaf2;
-  --brand: #3440e6;
-  --brand-2: #5b2ff0;
+  --surface-2: #f4f5fa;
+  --fg: #12142b;
+  --fg-2: #2c2f4a;
+  --muted: #5d6280;
+  --line: #e8e9f3;
+  --line-strong: #dcdeec;
+  --brand: #4f46e5;
+  --brand-2: #7c3aed;
+  --brand-start: #4f46e5;
+  --brand-end: #8b3dee;
   --brand-fg: #ffffff;
-  --brand-soft: #edf1ff;
-  --success: #116932;
-  --success-soft: #dcfce7;
+  --brand-soft: #eef0ff;
+  --success: #0e7a4f;
+  --success-soft: #dcf7ea;
   --warning: #b45309;
   --warning-soft: #fef3c7;
-  --danger: #b91c1c;
-  --danger-soft: #fee2e2;
+  --danger: #c81e4a;
+  --danger-soft: #fde4ea;
   --info: #0369a1;
   --info-soft: #e0f2fe;
   /* Categorical chart slots (validated: dataviz reference palette, light surface) */
-  --series-1: #2a78d6;
+  --series-1: #5b5bf0;
   --series-2: #eb6834;
   --series-3: #1baf7a;
   --series-4: #eda100;
-  --series-5: #e87ba4;
-  /* Elevation, kept quiet: surfaces separate by border first, shadow second. */
-  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
-  --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
-  --shadow-lift: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 12px 24px -6px rgb(16 24 40 / 0.10);
-  /* Corner radii: controls 8px, cards 12px, large panels 16px. */
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-panel: 16px;
-  /* Text that must stay readable on any surface. */
-  --fg-2: #2b3346;
-  --line-strong: #d6dbe6;
+  --series-5: #e8589a;
+  /* Soft, lifted surfaces with a faint indigo cast. */
+  --shadow-xs: 0 1px 2px rgb(30 27 75 / 0.05);
+  --shadow: 0 1px 2px rgb(30 27 75 / 0.03), 0 6px 18px -8px rgb(30 27 75 / 0.10);
+  --shadow-lift: 0 2px 6px -1px rgb(30 27 75 / 0.06), 0 18px 36px -12px rgb(30 27 75 / 0.18);
+  --shadow-brand: 0 8px 18px -8px color-mix(in oklab, var(--brand-end) 75%, transparent);
+  /* Corner radii: controls 10px, cards 16px, large panels 20px. */
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+  /* Group colours (sidebar, icon chips). */
+  --g-overview: #6366f1;
+  --g-people: #e8478b;
+  --g-academics: #0e98c7;
+  --g-exams: #8b5cf6;
+  --g-campus: #10a26b;
+  --g-services: #0fb5c9;
+  --g-system: #64748b;
 }
 
 
@@ -78,7 +89,11 @@
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgb(139 92 246 / 0.08), transparent 70%),
+    radial-gradient(800px 380px at 10% 110%, rgb(236 72 153 / 0.05), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
 }
@@ -118,66 +133,86 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
 .skip-link:focus { top: 12px; }
 
 @layer components {
-  /* Form controls: one height and one radius everywhere; a clear focus ring. */
   .input {
-    @apply w-full max-w-full rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-brand focus:ring-3 focus:ring-brand/15 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-70;
-    box-shadow: var(--shadow-xs);
-    min-height: 2.375rem;
+    @apply w-full max-w-full rounded-[var(--radius-control)] border border-line-strong bg-surface px-3.5 py-2 text-sm text-fg outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-brand/60 focus:ring-4 focus:ring-brand/12 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-70;
+    min-height: 2.5rem;
   }
   .label {
     @apply mb-1.5 block text-[13px] font-medium text-fg-2;
   }
-  /* The brand colour as a solid fill (the name is kept: avatars, badges and banners use it). */
+  /* The brand gradient (primary buttons, the active menu item, avatars). */
   .brand-gradient {
-    background-color: var(--brand);
+    background-image: linear-gradient(120deg, var(--brand-start), var(--brand-end));
+  }
+  .brand-text {
+    background-image: linear-gradient(100deg, var(--brand-start), var(--brand-end) 60%, #d946ef);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
 
   /* The app's card surface. */
   .tile {
     @apply min-w-0 rounded-[var(--radius-card)] border border-line bg-surface shadow-card;
   }
-  /* Clickable tiles say so with their border, not by jumping. */
   .tile-hover {
-    @apply transition-[border-color,box-shadow] duration-150 hover:border-line-strong hover:shadow-lift;
+    @apply transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-brand/25 hover:shadow-lift;
   }
 
-  /* Icon chip: the colour as a soft tint behind the icon in that colour. Colour comes from --c. */
+  /* Gradient icon chip: white icon on a two-stop gradient of its colour. Colour comes from --c. */
   .chip {
-    @apply grid shrink-0 place-items-center rounded-[var(--radius-control)];
+    @apply grid shrink-0 place-items-center rounded-[var(--radius-control)] text-white;
+    --c: var(--brand);
+    background-image: linear-gradient(140deg, color-mix(in oklab, var(--c) 70%, white), var(--c));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 4px 10px -4px color-mix(in oklab, var(--c) 70%, transparent);
+  }
+  /* Soft variant: tinted square with the icon in its colour (card titles, lists). */
+  .chip-soft {
+    @apply grid shrink-0 place-items-center rounded-[9px];
     --c: var(--brand);
     color: var(--c);
-    background-color: color-mix(in oklab, var(--c) 11%, var(--surface));
+    background-color: color-mix(in oklab, var(--c) 12%, white);
   }
-  .chip-success { --c: var(--success); }
-  .chip-warning { --c: var(--warning); }
-  .chip-danger { --c: var(--danger); }
-  .chip-info { --c: var(--info); }
-  .chip-neutral { --c: var(--muted); }
+  .chip-success { --c: #10b981; }
+  .chip-warning { --c: #f59e0b; }
+  .chip-danger { --c: #f43f5e; }
+  .chip-info { --c: #0ea5e9; }
+  .chip-neutral { --c: #64748b; }
+  .chip-brand { --c: #6366f1; }
+  .chip-violet { --c: #8b5cf6; }
+  .chip-pink { --c: #ec4899; }
 
-  /* Buttons: solid brand for the one main action, outlined white for the rest. */
+  /* Buttons: gradient for the one main action, white with a border for the rest. */
   .btn-primary {
     @apply text-white;
-    background-color: var(--brand);
-    box-shadow: var(--shadow-xs), inset 0 -1px 0 rgb(0 0 0 / 0.08);
+    background-image: linear-gradient(100deg, var(--brand-start), var(--brand-end));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), var(--shadow-brand);
   }
-  .btn-primary:hover:not(:disabled) { background-color: color-mix(in oklab, var(--brand) 88%, black); }
-  .btn-primary:active:not(:disabled) { background-color: color-mix(in oklab, var(--brand) 80%, black); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+  .btn-primary:active:not(:disabled) { filter: brightness(0.96); }
   .btn-secondary {
     @apply border border-line-strong bg-surface text-fg;
     box-shadow: var(--shadow-xs);
   }
-  .btn-secondary:hover:not(:disabled) { @apply bg-surface-2; }
+  .btn-secondary:hover:not(:disabled) { @apply border-brand/30 bg-brand-soft/40; }
 
-  /* Sidebar: a plain white column with a hairline edge. */
+  /* Sidebar: white column; each group has its own colour (--g). */
   .sidebar {
     background: var(--surface);
     border-right: 1px solid var(--line);
   }
-  .side-link { @apply relative flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-[7px] text-sm text-fg-2 transition-colors; }
-  .side-link svg { color: var(--muted); }
+  .side-link { @apply relative flex items-center gap-3 rounded-[11px] px-2.5 py-[7px] text-sm text-fg-2 transition-colors; }
+  .side-icon { @apply grid size-7 shrink-0 place-items-center rounded-lg; color: var(--g); background-color: color-mix(in oklab, var(--g) 12%, white); }
   .side-link:hover { @apply bg-surface-2 text-fg; }
-  .side-link[aria-current="page"] { @apply bg-brand-soft font-medium text-brand; }
-  .side-link[aria-current="page"] svg { color: var(--brand); }
+  .side-link[aria-current="page"] {
+    @apply font-semibold text-white;
+    background-image: linear-gradient(100deg, var(--brand-start), var(--brand-end));
+    box-shadow: var(--shadow-brand);
+  }
+  .side-link[aria-current="page"] .side-icon { color: white; background-color: rgb(255 255 255 / 0.18); }
+
+  /* Segmented control: grey track, the chosen option a white pill. */
+  .segmented { @apply inline-flex gap-1 rounded-xl bg-[#ebecf5] p-1; }
+  .segmented > * { @apply rounded-[9px] px-3.5 py-1.5 text-sm whitespace-nowrap text-muted transition-colors hover:text-fg; }
+  .segmented > [aria-current="page"], .segmented > [aria-pressed="true"] { @apply bg-surface font-semibold text-brand shadow-[0_1px_3px_rgb(30_27_75/0.12)]; }
 }
 
 /* On a phone a table becomes a list of cards: one card per row, each cell on its own line with its
@@ -226,3 +261,8 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
   color: var(--fg); font-size: 0.875rem; font-weight: 500;
 }
 .more-menu a:hover, .more-menu button:hover:not(:disabled) { background: var(--surface-2); transform: none; filter: none; }
+
+/* Phones: a section page's name is already in the top bar, so its heading is kept for screen readers only. */
+@media (max-width: 639px) {
+  main[data-section] .page-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}

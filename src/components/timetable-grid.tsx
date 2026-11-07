@@ -1,6 +1,7 @@
 import { Coffee, MapPin } from "lucide-react";
 import { DAYS } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { TimetableDay } from "./timetable-day";
 
 export const PERIOD_TIMES = ["", "09:00", "09:50", "10:50", "11:40", "13:20", "14:10", "15:00", "15:50"];
 export const PERIODS = [1, 2, 3, 4, 5, 6, 7];
@@ -35,6 +36,7 @@ export function TimetableGrid({ slots }: { slots: GridSlot[] }) {
   const kinds = [...new Set(slots.map((s) => (KIND[s.kind] ? s.kind : "THEORY")))];
   return (
     <div>
+      <div className="hidden sm:block">
       <div className="relative overflow-x-auto pb-1" tabIndex={0} role="region" aria-label="Timetable">
         <table className="w-full min-w-[900px] border-separate border-spacing-1.5 text-xs">
           <thead>
@@ -86,6 +88,8 @@ export function TimetableGrid({ slots }: { slots: GridSlot[] }) {
         <span className="flex items-center gap-1.5"><Coffee className="size-3.5" /> Lunch 12:30–13:20</span>
         <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[repeating-linear-gradient(135deg,transparent_0_3px,var(--line)_3px_6px)]" /> Saturday is a half day (P1–P4)</span>
       </div>
+    </div>
+      <div className="sm:hidden"><TimetableDay slots={slots} /></div>
     </div>
   );
 }

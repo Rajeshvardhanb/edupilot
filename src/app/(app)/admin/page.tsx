@@ -35,7 +35,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
     <>
       <PageHeader title="Administration" subtitle="User accounts, access and audit trail" />
       <Tabs active="/admin" items={ADMIN_TABS} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {counts.map((c) => <StatCard key={c.role} label={ROLE_LABEL[c.role]} value={c._count} tone="neutral" />)}
       </div>
       <div className="grid gap-6 lg:grid-cols-3">

@@ -27,7 +27,7 @@ test("first-login tour and language switch", async ({ browser }) => {
 test("student: leave, feedback, certificate, helpdesk, elective, assignment, documents", async ({ browser }) => {
   const p = await session(browser, "student@edupilot.edu");
   await go(p, "/leave");
-  await p.selectOption("#type", "ON_DUTY");
+  await p.locator("label", { hasText: "On duty" }).click();
   await p.fill("#fromDate", "2026-10-06");
   await p.fill("#toDate", "2026-10-06");
   await p.fill("#reason", "E2E hackathon duty");
@@ -291,10 +291,10 @@ test("accounts and parent: payment at the counter, receipt, child's record on a 
   await a.context().close();
 
   const p = await session(browser, "parent@edupilot.edu", { viewport: { width: 390, height: 844 } });
-  ok("parent sees the child's dashboard", await seen(p, "You are viewing"));
+  ok("parent sees the child's dashboard", await seen(p, /Viewing Ravi/));
   ok("phones get a bottom tab bar", await p.getByRole("navigation", { name: "Quick links" }).isVisible());
   await go(p, "/results");
-  ok("parent can read results", await seen(p, "CGPA"));
+  ok("parent can read results", await seen(p, "Cumulative GPA"));
   await go(p, "/leave");
   ok("parent cannot apply for leave", await p.waitForURL(/denied=1/, { timeout: 15_000 }).then(() => true, () => false));
   await p.context().close();

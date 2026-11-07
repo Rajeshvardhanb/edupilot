@@ -131,7 +131,7 @@ test("teaching: attendance, on-duty approval, marks, published results and a new
 
   // The absence was for a college event: an approved on-duty request turns it into attendance.
   await go(s, "/leave");
-  await s.selectOption("#type", "ON_DUTY");
+  await s.locator("label", { hasText: "On duty" }).click();
   await s.fill("#fromDate", "2026-10-13");
   await s.fill("#toDate", "2026-10-13");
   await s.fill("#reason", "Sync test: inter-college fest");

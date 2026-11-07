@@ -30,7 +30,7 @@ export default async function AchievementsPage(props: PageProps<"/staff/achievem
     <>
       <PageHeader title="Staff" subtitle="Publications, conferences, FDPs, patents and funded projects, ready for appraisal and accreditation files" actions={<PrintButton />} />
       <Tabs active="/staff/achievements" items={staffTabs(user.role)} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Publications" value={count("PUBLICATION") + count("CONFERENCE")} /><StatCard label="FDPs & workshops" value={count("FDP") + count("WORKSHOP")} tone="info" />
         <StatCard label="Patents & projects" value={count("PATENT") + count("FUNDED_PROJECT")} tone="success" /><StatCard label="Awards" value={count("AWARD")} tone="warning" />
       </div>

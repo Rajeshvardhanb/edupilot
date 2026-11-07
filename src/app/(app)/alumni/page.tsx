@@ -1,5 +1,4 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import Link from "next/link";
 import { Briefcase, GraduationCap, MapPin, ExternalLink } from "lucide-react";
 import type { Prisma } from "@prisma/client";
@@ -12,7 +11,7 @@ import { ActionForm, SubmitButton } from "@/components/forms";
 import { Avatar } from "@/components/avatar";
 import { BarsChart } from "@/components/charts";
 import { Badge, Pagination, buttonClass, LinkButton } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui-server";
+import { Card, EmptyState, StatCard, PageBanner } from "@/components/ui-server";
 import { Filters, SearchInput } from "@/components/filters";
 import { SavedFilters } from "@/components/saved-filters";
 
@@ -45,9 +44,8 @@ export default async function AlumniPage(props: PageProps<"/alumni">) {
 
   return (
     <>
-      <PhotoBanner {...banner("alumni")} />
-      <PageHeader title="Alumni" subtitle="Graduates of the institution. A batch becomes alumni when it is graduated under Academics → Batches." actions={<a href="/reports?dataset=alumni&run=1" className={buttonClass("secondary")}>Export</a>} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <PageBanner {...banner("alumni")} eyebrow="Graduates of the institution" tint="#0f3d5e" title="Alumni" subtitle="Graduates of the institution. A batch becomes alumni when it is graduated under Academics → Batches." actions={<a href="/reports?dataset=alumni&run=1" className={buttonClass("secondary")}>Export</a>} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Alumni" value={all.length} icon={<GraduationCap className="size-5" />} />
         <StatCard label="Working" value={employed} tone="success" icon={<Briefcase className="size-5" />} hint={`${pct(employed, all.length)}% with a known employer`} />
         <StatCard label="Higher studies" value={higher} tone="info" />

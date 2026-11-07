@@ -36,7 +36,7 @@ export default async function EmailPage(props: PageProps<"/admin/email">) {
           {!ok && <p className="mt-1 text-fg/80">Add these lines to <code>.env</code> and restart. A free Gmail account works (create an “App password” in your Google account): <code className="mt-1 block rounded bg-surface px-2 py-1 text-xs text-fg">SMTP_HOST=smtp.gmail.com · SMTP_PORT=587 · SMTP_USER=you@gmail.com · SMTP_PASS=app-password · APP_URL=http://localhost:3001</code></p>}
         </div>
       </div>
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Sent" value={c("SENT")} tone="success" /><StatCard label="Not delivered" value={c("NOT_CONFIGURED")} tone="warning" /><StatCard label="Failed" value={c("FAILED")} tone="danger" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">

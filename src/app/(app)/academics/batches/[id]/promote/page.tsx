@@ -44,7 +44,7 @@ export default async function PromotePage(props: PageProps<"/academics/batches/[
     <>
       <Breadcrumbs items={[{ label: "Academics", href: "/academics" }, { label: "Batches", href: "/academics/batches" }, { label: batchLabel(batch) }]} />
       <PageHeader title={final ? `Graduate ${batchLabel(batch)}` : `Promote ${batchLabel(batch)}`} subtitle={final ? `Final semester (${batch.currentSemester}). Students who graduate become alumni.` : `Semester ${batch.currentSemester} → ${batch.currentSemester + 1}. Review who is held back, then confirm.`} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Students in the batch" value={rows.length} />
         <StatCard label={final ? "Ready to graduate" : "To be promoted"} value={rows.length - held} tone="success" />
         <StatCard label="Suggested to hold back" value={held} tone={held ? "warning" : "neutral"} hint={final ? "have a backlog to clear" : limit === null ? "no backlog limit is set" : `more than ${limit} active backlog${limit === 1 ? "" : "s"}`} />

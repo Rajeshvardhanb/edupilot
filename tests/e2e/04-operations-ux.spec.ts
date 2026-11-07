@@ -148,7 +148,7 @@ test("payroll, promotion with detention, system health and archive", async ({ br
   await go(a, "/staff/payroll");
   const last = new Date(); last.setUTCDate(1); last.setUTCMonth(last.getUTCMonth() - 1);
   const month = last.toISOString().slice(0, 7);
-  await a.locator('section:has(h2:text-is("Run payroll")) input[name="month"]').first().fill(month);
+  await a.locator('section:has(h2 > span:last-child:text-is("Run payroll")) input[name="month"]').first().fill(month);
   await a.getByRole("button", { name: "Run payroll" }).click();
   await confirm(a);
   const ran = await seen(a, /Payroll run for \d+ staff/, 40_000);
@@ -219,13 +219,18 @@ test("interface: field checks, drag-and-drop board, phone tables, translated pag
 
   const s = await session(browser, "student@edupilot.edu", { viewport: { width: 390, height: 844 } });
   await go(s, "/results");
-  const phone = await s.evaluate(() => ({ overflow: document.documentElement.scrollWidth - window.innerWidth, labelled: document.querySelectorAll("td[data-label]").length, rowDisplay: getComputedStyle(document.querySelector("table[data-stack] tbody tr")!).display, before: getComputedStyle(document.querySelector("td[data-label]")!, "::before").content }));
-  ok(`on a phone, result rows are cards with the heading beside each value (${JSON.stringify(phone)})`, phone.rowDisplay === "block" && phone.labelled > 10 && phone.before.length > 3);
+  // Phones get the design's compact subject list (one line per subject with its grade) instead of the wide table.
+  const phone = await s.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+    lines: [...document.querySelectorAll("main ul li")].filter((li) => (li as HTMLElement).offsetParent !== null && /BTCSE\d+ · \d/.test(li.textContent ?? "")).length,
+    tableShown: [...document.querySelectorAll("main table")].some((t) => (t as HTMLElement).offsetParent !== null),
+  }));
+  ok(`on a phone, results are a compact list, not a wide table (${JSON.stringify(phone)})`, phone.lines > 5 && !phone.tableShown);
   ok("and the page does not scroll sideways", phone.overflow <= 1);
   await s.context().addCookies([{ name: "edupilot_lang", value: "hi", url: "http://localhost:3100" }]);
   await go(s, "/attendance");
   ok("page titles follow the chosen language", await seen(s, "मेरी उपस्थिति"));
   await go(s, "/notices");
-  ok("as do pages translated in this round", await seen(s, "परिपत्र और घोषणाएँ"));
+  ok("as do pages translated in this round (on a phone the page name is in the top bar)", await s.locator("header").getByText("सूचनाएँ").isVisible());
   await s.context().close();
 });

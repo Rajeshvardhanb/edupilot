@@ -1,14 +1,14 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
-import { Pin } from "lucide-react";
+import { Megaphone, Pin } from "lucide-react";
+import { noticeTag } from "../dashboard/widgets";
 import type { NoticeAudience } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { fmtDateTime, titleCase } from "@/lib/format";
 import { createNotice, deleteNotice } from "@/actions/admin";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Field } from "@/components/ui";
-import { Card, EmptyState, PageHeader } from "@/components/ui-server";
+import { Field } from "@/components/ui";
+import { Card, EmptyState, PageBanner } from "@/components/ui-server";
 
 export const metadata = { title: "Notices" };
 
@@ -24,28 +24,31 @@ export default async function NoticesPage() {
   const canPost = user.role !== "STUDENT" && user.role !== "PARENT";
   return (
     <>
-      <PhotoBanner {...banner("campus-life")} />
-      <PageHeader title="Notice board" subtitle="Circulars and announcements" />
+      <PageBanner {...banner("campus-life")} eyebrow="Circulars and announcements" tint="#3b2a8f" title="Notice board" subtitle="Circulars and announcements" />
       <div className="grid gap-6 lg:grid-cols-3">
         <div className={`space-y-4 ${canPost ? "lg:col-span-2" : "lg:col-span-3"}`}>
           {notices.length === 0 && <EmptyState title="No notices yet" />}
-          {notices.map((n) => (
-            <Card key={n.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h3 className="flex items-center gap-2 font-semibold">{n.pinned && <Pin className="size-4 text-brand" />}{n.title}</h3>
-                  <p className="mt-1 text-xs text-muted">
-                    {fmtDateTime(n.createdAt)} · {n.createdBy?.name ?? "Office"}{n.department && ` · ${n.department.code}`}
-                  </p>
+          {notices.map((n) => {
+            const tag = noticeTag(n.title, n.audience);
+            return (
+              <Card key={n.id} icon={false}>
+                <div className="-mt-1 flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <span className="grid size-7 place-items-center rounded-lg" style={{ color: tag.color, background: `color-mix(in oklab, ${tag.color} 12%, white)` }}><Megaphone className="size-3.5" /></span>
+                    <span className="rounded-full px-2 py-px text-[11px] font-semibold" style={{ color: `color-mix(in oklab, ${tag.color} 72%, black)`, background: `color-mix(in oklab, ${tag.color} 12%, white)` }}>{tag.label}</span>
+                    {n.audience !== "ALL" && <span className="text-[11px] text-muted">for {titleCase(n.audience)}</span>}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1">
+                    {n.pinned && <Pin aria-label="Pinned" className="size-4" style={{ color: tag.color }} />}
+                    {(user.role === "ADMIN" || n.createdById === user.id) && <ActionButton action={deleteNotice} fields={{ id: n.id }} variant="ghost" confirm="Delete this notice?">Delete</ActionButton>}
+                  </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge tone={n.audience === "ALL" ? "brand" : n.audience === "STUDENTS" ? "info" : "warning"}>{titleCase(n.audience)}</Badge>
-                  {(user.role === "ADMIN" || n.createdById === user.id) && <ActionButton action={deleteNotice} fields={{ id: n.id }} variant="ghost" confirm="Delete this notice?">Delete</ActionButton>}
-                </div>
-              </div>
-              <p className="mt-3 text-sm whitespace-pre-line">{n.body}</p>
-            </Card>
-          ))}
+                <h3 className="mt-2.5 font-semibold">{n.title}</h3>
+                <p className="mt-1.5 text-sm whitespace-pre-line text-fg-2">{n.body}</p>
+                <p className="mt-3 text-xs text-muted">{fmtDateTime(n.createdAt)} · {n.createdBy?.name ?? "Office"}{n.department && ` · ${n.department.code}`}</p>
+              </Card>
+            );
+          })}
         </div>
         {canPost && (
           <Card title="Post a notice" className="h-fit lg:sticky lg:top-6">

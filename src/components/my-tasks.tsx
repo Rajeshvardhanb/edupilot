@@ -9,6 +9,9 @@ import { overdueCount } from "@/lib/fee-ledger";
 import { isoDate } from "@/lib/format";
 import { Card } from "./ui-server";
 
+/** Count-square colours: the first for urgent tasks, the rest in turn. */
+const TONES = ["bg-[#ffe4e8] text-[#be123c]", "bg-[#e0f2fe] text-[#0369a1]", "bg-[#f1ebff] text-[#7c3aed]", "bg-[#eef0ff] text-[#4f46e5]", "bg-[#fef3c7] text-[#b45309]", "bg-[#cffafe] text-[#0e7490]", "bg-[#fce7f3] text-[#be185d]", "bg-[#dcf7ea] text-[#0e7a4f]"];
+
 type Task = { label: string; count: number; href: string; urgent?: boolean };
 
 /** What is waiting on this user right now, each linking to where it gets done. */
@@ -59,18 +62,21 @@ export async function MyTasks({ user }: { user: CurrentUser }) {
   const t = await getT();
   const tasks = await tasksFor(user);
   return (
-    <Card title={t("My tasks")} className="mb-6" actions={<span className="text-xs text-muted">{tasks.length ? `${tasks.reduce((s, x) => s + x.count, 0)} waiting` : ""}</span>}>
+    <Card title={t("My tasks")} className="mb-6" actions={tasks.length ? <span className="rounded-full bg-[#f1ebff] px-2.5 py-0.5 text-xs font-semibold text-[#7c3aed]">{tasks.reduce((s, x) => s + x.count, 0)} waiting</span> : null}>
       {tasks.length === 0 ? <p className="flex items-center gap-2 text-sm text-success"><CheckCircle2 className="size-4" /> Nothing is waiting on you.</p> : (
-        <ul className="-m-2 grid gap-x-4 sm:grid-cols-2 xl:grid-cols-3">
-          {tasks.map((x) => (
-            <li key={x.label}>
-              <Link href={x.href} className="group flex items-center gap-3 rounded-[var(--radius-control)] p-2 transition-colors hover:bg-surface-2">
-                <span className={`chip h-7 min-w-9 px-1.5 text-[13px] font-semibold tabular-nums ${x.urgent ? "chip-danger" : ""}`}>{x.count > 99 ? "99+" : x.count}</span>
-                <span className="min-w-0 flex-1 text-sm text-fg-2 group-hover:text-fg">{x.label}{x.urgent && <span className="sr-only"> (urgent)</span>}</span>
-                <ChevronRight className="size-4 shrink-0 text-muted" />
-              </Link>
-            </li>
-          ))}
+        <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          {tasks.map((x, i) => {
+            const tone = x.urgent ? TONES[0] : TONES[1 + (i % (TONES.length - 1))];
+            return (
+              <li key={x.label}>
+                <Link href={x.href} className="group flex h-full items-center gap-3 rounded-xl border border-line bg-surface p-2.5 transition hover:border-brand/30 hover:shadow-card">
+                  <span className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-lg px-1.5 text-[13px] font-bold tabular-nums ${tone}`}>{x.count > 99 ? "99+" : x.count}</span>
+                  <span className="min-w-0 flex-1 text-[13px] leading-snug font-medium text-fg-2 group-hover:text-fg">{x.label}{x.urgent && <span className="sr-only"> (urgent)</span>}</span>
+                  <ChevronRight className="size-4 shrink-0 text-muted transition group-hover:translate-x-0.5" />
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>

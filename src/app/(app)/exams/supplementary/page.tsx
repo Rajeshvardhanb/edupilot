@@ -64,7 +64,7 @@ export default async function SupplementaryPage() {
   return (
     <>
       <PageHeader title="Supplementary registrations" subtitle={term?.name} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Registrations" value={regs.length} />
         <StatCard label="Subjects" value={subjects} tone="info" />
         <StatCard label="Fee paid" value={regs.filter((r) => paid(r.invoiceId)).length} tone="success" hint={`${regs.filter((r) => !paid(r.invoiceId)).length} awaiting payment`} />

@@ -1,5 +1,4 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import { Bus, MapPin } from "lucide-react";
 import { isOffice, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,7 +6,7 @@ import { inr } from "@/lib/format";
 import { assignPass, cancelPass, saveRoute } from "@/actions/campus";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui-server";
+import { Card, EmptyState, StatCard, PageBanner } from "@/components/ui-server";
 
 export const metadata = { title: "Transport" };
 
@@ -22,10 +21,9 @@ export default async function TransportPage() {
   const riders = routes.reduce((s, r) => s + r.passes.length, 0);
   return (
     <>
-      <PhotoBanner {...banner("transport")} />
-      <PageHeader title="Transport" subtitle={admin ? "Bus routes, stops and passes" : "College bus routes and your pass"} />
+      <PageBanner {...banner("transport")} eyebrow="Bus routes, stops and passes" tint="#7a3410" title="Transport" subtitle={admin ? "Bus routes, stops and passes" : "College bus routes and your pass"} />
       {admin ? (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
           <StatCard label="Routes" value={routes.length} icon={<Bus className="size-5" />} /><StatCard label="Stops" value={routes.reduce((s, r) => s + r.stops.length, 0)} tone="info" /><StatCard label="Pass holders" value={riders} tone="success" />
         </div>
       ) : (

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Ticket } from "lucide-react";
 import { requireUser, isLearner } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { currentTerm, programScope } from "@/lib/scope";
@@ -50,8 +52,8 @@ export default async function ExamSchedulePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className={`space-y-6 ${manage ? "lg:col-span-2" : "lg:col-span-3"}`}>
         <Card title="Time-table">
-          {exams.length === 0 ? <EmptyState title="The exam schedule has not been published yet" /> : (
-            <Table>
+          {exams.length === 0 ? <EmptyState title="The exam schedule has not been published yet" /> : (<>
+            <div className={student ? "hidden sm:block" : undefined}><Table>
               <thead><tr><Th>Date</Th><Th>Session</Th><Th>Exam</Th><Th>Subject</Th><Th>Programme · Sem</Th>{student ? <Th>Your seat</Th> : <Th className="text-right">Seated</Th>}{manage && <Th />}</tr></thead>
               <tbody>{exams.map((e) => (
                 <tr key={e.id}>
@@ -64,8 +66,9 @@ export default async function ExamSchedulePage() {
                   {manage && <Td><ActionButton action={deleteExam} fields={{ id: e.id }} variant="ghost" confirm={`Remove ${e.subject.name} from the schedule?`}>×</ActionButton></Td>}
                 </tr>
               ))}</tbody>
-            </Table>
-          )}
+            </Table></div>
+            {student && <ExamList exams={exams} />}
+          </>)}
         </Card>
         {duties.length > 0 && (
           <Card title="Invigilation roster" actions={<span className="text-xs text-muted">{duties.length} duties</span>}>
@@ -135,4 +138,40 @@ export default async function ExamSchedulePage() {
       </div>
     </>
   );
+}
+
+type ExamRow = { id: string; date: Date; session: string; kind: string; subject: { code: string; name: string }; seats: { seatNo: number | string; room: { name: string } }[] };
+
+/** Phones (students): the next paper as a gradient card with the hall ticket, then every paper as a dated line. */
+function ExamList({ exams }: { exams: ExamRow[] }) {
+  const upcoming = exams.filter((e) => e.date.getTime() >= startOfToday());
+  const first = upcoming[0];
+  const days = first ? Math.round((first.date.getTime() - startOfToday()) / 864e5) : 0;
+  return (
+    <div className="space-y-3 sm:hidden">
+      {first && (
+        <section className="relative overflow-hidden rounded-[var(--radius-panel)] bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#c026d3] p-4 text-white shadow-[var(--shadow-brand)]">
+          <span aria-hidden className="absolute -top-8 -right-8 size-28 rounded-full bg-white/10" />
+          <p className="relative text-xs text-white/85">{days === 0 ? "Next paper today" : `Next paper in ${days} day${days === 1 ? "" : "s"}`}</p>
+          <p className="relative text-lg font-bold">{first.subject.name}</p>
+          <p className="relative text-xs text-white/85">{first.date.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", timeZone: "UTC" })} · {SESSION[first.session]}</p>
+          <Link href="/exams/hall-tickets" className="relative mt-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-brand"><Ticket className="size-4" /> Hall ticket</Link>
+        </section>
+      )}
+      <ol className="space-y-2">
+        {exams.map((e) => (
+          <li key={e.id} className="flex items-center gap-3 rounded-xl border border-line p-2.5">
+            <span className="w-10 shrink-0 text-center leading-tight"><span className="block text-lg font-bold text-brand">{String(e.date.getUTCDate()).padStart(2, "0")}</span><span className="text-[10px] text-muted">{e.date.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span></span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{e.subject.name}</span><span className="block truncate text-[11px] text-muted">{e.subject.code} · {e.date.toLocaleDateString("en-IN", { weekday: "long", timeZone: "UTC" })} · {e.session === "FN" ? "FN 10:00" : "AN 14:00"} · {KIND[e.kind] ?? e.kind}</span></span>
+            {e.seats[0] && <span className="shrink-0 text-[11px] font-semibold">{e.seats[0].room.name} · {e.seats[0].seatNo}</span>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function startOfToday() {
+  const d = new Date();
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
 }

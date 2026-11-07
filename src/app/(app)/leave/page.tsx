@@ -1,3 +1,4 @@
+import { Plane } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { studentScope } from "@/lib/scope";
@@ -27,18 +28,27 @@ export default async function LeavePage(props: PageProps<"/leave">) {
         <div className="grid gap-6 lg:grid-cols-3">
           <Card title="New request">
             <ActionForm action={applyLeave} className="space-y-3" resetOnSuccess>
-              <Field label="Type" name="type"><select id="type" name="type" className="input">{Object.entries(TYPE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+              <fieldset>
+                <legend className="label">Type</legend>
+                <div className="segmented grid w-full grid-cols-3">
+                  {Object.entries(TYPE).map(([k, v], i) => (
+                    <label key={k} className="cursor-pointer text-center has-[:checked]:bg-surface has-[:checked]:font-semibold has-[:checked]:text-brand has-[:checked]:shadow-[0_1px_3px_rgb(30_27_75/0.12)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand">
+                      <input type="radio" name="type" value={k} defaultChecked={i === 0} className="sr-only" />{v.replace(" leave", "").replace(" (OD)", "")}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="From" name="fromDate"><input id="fromDate" type="date" name="fromDate" className="input" required /></Field>
                 <Field label="To" name="toDate"><input id="toDate" type="date" name="toDate" className="input" required /></Field>
               </div>
               <Field label="Reason" name="reason"><textarea id="reason" name="reason" rows={3} className="input" placeholder="e.g. Representing the college at SIH hackathon" required /></Field>
-              <SubmitButton>Submit request</SubmitButton>
+              <SubmitButton className="w-full">Submit request</SubmitButton>
             </ActionForm>
           </Card>
           <Card title="My requests" className="lg:col-span-2">
-            {mine.length === 0 ? <EmptyState title="No requests yet" /> : (
-              <Table>
+            {mine.length === 0 ? <EmptyState title="No requests yet" /> : (<>
+              <div className="hidden sm:block"><Table>
                 <thead><tr><Th>Type</Th><Th>Dates</Th><Th>Reason</Th><Th>Status</Th></tr></thead>
                 <tbody>{mine.map((r) => (
                   <tr key={r.id}>
@@ -48,8 +58,18 @@ export default async function LeavePage(props: PageProps<"/leave">) {
                     <Td><Badge tone={TONE[r.status]}>{titleCase(r.status)}</Badge>{r.reviewedBy && <p className="mt-0.5 text-[11px] text-muted">by {r.reviewedBy.name}</p>}</Td>
                   </tr>
                 ))}</tbody>
-              </Table>
-            )}
+              </Table></div>
+              {/* Phones: one line per request. */}
+              <ul className="divide-y divide-line sm:hidden">
+                {mine.map((r) => (
+                  <li key={r.id} className="flex items-center gap-3 py-3">
+                    <span className={`chip size-9 ${r.type === "ON_DUTY" ? "chip-success" : r.type === "MEDICAL" ? "chip-danger" : "chip-info"}`}><Plane className="size-4" /></span>
+                    <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{fmtDate(r.fromDate)}{+r.toDate !== +r.fromDate && ` – ${fmtDate(r.toDate)}`}</span><span className="block truncate text-xs text-muted">{TYPE[r.type]} · {r.reason}</span></span>
+                    <Badge tone={TONE[r.status]}>{titleCase(r.status)}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </>)}
           </Card>
         </div>
       </>
@@ -66,7 +86,7 @@ export default async function LeavePage(props: PageProps<"/leave">) {
   return (
     <>
       <PageHeader title="Leave & on-duty requests" subtitle="Approving an on-duty request converts the student's absences on those dates to On-duty." />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Pending" value={c("PENDING")} tone="warning" />
         <StatCard label="Approved" value={c("APPROVED")} tone="success" />
         <StatCard label="Rejected" value={c("REJECTED")} tone="danger" />

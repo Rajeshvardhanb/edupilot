@@ -89,13 +89,31 @@ export function CareerIllustration({ className }: P) {
 }
 
 export function EmptyIllustration({ className }: P) {
+  // Three glossy violet cubes (the empty-state art of the ICL theme).
+  const cube = (x: number, y: number, k: string) => (
+    <g transform={`translate(${x} ${y})`}>
+      <path d="M0 12 L22 0 L44 12 L22 24 Z" fill={`url(#top${k})`} />
+      <path d="M0 12 L22 24 L22 50 L0 38 Z" fill={`url(#left${k})`} />
+      <path d="M44 12 L22 24 L22 50 L44 38 Z" fill={`url(#right${k})`} />
+      <path d="M0 12 L22 0 L44 12" fill="none" stroke="#fff" strokeOpacity=".7" strokeWidth="1" />
+    </g>
+  );
+  const grads = (k: string) => (
+    <>
+      <linearGradient id={`top${k}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ede9fe" /><stop offset="1" stopColor="#c4b5fd" /></linearGradient>
+      <linearGradient id={`left${k}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a78bfa" /><stop offset="1" stopColor="#7c3aed" /></linearGradient>
+      <linearGradient id={`right${k}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#8b5cf6" /><stop offset="1" stopColor="#5b21b6" /></linearGradient>
+    </>
+  );
   return (
     <svg viewBox="0 0 160 120" className={className} role="img" aria-label="Nothing here">
-      <ellipse cx="80" cy="106" rx="54" ry="6" fill={LINE} />
-      <path d="M36 50 80 36l44 14v44l-44 14-44-14z" fill={SOFT} stroke={B} strokeOpacity=".3" />
-      <path d="M36 50l44 14 44-14M80 64v44" stroke={B} strokeOpacity=".3" fill="none" />
-      <path d="M36 50 22 64l44 14 14-14M124 50l14 14-44 14-14-14" fill={SURF} stroke={B} strokeOpacity=".3" />
-      <circle cx="112" cy="30" r="12" fill="none" stroke={B} strokeWidth="4" /><path d="m121 39 10 10" stroke={B} strokeWidth="4" strokeLinecap="round" />
+      <defs>{grads("a")}</defs>
+      <ellipse cx="80" cy="108" rx="46" ry="6" fill="#ddd6fe" opacity=".55" />
+      {cube(58, 8, "a")}
+      {cube(36, 46, "a")}
+      {cube(80, 46, "a")}
+      <circle cx="24" cy="84" r="2" fill="#c4b5fd" />
+      <circle cx="136" cy="30" r="1.6" fill="#c4b5fd" />
     </svg>
   );
 }

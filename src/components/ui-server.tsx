@@ -2,6 +2,8 @@ import "server-only";
 import { cloneElement, Fragment, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { getT } from "@/lib/i18n-server";
 import * as ui from "./ui";
+import { cardIcon } from "./card-icons";
+import { PhotoBanner } from "./hero";
 
 /**
  * The same building blocks as ./ui, but any plain-text title, label or heading is shown in the
@@ -17,7 +19,8 @@ export async function StatCard(p: ComponentProps<typeof ui.StatCard>) {
   return <ui.StatCard {...p} label={(await getT())(p.label)} hint={await tr(p.hint)} />;
 }
 export async function Card(p: ComponentProps<typeof ui.Card>) {
-  return <ui.Card {...p} title={await tr(p.title)} />;
+  // The icon is picked from the English title, before it is translated.
+  return <ui.Card {...p} icon={p.icon === undefined ? cardIcon(p.title) : p.icon} title={await tr(p.title)} />;
 }
 export async function Th(p: ComponentProps<typeof ui.Th>) {
   return <ui.Th {...p}>{await tr(p.children)}</ui.Th>;
@@ -68,4 +71,10 @@ export async function Table({ children, stack = true }: ComponentProps<typeof ui
     return cloneElement(section, { key: `s${i}` }, rows);
   });
   return <ui.Table>{labelled}</ui.Table>;
+}
+
+/** Module photo banner with the page heading on it (translated like PageHeader). */
+export async function PageBanner(p: ComponentProps<typeof PhotoBanner>) {
+  const t = await getT();
+  return <PhotoBanner {...p} title={p.title && t(p.title)} eyebrow={p.eyebrow && t(p.eyebrow)} subtitle={await tr(p.subtitle)} />;
 }

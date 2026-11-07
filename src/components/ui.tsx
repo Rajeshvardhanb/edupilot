@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { cloneElement, Fragment, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { EmptyIllustration } from "./illustrations";
 import { LiveError } from "./live-validation";
 import { MoreMenu } from "./more-menu";
+import { cardIcon, statIcon } from "./card-icons";
 
 export function PageHeader({ title, subtitle, actions, eyebrow }: { title: string; subtitle?: ReactNode; actions?: ReactNode; eyebrow?: string }) {
   return (
     <div className="relative z-20 mb-6 flex animate-fade-up flex-wrap items-end justify-between gap-3">
       <div>
-        {eyebrow && <p className="mb-1 text-xs font-medium text-brand">{eyebrow}</p>}
-        <h1 className="text-[1.375rem] leading-tight font-semibold sm:text-2xl">{title}</h1>
+        {eyebrow && <p className="mb-1 text-xs font-semibold text-brand">{eyebrow}</p>}
+        <h1 className="page-title text-[1.6rem] leading-tight font-bold tracking-tight sm:text-[1.75rem]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="no-print flex flex-wrap items-center gap-2"><HeaderActions actions={actions} /></div>}
@@ -37,34 +39,47 @@ function HeaderActions({ actions }: { actions: ReactNode }) {
   );
 }
 
-export function Card({ className, title, actions, children }: { className?: string; title?: ReactNode; actions?: ReactNode; children: ReactNode }) {
+export function Card({ className, title, actions, children, icon }: {
+  className?: string; title?: ReactNode; actions?: ReactNode; children: ReactNode;
+  /** The tinted icon before the title; chosen from the title's words when not given, `false` for none. */
+  icon?: ReactNode | false;
+}) {
+  const chip = icon === false ? null : icon ?? cardIcon(title);
   return (
     <section className={cn("tile animate-fade-up", className)}>
       {(title || actions) && (
-        <header className="flex min-h-[3.25rem] items-center justify-between gap-2 border-b border-line px-5 py-3">
-          <h2 className="font-sans text-sm font-semibold tracking-normal">{title}</h2>
+        <header className="flex min-h-14 flex-wrap items-center justify-between gap-2 px-5 pt-4">
+          <h2 className="flex min-w-0 items-center gap-2.5 font-sans text-[15px] font-semibold tracking-normal">{chip}<span className="min-w-0">{title}</span></h2>
           {actions}
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className={cn("p-5", (title || actions) && "pt-4")}>{children}</div>
     </section>
   );
 }
 
 export type Tone = "neutral" | "brand" | "success" | "warning" | "danger" | "info";
 const toneClasses: Record<Tone, string> = {
-  neutral: "bg-surface-2 text-fg-2 ring-line-strong",
-  brand: "bg-brand-soft text-brand ring-brand/15",
-  success: "bg-success-soft text-success ring-success/20",
-  warning: "bg-warning-soft text-warning ring-warning/20",
-  danger: "bg-danger-soft text-danger ring-danger/20",
-  info: "bg-info-soft text-info ring-info/20",
+  neutral: "bg-[#eef0f6] text-fg-2",
+  brand: "bg-brand-soft text-brand",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  danger: "bg-danger-soft text-danger",
+  info: "bg-info-soft text-info",
 };
-const chipClasses: Record<Tone, string> = { neutral: "chip-neutral", brand: "", success: "chip-success", warning: "chip-warning", danger: "chip-danger", info: "chip-info" };
-const TONE_VAR: Record<Tone, string> = { brand: "var(--brand)", success: "var(--success)", warning: "var(--warning)", danger: "var(--danger)", info: "var(--info)", neutral: "var(--muted)" };
+const chipClasses: Record<Tone, string> = { neutral: "chip-neutral", brand: "chip-brand", success: "chip-success", warning: "chip-warning", danger: "chip-danger", info: "chip-info" };
+/** Tile wash: the tone's colour faint in the lower right and in the corner circle. */
+const WASH: Record<Tone, string> = { neutral: "#64748b", brand: "#6366f1", success: "#10b981", warning: "#f59e0b", danger: "#f43f5e", info: "#0ea5e9" };
 
-export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
-  return <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11.5px] leading-4 font-medium whitespace-nowrap ring-1 ring-inset", toneClasses[tone])}>{children}</span>;
+/** Status words stored in capitals ("OVERDUE", "IN_PROGRESS") read as "Overdue", "In progress"; short codes (OD, CSE) stay. */
+const statusCase = (t: string) => (/^[A-Z][A-Z_]{3,}$/.test(t) ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, " ") : t);
+
+export function Badge({ tone = "neutral", children, dot = tone !== "brand" }: { tone?: Tone; children: ReactNode; /** The small dot before the text (status badges). */ dot?: boolean }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs leading-5 font-semibold whitespace-nowrap", toneClasses[tone])}>
+      {dot && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current opacity-80" />}{typeof children === "string" ? statusCase(children) : children}
+    </span>
+  );
 }
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";
@@ -76,8 +91,8 @@ const variantClasses: Record<Variant, string> = {
 };
 export const buttonClass = (variant: Variant = "primary", size: "sm" | "md" = "md") =>
   cn(
-    "inline-flex items-center justify-center gap-1.5 font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:shrink-0",
-    size === "sm" ? "h-8 rounded-[7px] px-2.5 text-[13px]" : "h-9 rounded-[var(--radius-control)] px-3.5 text-sm",
+    "inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+    size === "sm" ? "h-8 rounded-lg px-3 text-[13px]" : "h-10 rounded-[var(--radius-control)] px-4 text-sm",
     variantClasses[variant],
   );
 
@@ -92,16 +107,16 @@ export function LinkButton({ variant, size, className, ...props }: ComponentProp
 /** `stack={false}` keeps the table as a grid on phones (it then scrolls sideways inside its card). */
 export function Table({ children, stack = true }: { children: ReactNode; stack?: boolean }) {
   return (
-    <div className="overflow-x-auto">
-      <table data-stack={stack ? "" : undefined} className="w-full text-left text-sm [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-surface-2/60 [&_tbody_tr:last-child_td]:border-b-0">{children}</table>
+    <div className="overflow-x-auto sm:rounded-xl sm:border sm:border-line">
+      <table data-stack={stack ? "" : undefined} className="w-full text-left text-sm [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-brand-soft/35 [&_tbody_tr:last-child_td]:border-b-0">{children}</table>
     </div>
   );
 }
 export function Th({ children, className }: { children?: ReactNode; className?: string }) {
-  return <th className={cn("border-b border-line bg-surface-2/60 px-3 py-2.5 text-xs font-medium whitespace-nowrap text-muted", className)}>{children}</th>;
+  return <th className={cn("border-b border-line bg-[#f6f7fb] px-4 py-3 text-xs font-semibold whitespace-nowrap text-muted", className)}>{children}</th>;
 }
 export function Td({ children, className, colSpan, "data-label": label }: { children?: ReactNode; className?: string; colSpan?: number; /** Column heading, shown before the value in the phone layout. Filled in by the server Table. */ "data-label"?: string }) {
-  return <td colSpan={colSpan} data-label={label} className={cn("border-b border-line px-3 py-3 align-middle", className)}>{children}</td>;
+  return <td colSpan={colSpan} data-label={label} className={cn("border-b border-line px-4 py-3.5 align-middle", className)}>{children}</td>;
 }
 
 export function StatCard({ label, value, hint, tone = "brand", icon, trend, chart, href }: {
@@ -112,17 +127,22 @@ export function StatCard({ label, value, hint, tone = "brand", icon, trend, char
 }) {
   const good = trend ? (trend.good ?? trend.up) : true;
   return (
-    <div className={cn("tile group relative min-w-0 animate-fade-up overflow-hidden p-4 sm:p-5", href && "tile-hover")}>
+    <div
+      className={cn("tile group relative min-w-0 animate-fade-up overflow-hidden p-4 sm:p-5", href && "tile-hover")}
+      style={{ backgroundImage: `linear-gradient(145deg, #fff 45%, color-mix(in oklab, ${WASH[tone]} 7%, white))` }}
+    >
+      {/* Soft circle of the tile's colour in the corner. */}
+      <span aria-hidden className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full" style={{ background: `color-mix(in oklab, ${WASH[tone]} 11%, transparent)` }} />
       <div className="relative flex items-center gap-2.5">
         {icon
-          ? <span className={cn("chip size-8 shrink-0 [&_svg]:size-4", chipClasses[tone])}>{icon}</span>
-          : <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: TONE_VAR[tone] }} />}
-        <p className="line-clamp-2 min-w-0 flex-1 text-[13px] leading-snug font-medium text-muted">{label}</p>
+          ? <span className={cn("chip size-9 shrink-0 [&_svg]:size-[18px]", chipClasses[tone])}>{icon}</span>
+          : statIcon(label, tone === "brand" ? undefined : chipClasses[tone])}
+        <p className="line-clamp-2 min-w-0 flex-1 text-[13px] leading-snug font-medium text-fg-2">{label}</p>
       </div>
-      <p className="relative mt-3 truncate font-display text-[1.375rem] leading-tight font-semibold tabular-nums sm:text-[1.75rem]">{value}</p>
+      <p className="relative mt-3 truncate font-sans text-[1.45rem] leading-tight font-bold tracking-tight tabular-nums sm:text-[1.65rem]">{value}</p>
       {(trend || hint) && (
-        <div className="relative mt-1.5 flex items-center gap-2 text-xs">
-          {trend && <span className={cn("shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium tabular-nums", good ? "bg-success-soft text-success" : "bg-danger-soft text-danger")}>{trend.up ? "↑" : "↓"} {trend.value}</span>}
+        <div className="relative mt-1 flex items-center gap-2 text-xs">
+          {trend && <span className={cn("shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums", good ? "bg-success-soft text-success" : "bg-danger-soft text-danger")}>{trend.up ? "↑" : "↓"} {trend.value}</span>}
           {hint && <span className="min-w-0 text-muted">{hint}</span>}
         </div>
       )}
@@ -134,9 +154,9 @@ export function StatCard({ label, value, hint, tone = "brand", icon, trend, char
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; /** A button or link for the obvious next step. */ action?: ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
-      <EmptyIllustration className="mx-auto mb-3 h-16 w-auto opacity-90" />
-      <h2 className="font-sans text-[15px] font-semibold">{title}</h2>
+    <div className="rounded-[var(--radius-card)] border border-dashed border-[#d9dbf0] bg-gradient-to-b from-[#fafaff] to-surface px-6 py-12 text-center">
+      <EmptyIllustration className="mx-auto mb-4 h-28 w-auto" />
+      <h2 className="font-sans text-base font-bold">{title}</h2>
       {children && <div className="mt-1 text-sm text-muted">{children}</div>}
       {action && <div className="no-print mt-4 flex justify-center gap-2">{action}</div>}
     </div>
@@ -156,20 +176,10 @@ export function Field({ label, name, error, className, children }: { label: stri
 
 export function Tabs({ items, active }: { items: { href: string; label: string }[]; active: string }) {
   return (
-    <nav className="no-print mb-6 flex max-w-full overflow-x-auto border-b border-line">
-      <div className="-mb-px flex gap-5">
+    <nav className="no-print mb-6 flex max-w-full overflow-x-auto">
+      <div className="segmented">
         {items.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            aria-current={t.href === active ? "page" : undefined}
-            className={cn(
-              "border-b-2 pt-1 pb-2.5 text-sm whitespace-nowrap transition-colors",
-              t.href === active ? "border-brand font-medium text-fg" : "border-transparent text-muted hover:border-line-strong hover:text-fg",
-            )}
-          >
-            {t.label}
-          </Link>
+          <Link key={t.href} href={t.href} aria-current={t.href === active ? "page" : undefined}>{t.label}</Link>
         ))}
       </div>
     </nav>
@@ -177,9 +187,9 @@ export function Tabs({ items, active }: { items: { href: string; label: string }
 }
 
 export function Progress({ value, tone = "brand" }: { value: number; tone?: Tone }) {
-  const bar = { brand: "bg-brand", success: "bg-success", warning: "bg-warning", danger: "bg-danger", info: "bg-info", neutral: "bg-muted" }[tone];
+  const bar = { brand: "brand-gradient", success: "bg-gradient-to-r from-emerald-400 to-emerald-600", warning: "bg-gradient-to-r from-amber-400 to-orange-500", danger: "bg-gradient-to-r from-rose-400 to-rose-600", info: "bg-gradient-to-r from-sky-400 to-sky-600", neutral: "bg-slate-400" }[tone];
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#eceef6]">
       <div className={cn("h-full rounded-full", bar)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   );
@@ -203,8 +213,8 @@ export function Pagination({ page, pages, makeHref }: { page: number; pages: num
     <div className="no-print mt-4 flex items-center justify-between text-sm text-muted">
       <span>Page {page} of {pages}</span>
       <div className="flex gap-2">
-        {page > 1 && <LinkButton variant="secondary" size="sm" href={makeHref(page - 1)}>Previous</LinkButton>}
-        {page < pages && <LinkButton variant="secondary" size="sm" href={makeHref(page + 1)}>Next</LinkButton>}
+        {page > 1 && <LinkButton variant="secondary" size="sm" href={makeHref(page - 1)}><ArrowLeft /> Previous</LinkButton>}
+        {page < pages && <LinkButton variant="secondary" size="sm" href={makeHref(page + 1)}>Next <ArrowRight /></LinkButton>}
       </div>
     </div>
   );
@@ -257,4 +267,21 @@ export function DashboardBodySkeleton() {
 
 export function TasksSkeleton() {
   return <div aria-hidden className="mb-6 h-36 animate-pulse rounded-[var(--radius-card)] bg-surface-2" />;
+}
+
+/** A percentage ring (teal-to-blue when on track, amber below the rule, red well below). Pure SVG, no state. */
+export function Ring({ value, size = 64, stroke = 7, tone = "success", children }: { value: number; size?: number; stroke?: number; tone?: "success" | "warning" | "danger" | "brand"; children?: ReactNode }) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, value));
+  const [a, b] = { success: ["#14b8a6", "#0ea5e9"], warning: ["#f59e0b", "#f97316"], danger: ["#f43f5e", "#e11d48"], brand: ["#6366f1", "#a855f7"] }[tone];
+  const id = `ring-${tone}`;
+  return (
+    <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <defs><linearGradient id={id} x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient></defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e8e9f3" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${id})`} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} />
+      </svg>
+      <span className="absolute inset-0 grid place-items-center text-center leading-none">{children}</span>
+    </span>
+  );
 }

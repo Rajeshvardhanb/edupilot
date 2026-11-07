@@ -43,7 +43,7 @@ export async function OfficeDashboard({ user }: { user: CurrentUser }) {
         art={<CampusIllustration className="w-full drop-shadow-xl" />}
       >
         <div className="flex flex-wrap gap-2">
-          <HeroAction href="/admissions"><PhoneCall className="size-4" /> Enquiries</HeroAction>
+          <HeroAction primary href="/admissions"><PhoneCall className="size-4" /> Enquiries</HeroAction>
           <HeroAction href="/students/new"><UserPlus className="size-4" /> Admit student</HeroAction>
           <HeroAction href="/certificates"><ScrollText className="size-4" /> Certificates</HeroAction>
           <HeroAction href="/helpdesk"><LifeBuoy className="size-4" /> Helpdesk</HeroAction>

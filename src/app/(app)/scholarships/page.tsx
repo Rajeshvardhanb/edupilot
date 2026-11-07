@@ -19,7 +19,7 @@ export default async function ScholarshipsPage() {
   return (
     <>
       <PageHeader title="Scholarships & fee reimbursement" subtitle="Track government and college scheme claims. Marking a claim received credits the student's fee invoice." />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Claimed (awaiting sanction)" value={inr(sum("APPLIED"))} tone="warning" />
         <StatCard label="Sanctioned (awaiting funds)" value={inr(sum("SANCTIONED"))} tone="info" />
         <StatCard label="Received" value={inr(sum("RECEIVED"))} tone="success" />

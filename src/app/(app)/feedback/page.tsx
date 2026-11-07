@@ -58,7 +58,7 @@ async function StaffFeedback({ user }: { user: CurrentUser }) {
   return (
     <>
       <PageHeader title="Course feedback" subtitle={`${term?.name} · anonymous student ratings (1–5)`} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
         <StatCard label="Responses" value={total} />
         <StatCard label="Average rating" value={visible.length ? (visible.reduce((s, x) => s + x.overall, 0) / visible.length).toFixed(2) : "—"} tone="info" hint="courses with 5+ responses" />
         <StatCard label="Courses rated" value={`${visible.length}/${stats.length}`} tone="success" />

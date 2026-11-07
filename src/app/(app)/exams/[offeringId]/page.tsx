@@ -41,7 +41,7 @@ export default async function OfferingExamPage(props: PageProps<"/exams/[offerin
           </>
         }
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Students" value={eligible.length} />
         <StatCard label={hasEnd ? "Pass percentage" : "Projected pass % (internals only)"} value={`${pct(passed, eligible.length)}%`} tone={pct(passed, eligible.length) >= 75 ? "success" : "warning"} />
         <StatCard label="Class average" value={`${avg}%`} tone="info" />

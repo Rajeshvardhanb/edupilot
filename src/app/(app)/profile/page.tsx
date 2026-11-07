@@ -15,6 +15,13 @@ import { ALERT_KINDS } from "@/lib/notify";
 import { saveNotificationPrefs } from "@/actions/prefs";
 import { PROFILE_FIELDS, type ProfileField } from "@/lib/profile-fields";
 import { requestProfileChange } from "@/actions/office";
+import { logout } from "@/actions/auth";
+import { cookies } from "next/headers";
+import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
+import { LanguageSelect } from "@/components/language-select";
+import { TextSizeToggle } from "@/components/theme";
+import { LogOut } from "lucide-react";
+import { buttonClass } from "@/components/ui";
 
 export const metadata = { title: "My profile" };
 
@@ -23,6 +30,8 @@ export default async function ProfilePage() {
   const user = await db.user.findUniqueOrThrow({ where: { id: me.id }, include: { faculty: { include: { department: true } }, student: true } });
   const corrections = me.studentId ? await db.profileChange.findMany({ where: { studentId: me.studentId }, orderBy: { createdAt: "desc" }, take: 5 }) : [];
   const muted = ((user.prefs as { mutedEmail?: string[] } | null)?.mutedEmail) ?? [];
+  const raw = (await cookies()).get(LANG_COOKIE)?.value;
+  const lang: Lang = raw && raw in LANGS ? (raw as Lang) : "en";
   const rows: [string, string][] = [
     ["Name", user.name], ["Email", user.email], ["Phone", user.phone ?? "—"], ["Role", ROLE_LABEL[user.role]],
     ...(user.faculty ? [["Employee ID", user.faculty.employeeId], ["Department", user.faculty.department.name], ["Designation", user.faculty.designation]] as [string, string][] : []),
@@ -40,10 +49,17 @@ export default async function ProfilePage() {
           </dl>
           {user.student && <Link href={`/students/${user.student.id}`} className="mt-4 inline-block text-sm text-brand">View full student record →</Link>}
         </Card>
+        <Card title="Language and display">
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center justify-between gap-3"><span className="text-fg-2">Language</span><LanguageSelect lang={lang} /></div>
+            <div className="flex items-center justify-between gap-3"><span className="text-fg-2">Text size</span><TextSizeToggle /></div>
+          </div>
+          <form action={logout} className="mt-5 border-t border-line pt-4"><button className={buttonClass("secondary") + " w-full text-danger"}><LogOut /> Sign out</button></form>
+        </Card>
         <Card title="Help">
           <p className="mb-3 text-sm text-muted">New here, or want a refresher? The guided tour points out search, the menu, notifications and your account.</p>
           <ReplayTourButton />
-          <p className="mt-4 text-xs text-muted">Language and text size can be changed from the menu at the top right. On a phone, add this site to your home screen to use it like an app.</p>
+          <p className="mt-4 text-xs text-muted">On a phone, add this site to your home screen to use it like an app.</p>
         </Card>
         {(user.role === "STUDENT" || user.role === "PARENT") && me.studentId && (
           <Card title="Request a correction">

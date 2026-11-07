@@ -1,12 +1,11 @@
 import { banner } from "@/lib/images";
-import { PhotoBanner } from "@/components/hero";
 import { isOffice, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { fmtDate, isoDate } from "@/lib/format";
 import { issueBook, returnBook, saveBook } from "@/actions/campus";
 import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
 import { Badge, Field, Td } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard, Th, Table } from "@/components/ui-server";
+import { Card, EmptyState, StatCard, Th, Table, PageBanner } from "@/components/ui-server";
 import { Filters, SearchInput } from "@/components/filters";
 import { SavedFilters } from "@/components/saved-filters";
 
@@ -26,9 +25,8 @@ export default async function LibraryPage(props: PageProps<"/library">) {
   const overdue = issues.filter((i) => i.dueOn < today).length;
   return (
     <>
-      <PhotoBanner {...banner("library")} />
-      <PageHeader title="Library" subtitle={admin ? "Catalogue, issue and return. Loan period 14 days, fine ₹2 per day, 3 books per member." : "Search the catalogue and see the books you have borrowed."} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <PageBanner {...banner("library")} eyebrow="Central library" tint="#0f4f46" title="Library" subtitle={admin ? "Catalogue, issue and return. Loan period 14 days, fine ₹2 per day, 3 books per member." : "Search the catalogue and see the books you have borrowed."} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Titles" value={totals._count} /><StatCard label="Copies" value={totals._sum.copies ?? 0} tone="info" />
         <StatCard label={admin ? "Books on loan" : "My books"} value={issues.length} tone="warning" /><StatCard label="Overdue" value={overdue} tone={overdue ? "danger" : "success"} />
       </div>

@@ -38,7 +38,7 @@ export default async function PaymentsPage(props: PageProps<"/fees/payments">) {
         <button className={buttonClass("secondary")}>Apply</button>
       </Filters>
       <SavedFilters storageKey="edupilot-filters-fees-payments" />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label={refunds.length ? "Net collected" : "Total collected"} value={inr(total)} hint={`${payments.length - refunds.length} receipts${refunds.length ? ` · ${refunds.length} refund${refunds.length === 1 ? "" : "s"} of ${inr(-refunds.reduce((s, p) => s + p.amount, 0))}` : ""}`} tone="success" />
         {[...byMode].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m, v]) => <StatCard key={m} label={titleCase(m)} value={inr(v)} tone="neutral" />)}
       </div>

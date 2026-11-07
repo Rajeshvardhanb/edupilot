@@ -15,7 +15,7 @@ async function settle(p: Page) {
 
 /** Opens every folded menu group. Each click shrinks the list of folded ones, so always open the first. */
 async function openAllGroups(p: Page) {
-  const folded = p.locator("aside nav button[aria-expanded=false]");
+  const folded = p.locator("aside nav button[aria-expanded=false]:visible");
   for (let i = 0; i < 12 && (await folded.count()); i++) await folded.first().click();
 }
 
@@ -29,7 +29,7 @@ test("smoke: every page on every role's menu opens without an error, and so does
     const p = await session(browser, email);
     p.setDefaultNavigationTimeout(30_000);
     await openAllGroups(p);
-    const menu = await p.locator("aside nav a").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
+    const menu = await p.locator("aside nav a:visible").evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")!))]);
     const visited = new Set<string>();
     const open = async (href: string) => {
       if (visited.has(href)) return;
@@ -66,7 +66,7 @@ test("smoke on a phone: every menu page fits a phone screen without sideways scr
     p.setDefaultNavigationTimeout(30_000);
     await p.click('button[aria-label="Open menu"]');
     await openAllGroups(p);
-    const menu = await p.locator("aside nav a").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
+    const menu = await p.locator("aside nav a:visible").evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")!))]);
     for (const href of menu) {
       if (!(await p.goto(href, { waitUntil: "load" }).then(() => true, () => false))) { ok(`${email} ${href} loads on a phone`, false); continue; }
       await settle(p);

@@ -100,7 +100,7 @@ test("student and parent: notifications, online payment, PDF, language, child sw
   ok("a notification opens the page it is about", await p.waitForURL("**/materials", { timeout: 20_000 }).then(() => true, () => false));
 
   await go(p, "/fees");
-  await p.locator('input[name="amount"]').first().fill("1000");
+  await p.locator('input[name="amount"]:visible').first().fill("1000");
   await p.getByRole("button", { name: "Pay now" }).first().click();
   await p.waitForURL(/\/pay\//, { timeout: 30_000 }).catch(() => {});
   ok("test checkout opens and says it is a test", (await seen(p, "Test mode")) && (await seen(p, "₹1,000")));
