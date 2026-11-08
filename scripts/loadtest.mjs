@@ -13,7 +13,7 @@ import { loadEnvFile } from "node:process";
 try { loadEnvFile(".env"); } catch { /* variables may come from the environment */ }
 const [base = "http://localhost:3200", usersArg = "200", secondsArg = "30"] = process.argv.slice(2);
 const USERS = Number(usersArg), SECONDS = Number(secondsArg);
-const PAGES = ["/dashboard", "/attendance", "/results", "/fees", "/timetable", "/notices"];
+const PAGES = ["/dashboard", "/attendance", "/results", "/timetable", "/materials", "/calendar"];
 
 const db = new PrismaClient();
 const students = await db.user.findMany({ where: { role: "STUDENT", isActive: true, student: { status: "ACTIVE" } }, select: { id: true, name: true }, take: USERS });

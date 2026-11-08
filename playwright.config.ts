@@ -7,6 +7,8 @@ export const TEST_PORT = 3100;
 /** E2E_PROD=1 runs the tests against a production build: a few minutes to build, then every page opens at once
  *  instead of compiling on first visit (the full run, with its every-page smoke test, needs this). */
 const PROD = process.env.E2E_PROD === "1";
+const MAIL_TEST = process.env.E2E_SMTP_TEST === "1";
+const WEBPACK = process.env.E2E_WEBPACK === "1" ? " --webpack" : "";
 /** Same MySQL server as development, but a separate database, so tests never touch real data. */
 export const TEST_DATABASE_URL = (process.env.DATABASE_URL ?? "").replace(/\/[^/?]+(\?.*)?$/, "/edupilot_test$1");
 
@@ -25,17 +27,20 @@ export default defineConfig({
   webServer: {
     // Creates the test database on first run and brings its tables up to date, then starts the app on it.
     command: PROD
-      ? `npx prisma migrate deploy && npx next build && npx next start -p ${TEST_PORT}`
-      : `npx prisma migrate deploy && npx next dev -p ${TEST_PORT}`,
+      ? `npx prisma migrate deploy && npx next build${WEBPACK} && ${MAIL_TEST ? "node scripts/test-smtp.mjs node node_modules/next/dist/bin/next" : "npx next"} start -p ${TEST_PORT}`
+      : `npx prisma migrate deploy && npx next dev${WEBPACK} -p ${TEST_PORT}`,
     url: `http://localhost:${TEST_PORT}/login`,
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: PROD ? 600_000 : 180_000,
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       NEXT_DIST_DIR: ".next-test",
       APP_URL: `http://localhost:${TEST_PORT}`,
-      // No mail server or payment keys: emails go to the outbox and payments use the test checkout.
-      SMTP_HOST: "", RAZORPAY_KEY_ID: "", RAZORPAY_KEY_SECRET: "",
+      // Test security mail goes to the local outbox, never to a real mailbox.
+      SMTP_HOST: "",
+      SMTP_USER: "",
+      SMTP_PASS: "",
+      SMTP_FROM: "",
     },
   },
 });

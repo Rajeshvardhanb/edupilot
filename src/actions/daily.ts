@@ -1,13 +1,13 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { assertOffering, studentScope } from "@/lib/scope";
-import { notifyRoles, notifyStudents, notifyUsers } from "@/lib/notify";
 import type { ActionState } from "@/lib/action-state";
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { assertOffering,studentScope } from "@/lib/scope";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const day = (s: string) => new Date(`${s}T00:00:00Z`);
 const isoRe = /^\d{4}-\d{2}-\d{2}$/;
@@ -55,9 +55,8 @@ export async function applyLeave(_: ActionState, fd: FormData): Promise<ActionSt
   const from = day(p.data.fromDate), to = day(p.data.toDate);
   if (to < from) return { error: "End date is before the start date." };
   if ((to.getTime() - from.getTime()) / 864e5 > 30) return { error: "A single request can cover at most 30 days." };
-  await db.leaveRequest.create({ data: { studentId: me.studentId!, type: p.data.type, fromDate: from, toDate: to, reason: p.data.reason } });
-  const st = await db.student.findUniqueOrThrow({ where: { id: me.studentId! }, select: { rollNo: true, batch: { select: { program: { select: { departmentId: true } } } } } });
-  await notifyRoles(["HOD"], { title: `Leave request from ${me.name} (${st.rollNo})`, body: p.data.reason, href: "/leave" }, st.batch.program.departmentId);
+  const request = await db.leaveRequest.create({ data: { studentId: me.studentId!, type: p.data.type, fromDate: from, toDate: to, reason: p.data.reason } });
+  notifyAcademic({ type: "leave-request", id: request.id });
   revalidatePath("/leave");
   return { ok: true, message: "Request submitted for approval." };
 }
@@ -80,10 +79,7 @@ export async function reviewLeave(_: ActionState, fd: FormData): Promise<ActionS
     }
   });
   await audit(me.id, decision, "LeaveRequest", req.id, converted ? `${converted} absences → on duty` : undefined);
-  await notifyStudents([req.studentId], (s) => ({
-    title: `Leave request ${decision.toLowerCase()}`, href: "/leave", email: true,
-    body: `The ${req.type === "ON_DUTY" ? "on-duty" : req.type.toLowerCase() + " leave"} request of ${s.name} (${s.rollNo}) for ${req.fromDate.toISOString().slice(0, 10)} to ${req.toDate.toISOString().slice(0, 10)} was ${decision.toLowerCase()} by ${me.name}.`,
-  }));
+  notifyAcademic({ type: "leave-decision", id: req.id });
   revalidatePath("/leave");
   return { ok: true, message: decision === "APPROVED" ? `Approved.${converted ? ` ${converted} absences changed to On-duty.` : ""}` : "Rejected." };
 }
@@ -119,8 +115,7 @@ export async function saveMaterial(_: ActionState, fd: FormData): Promise<Action
       },
     });
     await audit(me.id, "CREATE", "Material", m.id, title);
-    const off = await db.courseOffering.findUniqueOrThrow({ where: { id: offeringId }, select: { subject: { select: { name: true } }, batch: { select: { students: { where: { status: "ACTIVE" }, select: { userId: true } } } } } });
-    await notifyUsers(off.batch.students.map((s) => s.userId), { title: kind === "ASSIGNMENT" ? `New assignment in ${off.subject.name}` : `New material in ${off.subject.name}`, body: title, href: "/materials" });
+    notifyAcademic({ type: "material", id: m.id });
   } catch (e) { return { error: (e as Error).message }; }
   revalidatePath(`/materials/${offeringId}`);
   return { ok: true, message: kind === "NOTE" ? "Material shared with the class." : "Assignment published." };
@@ -150,7 +145,8 @@ export async function submitAssignment(_: ActionState, fd: FormData): Promise<Ac
     const data = { note: note || null, link: link || null, submittedAt: new Date(), ...(file ?? {}) };
     const existing = await db.submission.findUnique({ where: { materialId_studentId: { materialId: m.id, studentId: student.id } }, select: { marks: true } });
     if (existing?.marks != null) return { error: "This assignment has already been graded." };
-    await db.submission.upsert({ where: { materialId_studentId: { materialId: m.id, studentId: student.id } }, create: { materialId: m.id, studentId: student.id, ...data }, update: data });
+    const submitted = await db.submission.upsert({ where: { materialId_studentId: { materialId: m.id, studentId: student.id } }, create: { materialId: m.id, studentId: student.id, ...data }, update: data });
+    notifyAcademic({ type: "submission", id: submitted.id });
   } catch (e) { return { error: (e as Error).message }; }
   revalidatePath("/materials");
   return { ok: true, message: "Submitted." };
@@ -163,8 +159,8 @@ export async function gradeSubmission(_: ActionState, fd: FormData): Promise<Act
   const marks = Number(fd.get("marks"));
   const max = sub.material.maxMarks ?? 100;
   if (!Number.isFinite(marks) || marks < 0 || marks > max) return { error: `Marks must be between 0 and ${max}.` };
-  const graded = await db.submission.update({ where: { id: sub.id }, data: { marks, feedback: String(fd.get("feedback") ?? "").trim() || null }, select: { student: { select: { userId: true } }, material: { select: { title: true } } } });
-  await notifyUsers([graded.student.userId], { title: `Assignment graded: ${marks}/${max}`, body: graded.material.title, href: "/materials" });
+  await db.submission.update({ where: { id: sub.id }, data: { marks, feedback: String(fd.get("feedback") ?? "").trim() || null }, select: { student: { select: { userId: true } }, material: { select: { title: true } } } });
+  notifyAcademic({ type: "graded", id: sub.id });
   revalidatePath(`/materials/${sub.material.offeringId}`);
   return { ok: true, message: "Graded." };
 }
@@ -224,15 +220,13 @@ export async function assignSubstitute(_: ActionState, fd: FormData): Promise<Ac
   const busy = await db.timetableSlot.findFirst({ where: { dayOfWeek: d.getUTCDay(), period, offering: { facultyId, termId: offering.termId } } });
   const alsoCovering = await db.substitution.findFirst({ where: { facultyId, date: d, period } });
   if (busy || alsoCovering) return { error: "This faculty member already has a class in that period." };
-  await db.substitution.upsert({
+  const substitute = await db.substitution.upsert({
     where: { offeringId_date_period: { offeringId, date: d, period } },
     create: { offeringId, date: d, period, facultyId, reason: String(fd.get("reason") ?? "").trim() || null },
     update: { facultyId, reason: String(fd.get("reason") ?? "").trim() || null },
   });
   await audit(me.id, "SUBSTITUTE", "CourseOffering", offeringId, `${date} P${period}`);
-  const sub = await db.faculty.findUniqueOrThrow({ where: { id: facultyId }, select: { userId: true } });
-  const subj = await db.subject.findUniqueOrThrow({ where: { id: offering.subjectId }, select: { name: true } });
-  await notifyUsers([sub.userId], { title: `Substitute class on ${date}, period ${period}`, body: `You have been asked to take ${subj.name}. You can mark its attendance from the Attendance page.`, href: "/attendance", email: true });
+  notifyAcademic({ type: "substitution", id: substitute.id });
   revalidatePath("/attendance/substitutions");
   return { ok: true, message: "Substitute assigned. They can now take attendance for this class." };
 }

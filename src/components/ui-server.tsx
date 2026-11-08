@@ -5,11 +5,7 @@ import * as ui from "./ui";
 import { cardIcon } from "./card-icons";
 import { PhotoBanner } from "./hero";
 
-/**
- * The same building blocks as ./ui, but any plain-text title, label or heading is shown in the
- * signed-in person's language when the dictionary has it. Server Components use these;
- * Client Components keep using ./ui (they cannot read the language cookie).
- */
+/** Server presentation helpers shared by the academic pages. Labels remain in English. */
 const tr = async (v: ReactNode) => (typeof v === "string" ? (await getT())(v) : v);
 
 export async function PageHeader(p: ComponentProps<typeof ui.PageHeader>) {

@@ -1,59 +1,12 @@
-import { getT } from "@/lib/i18n-server";
-import Link from "next/link";
-import { Pin, Megaphone, ClipboardCheck } from "lucide-react";
-import type { NoticeAudience } from "@prisma/client";
-import { db } from "@/lib/db";
-import { Badge } from "@/components/ui";
-import { Card } from "@/components/ui-server";
 import { ScheduleIllustration } from "@/components/illustrations";
 import { PERIOD_TIMES } from "@/components/timetable-grid";
-import { DAYS, fmtDate } from "@/lib/format";
+import { Badge } from "@/components/ui";
+import { Card } from "@/components/ui-server";
+import { DAYS } from "@/lib/format";
+import { getT } from "@/lib/i18n-server";
 import { cn } from "@/lib/utils";
-
-/** A notice's tag and colour: from its subject when it is about exams or fees, otherwise its audience. */
-export function noticeTag(title: string, audience: NoticeAudience) {
-  if (/exam|hall ticket|result/i.test(title)) return { label: "Exams", color: "#6366f1" };
-  if (/fee|payment|scholarship/i.test(title)) return { label: "Fees", color: "#10a26b" };
-  if (/hackathon|fest|event|sports|workshop/i.test(title)) return { label: "Events", color: "#0ea5e9" };
-  if (audience === "FACULTY") return { label: "Faculty", color: "#8b5cf6" };
-  if (audience === "STUDENTS") return { label: "Students", color: "#e11d48" };
-  return { label: "Everyone", color: "#6366f1" };
-}
-
-export async function RecentNotices({ audiences }: { audiences: NoticeAudience[] }) {
-  const t = await getT();
-  const notices = await db.notice.findMany({
-    where: { audience: { in: audiences } },
-    include: { createdBy: { select: { name: true } } },
-    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-    take: 4,
-  });
-  return (
-    <Card title={t("Notice board")} actions={<Link href="/notices" className="text-sm font-semibold text-brand">View all →</Link>}>
-      {notices.length === 0 ? <p className="text-sm text-muted">No notices.</p> : (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {notices.map((n) => {
-            const tag = noticeTag(n.title, n.audience);
-            return (
-              <li key={n.id} className="flex flex-col rounded-xl border p-3.5" style={{ borderColor: `color-mix(in oklab, ${tag.color} 22%, white)`, backgroundImage: n.pinned ? `linear-gradient(160deg, color-mix(in oklab, ${tag.color} 10%, white), white 70%)` : undefined }}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5">
-                    <Megaphone aria-hidden className="size-3.5" style={{ color: tag.color }} />
-                    <span className="rounded-full px-2 py-px text-[11px] font-semibold" style={{ color: `color-mix(in oklab, ${tag.color} 72%, black)`, background: `color-mix(in oklab, ${tag.color} 12%, white)` }}>{t(tag.label)}</span>
-                  </span>
-                  {n.pinned && <Pin aria-label="Pinned" className="size-3.5 shrink-0" style={{ color: tag.color }} />}
-                </div>
-                <p className="mt-2.5 text-sm leading-snug font-semibold">{n.title}</p>
-                <p className="mt-1 line-clamp-2 text-xs text-muted">{n.body}</p>
-                <p className="mt-auto pt-2.5 text-[11px] text-muted">{fmtDate(n.createdAt)} · {n.createdBy?.name ?? "Office"}</p>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Card>
-  );
-}
+import { ClipboardCheck } from "lucide-react";
+import Link from "next/link";
 
 type SlotWithOffering = {
   period: number;

@@ -30,21 +30,25 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "prisma/**/*.ts",
+    "tests/**/*.ts",
+    "*.ts",
+    "scripts/**/*.mts",
+    "*.mts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
     ".next-test/types/**/*.ts",
     ".next-test/dev/types/**/*.ts",
-    ".next-check/types/**/*.ts",
-    ".next-check/dev/types/**/*.ts",
-    ".next-load/types/**/*.ts",
-    ".next-load/dev/types/**/*.ts",
     ".next-deploy/types/**/*.ts",
     ".next-deploy/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next-test",
+    ".next-check",
+    ".next-load",
+    ".next-deploy"
   ]
 }

@@ -1,17 +1,16 @@
+import { AttendanceHeatmap } from "@/components/attendance-heatmap";
+import { Badge,LinkButton,Progress,Ring,Td } from "@/components/ui";
+import { Card,EmptyState,PageHeader,Table,Th } from "@/components/ui-server";
+import { attendanceSummary } from "@/lib/attendance";
+import { requireUser,type CurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { batchLabel,fmtDate,isoDate,pct,titleCase } from "@/lib/format";
+import { classesToReach } from "@/lib/grading";
 import { getT } from "@/lib/i18n-server";
 import { learnerId } from "@/lib/learner";
-import Link from "next/link";
+import { getRules,toneFor } from "@/lib/rules";
+import { currentTerm,offeringScope } from "@/lib/scope";
 import { FileWarning } from "lucide-react";
-import { requireUser, type CurrentUser } from "@/lib/auth";
-import { AttendanceHeatmap } from "@/components/attendance-heatmap";
-import { db } from "@/lib/db";
-import { currentTerm, offeringScope } from "@/lib/scope";
-import { attendanceSummary } from "@/lib/attendance";
-import { getRules, toneFor } from "@/lib/rules";
-import { classesToReach } from "@/lib/grading";
-import { batchLabel, fmtDate, isoDate, pct, titleCase } from "@/lib/format";
-import { Badge, LinkButton, Progress, Ring, Td } from "@/components/ui";
-import { Card, EmptyState, PageHeader, Th, Table } from "@/components/ui-server";
 
 export const metadata = { title: "Attendance" };
 
@@ -42,7 +41,7 @@ async function StaffAttendance({ user }: { user: CurrentUser }) {
   const today = isoDate(new Date());
   return (
     <>
-      <PageHeader title="Attendance" subtitle={`${term?.name} · ${offerings.length} courses`} actions={<>{user.role !== "FACULTY" && <LinkButton variant="secondary" href="/attendance/substitutions">Substitute classes</LinkButton>}<LinkButton variant="secondary" href="/attendance/report"><FileWarning className="size-4" /> Shortage report</LinkButton></>} />
+      <PageHeader illustration="learning" title="Attendance" subtitle={`${term?.name} · ${offerings.length} courses`} actions={<>{user.role !== "FACULTY" && <LinkButton variant="secondary" href="/attendance/substitutions">Substitute classes</LinkButton>}<LinkButton variant="secondary" href="/attendance/report"><FileWarning className="size-4" /> Shortage report</LinkButton></>} />
       <Card>
         {offerings.length === 0 ? <EmptyState title="No courses allocated" action={(user.role === "ADMIN" || user.role === "HOD") && <LinkButton variant="secondary" href="/academics/allocation">Allocate courses</LinkButton>}>Attendance is marked per course. Courses appear here once they are created for this term and given a teacher.</EmptyState> : (
           <Table>
@@ -94,7 +93,7 @@ async function StudentAttendance({ user }: { user: CurrentUser }) {
   const who = user.role === "PARENT" ? (await db.user.findFirst({ where: { student: { id: student.id } }, select: { name: true } }))?.name.split(" ")[0] ?? "Your child" : null;
   return (
     <>
-      <PageHeader title={who ? `${who}'s attendance` : t("My attendance")} subtitle={`${term?.name} · overall ${overall}% (${totals.a}/${totals.t} classes)`} />
+      <PageHeader illustration="learning" title={who ? `${who}'s attendance` : t("My attendance")} subtitle={`${term?.name} · overall ${overall}% (${totals.a}/${totals.t} classes)`} />
       {/* Where the student stands against the attendance rule, in one sentence. */}
       <section className={`mb-6 flex items-center gap-4 rounded-[var(--radius-panel)] border p-4 sm:p-5 ${safe ? "border-[#d6f0ec] bg-gradient-to-r from-[#f0fbf9] via-white to-[#f0f7ff]" : "border-[#fbd5dd] bg-gradient-to-r from-[#fff5f7] via-white to-[#fffaf0]"}`}>
         <Ring value={overall} size={84} stroke={8} tone={safe ? "success" : overall >= ATTENDANCE_CONDONABLE ? "warning" : "danger"}>
@@ -152,7 +151,7 @@ async function StudentAttendance({ user }: { user: CurrentUser }) {
               {absences.map((a) => <li key={a.id} className="flex justify-between gap-2"><span className="truncate">{a.session.offering.subject.name}</span><span className="text-xs whitespace-nowrap text-muted">{fmtDate(a.session.date)} · P{a.session.period}</span></li>)}
             </ul>
           )}
-          <p className="mt-4 text-xs text-muted">Contact your faculty within 3 days if any entry is wrong. <Link href="/notices" className="text-brand">Notices</Link></p>
+          <p className="mt-4 text-xs text-muted">Contact your faculty within 3 days if any entry is wrong.</p>
         </Card>
       </div>
     </>

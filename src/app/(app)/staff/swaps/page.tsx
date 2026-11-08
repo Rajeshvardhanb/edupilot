@@ -1,12 +1,11 @@
+import { requestSwap,respondSwap } from "@/actions/staff";
+import { ActionButton,ActionForm,SubmitButton } from "@/components/forms";
+import { Badge,Field,Td,type Tone } from "@/components/ui";
+import { Card,EmptyState,PageHeader,Table,Th } from "@/components/ui-server";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { batchLabel,DAYS,fmtDate,titleCase } from "@/lib/format";
 import { currentTerm } from "@/lib/scope";
-import { batchLabel, DAYS, fmtDate, titleCase } from "@/lib/format";
-import { requestSwap, respondSwap } from "@/actions/staff";
-import { ActionButton, ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Field, Td, type Tone } from "@/components/ui";
-import { Card, EmptyState, PageHeader, Tabs, Th, Table } from "@/components/ui-server";
-import { staffTabs } from "../tabs";
 
 export const metadata = { title: "Class swaps" };
 const TONE: Record<string, Tone> = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" };
@@ -24,8 +23,7 @@ export default async function SwapsPage() {
   ]);
   return (
     <>
-      <PageHeader title="Staff" subtitle="Ask a colleague to take one of your periods. When they accept, the class appears on their Attendance page for that date." />
-      <Tabs active="/staff/swaps" items={staffTabs(user.role)} />
+      <PageHeader title="Class swaps" subtitle="Ask a colleague to take one of your periods. When they accept, the class appears on their Attendance page for that date." />
       <div className="grid gap-6 lg:grid-cols-3">
         {user.facultyId && (
           <Card title="Request a swap" className="h-fit">

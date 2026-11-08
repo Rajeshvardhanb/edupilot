@@ -31,7 +31,7 @@ export function Sidebar({ user, open, onClose, term, brand, t }: { user: ShellUs
   const toggle = (g: string) => setOpened((o) => { const n = new Set(o); if (n.has(g)) n.delete(g); else n.add(g); return n; });
 
   const college = (
-    <div className="flex items-center gap-2.5 rounded-xl border border-[#dbe7fb] bg-gradient-to-r from-[#eef3ff] to-[#eefbff] p-2.5">
+    <div className="sidebar-college flex items-center gap-2.5 rounded-xl border p-2.5">
       {brand.hasLogo
         // eslint-disable-next-line @next/next/no-img-element
         ? <img src="/brand/logo" alt="" className="size-8 shrink-0 rounded-full bg-white object-contain ring-1 ring-line" />

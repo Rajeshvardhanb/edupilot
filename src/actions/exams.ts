@@ -1,16 +1,15 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
-import { db } from "@/lib/db";
-import { notifyUsers } from "@/lib/notify";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { assertOffering, currentTerm } from "@/lib/scope";
-import { backlogSubjects } from "@/lib/eligibility";
-import { getInstitution } from "@/lib/institution";
 import type { ActionState } from "@/lib/action-state";
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { backlogSubjects } from "@/lib/eligibility";
+import { assertOffering,currentTerm } from "@/lib/scope";
+import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const day = (s: string) => new Date(`${s}T00:00:00Z`);
 const isoRe = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,8 +30,9 @@ export async function saveExam(_: ActionState, fd: FormData): Promise<ActionStat
     include: { subject: true },
   });
   if (clash) return { error: `Clash: the same batch has ${clash.subject.name} in that session.` };
-  await db.examSchedule.upsert({ where: { termId_subjectId_kind: { termId: term.id, subjectId, kind } }, create: { termId: term.id, subjectId, kind, date: day(date), session }, update: { date: day(date), session } });
+  const exam = await db.examSchedule.upsert({ where: { termId_subjectId_kind: { termId: term.id, subjectId, kind } }, create: { termId: term.id, subjectId, kind, date: day(date), session }, update: { date: day(date), session } });
   await audit(me.id, "SCHEDULE", "Exam", subjectId, `${date} ${session}`);
+  notifyAcademic({ type: "exam", id: exam.id });
   revalidatePath("/exams/schedule");
   return { ok: true, message: "Exam scheduled." };
 }
@@ -91,7 +91,7 @@ export async function generateSeating(_: ActionState, fd: FormData): Promise<Act
 // ───────── Invigilation duty ─────────
 /**
  * Puts one teacher in each hall for an exam session. Halls with seated students are covered (all halls
- * if seating has not been generated yet). Teachers on approved leave that day are skipped, and those
+ * if seating has not been generated yet). Those
  * with the fewest duties so far this term are chosen first, so the load is shared evenly.
  */
 export async function assignInvigilators(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -105,18 +105,18 @@ export async function assignInvigilators(_: ActionState, fd: FormData): Promise<
   const rooms = await db.examRoom.findMany({ where: seated.length ? { id: { in: seated.map((s) => s.roomId) } } : {}, orderBy: { name: "asc" } });
   if (!rooms.length) return { error: "Add exam halls first." };
 
-  const onLeave = await db.staffLeave.findMany({ where: { status: "APPROVED", fromDate: { lte: day(date) }, toDate: { gte: day(date) } }, select: { userId: true } });
-  const faculty = await db.faculty.findMany({ where: { user: { isActive: true, id: { notIn: onLeave.map((l) => l.userId) } } }, select: { id: true, employeeId: true, userId: true } });
+  const faculty = await db.faculty.findMany({ where: { user: { isActive: true } }, select: { id: true, employeeId: true, userId: true } });
   const load = new Map((await db.invigilationDuty.groupBy({ by: ["facultyId"], where: { date: { gte: term.startDate, lte: term.endDate }, NOT: { date: day(date), session } }, _count: true })).map((g) => [g.facultyId, g._count]));
   const pool = faculty.sort((a, b) => (load.get(a.id) ?? 0) - (load.get(b.id) ?? 0) || a.employeeId.localeCompare(b.employeeId));
-  if (pool.length < rooms.length) return { error: `${rooms.length} halls need a teacher but only ${pool.length} are available that day.` };
+  if (pool.length < rooms.length) return { error: `${rooms.length} halls need a teacher but only ${pool.length} are available.` };
 
   const picked = rooms.map((r, i) => ({ date: day(date), session, roomId: r.id, facultyId: pool[i].id }));
   await db.$transaction([db.invigilationDuty.deleteMany({ where: { date: day(date), session } }), db.invigilationDuty.createMany({ data: picked })]);
   await audit(me.id, "INVIGILATION", "Exam", undefined, `${date} ${session}: ${picked.length} halls`);
-  await notifyUsers(rooms.map((_, i) => pool[i].userId), { title: `Invigilation duty on ${date} (${session === "FN" ? "forenoon" : "afternoon"})`, body: "You have been assigned to supervise an exam hall. The hall is shown on the exam schedule.", href: "/exams/schedule", email: true });
+  const duties = await db.invigilationDuty.findMany({ where: { date: day(date), session }, select: { id: true } });
+  for (const duty of duties) notifyAcademic({ type: "invigilation", id: duty.id });
   revalidatePath("/exams/schedule");
-  return { ok: true, message: `${picked.length} hall(s) covered. The teachers have been notified.` };
+  return { ok: true, message: `${picked.length} hall(s) covered. Assignments are shown on the exam schedule.` };
 }
 
 export async function removeInvigilator(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -136,25 +136,15 @@ export async function registerSupplementary(_: ActionState, fd: FormData): Promi
   const already = new Set((await db.supplementaryRegistration.findMany({ where: { studentId: me.studentId!, termId: term.id } })).map((r) => r.subjectId));
   const picked = fd.getAll("subjectId").map(String).filter((id) => allowed.has(id) && !already.has(id));
   if (!picked.length) return { error: "Select at least one backlog subject." };
-  const inst = await getInstitution();
-  const amount = picked.length * inst.supplementaryFee;
-  const year = new Date().getFullYear();
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const last = await db.feeInvoice.findFirst({ where: { invoiceNo: { startsWith: `SUP-${year}-` } }, orderBy: { invoiceNo: "desc" } });
-      const no = `SUP-${year}-${String((last ? Number(last.invoiceNo.slice(-5)) : 0) + 1).padStart(5, "0")}`;
-      await db.$transaction(async (tx) => {
-        const inv = await tx.feeInvoice.create({ data: { invoiceNo: no, studentId: me.studentId!, title: `Supplementary exam fee — ${picked.map((id) => allowed.get(id)!.code).join(", ")}`, amount, dueDate: new Date(Date.now() + 10 * 864e5) } });
-        await tx.supplementaryRegistration.createMany({ data: picked.map((subjectId) => ({ studentId: me.studentId!, subjectId, termId: term.id, invoiceId: inv.id })) });
-      });
-      await audit(me.id, "REGISTER", "Supplementary", undefined, `${picked.length} subjects`);
-      revalidatePath("/exams/supplementary");
-      return { ok: true, message: `Registered for ${picked.length} subject(s). A fee invoice of ₹${amount} has been raised.` };
-    } catch (e) {
-      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
-    }
-  }
-  return { error: "Could not register, please try again." };
+  await db.supplementaryRegistration.createMany({
+    data: [...new Set(picked)].map((subjectId) => ({ studentId: me.studentId!, subjectId, termId: term.id })),
+    skipDuplicates: true,
+  });
+  await audit(me.id, "REGISTER", "Supplementary", undefined, `${picked.length} subjects`);
+  const registrations = await db.supplementaryRegistration.findMany({ where: { studentId: me.studentId!, termId: term.id, subjectId: { in: picked } }, select: { id: true } });
+  for (const r of registrations) notifyAcademic({ type: "supplementary", id: r.id });
+  revalidatePath("/exams/supplementary");
+  return { ok: true, message: "Supplementary registration completed." };
 }
 
 // ───────── Electives ─────────
@@ -183,12 +173,13 @@ export async function chooseElective(_: ActionState, fd: FormData): Promise<Acti
   const existing = await db.electiveChoice.findUnique({ where: { studentId_semester: { studentId: student.id, semester: option.subject.semester } } });
   if (existing?.optionId === option.id) return { ok: true, message: "Already selected." };
   if (option._count.choices >= option.seatLimit) return { error: "This elective is full." };
-  await db.electiveChoice.upsert({
+  const choice = await db.electiveChoice.upsert({
     where: { studentId_semester: { studentId: student.id, semester: option.subject.semester } },
     create: { studentId: student.id, optionId: option.id, semester: option.subject.semester },
     update: { optionId: option.id },
   });
   revalidatePath("/exams/electives");
+  notifyAcademic({ type: "elective", id: choice.id });
   return { ok: true, message: `You are enrolled in ${option.subject.name}.` };
 }
 

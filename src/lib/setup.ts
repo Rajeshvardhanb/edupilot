@@ -21,14 +21,9 @@ export const SETUP_KINDS = {
     help: "type is THEORY, LAB, PROJECT, ELECTIVE or AUDIT. Hours default to 3-0-0 and marks to 40 internal + 60 external.",
   },
   faculty: {
-    label: "Faculty", columns: ["employeeId", "name", "email", "phone", "department", "designation", "qualification", "specialization", "joiningDate"], required: ["employeeId", "name", "email", "department", "designation"],
-    sample: [["EMP001", "Dr. Vivaan Patel", "vivaan@college.edu", "9800000001", "CSE", "Professor", "Ph.D", "Compilers", "2014-06-15"]],
-    help: "Each teacher gets a login; the first password is the employee ID in lowercase and must be changed at first sign-in. joiningDate is YYYY-MM-DD.",
-  },
-  fees: {
-    label: "Fee structures", columns: ["program", "yearOfStudy", "academicYear", "head", "amount"], required: ["program", "yearOfStudy", "academicYear", "head", "amount"],
-    sample: [["BTCSE", "1", "2026-27", "Tuition Fee", "85000"], ["BTCSE", "1", "2026-27", "Examination Fee", "3500"], ["BTCSE", "2", "2026-27", "Tuition Fee", "85000"]],
-    help: "One row per fee head. Rows with the same programme, year of study and academic year become one fee structure.",
+    label: "Teacher accounts", columns: ["employeeId", "name", "email", "department"], required: ["employeeId", "name", "email", "department"],
+    sample: [["EMP001", "Dr. Vivaan Patel", "vivaan@college.edu", "CSE"]],
+    help: "Basic teaching accounts for academic activities. The temporary password is the employee ID in lowercase and must be changed at first sign-in.",
   },
 } as const;
 

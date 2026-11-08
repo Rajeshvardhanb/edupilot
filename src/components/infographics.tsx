@@ -43,7 +43,7 @@ export function Funnel({ stages }: { stages: { label: string; value: number; col
   );
 }
 
-/** Single stacked bar with legend, e.g. fee status split. Segments separated by 2px surface gaps. */
+/** Single stacked bar with legend, e.g. attendance status split. Segments separated by 2px surface gaps. */
 export function StackedBar({ data, format = (n: number) => String(n) }: { data: { label: string; value: number; color: string }[]; format?: (n: number) => string }) {
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
   return (

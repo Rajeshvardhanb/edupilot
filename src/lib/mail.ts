@@ -1,64 +1,61 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import nodemailer, { type Transporter } from "nodemailer";
+import { z } from "zod";
 import { db } from "./db";
 import { getInstitution } from "./institution";
+import { renderEmail, type EmailContent } from "./email-template";
 
-/**
- * Email goes out through any SMTP server (Gmail, Outlook, your host…) set in .env:
- * SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM. Without those, messages are
- * recorded in the outbox (Administration → Email outbox) but not delivered.
- */
-export const mailConfigured = () => !!process.env.SMTP_HOST;
-
+export const mailConfigured = () => !!process.env.SMTP_HOST?.trim();
 let transporter: Transporter | null = null;
 function transport() {
   if (!transporter) {
-    const port = Number(process.env.SMTP_PORT ?? 587);
+    const port = Number(process.env.SMTP_PORT || 587);
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST, port, secure: port === 465,
-      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+      host: process.env.SMTP_HOST?.trim(), port, secure: port === 465,
+      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER.trim(), pass: process.env.SMTP_PASS } : undefined,
+      connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000,
     });
   }
   return transporter;
 }
+export type Mail = EmailContent & { to: string; /** Stable event key prevents duplicate sends, including concurrent requests. */ key?: string; /** Codes and reset tokens must not remain in the outbox. */ logText?: string };
+export type MailStatus = "SENT" | "FAILED" | "NOT_CONFIGURED" | "SKIPPED";
+export const PRIVATE_EMAIL_LOG = "[PRIVATE CONTENT OMITTED]";
 
-const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-const isRealAddress = (to: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to);
-
-export type Mail = { to: string; subject: string; text: string; link?: { label: string; url: string } };
-
-/** Sends one email and always writes it to the outbox. Never throws: alerts must not break the action that triggered them. */
-export async function sendMail(mail: Mail): Promise<"SENT" | "FAILED" | "NOT_CONFIGURED"> {
-  let status: "SENT" | "FAILED" | "NOT_CONFIGURED" = "NOT_CONFIGURED";
-  let error: string | null = null;
-  const body = mail.link ? `${mail.text}\n\n${mail.link.label}: ${mail.link.url}` : mail.text;
+/** Reserve an outbox row before SMTP; mail failures never undo the academic operation. */
+export async function sendMail(mail: Mail): Promise<MailStatus> {
+  const to = mail.to.trim().toLowerCase();
+  const id = mail.key ? `mail_${createHash("sha256").update(`${mail.key}:${to}`).digest("hex")}` : undefined;
+  let row: { id: string };
   try {
-    if (mailConfigured() && isRealAddress(mail.to)) {
+    row = await db.emailLog.create({ data: { ...(id ? { id } : {}), to, subject: mail.subject.slice(0, 190), body: mail.logText ? `${PRIVATE_EMAIL_LOG}\n${mail.logText}` : [mail.text, ...(mail.details ?? []).map(d => `${d.label}: ${d.value}`), ...(mail.link ? [`${mail.link.label}: ${mail.link.url}`] : [])].join("\n"), status: "SENDING" } });
+  } catch (e) {
+    if (id && typeof e === "object" && e !== null && "code" in e && e.code === "P2002") return "SKIPPED";
+    console.error("Email could not be recorded; delivery was not attempted.");
+    return "FAILED";
+  }
+  let status: Exclude<MailStatus, "SKIPPED"> = "NOT_CONFIGURED";
+  let error: string | null = null;
+  try {
+    if (!z.email().safeParse(to).success || /[\r\n]/.test(mail.subject)) throw new Error("Invalid recipient address or subject.");
+    if (mailConfigured()) {
       const inst = await getInstitution();
-      const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto;color:#0f172a">
-        <div style="background:${inst.brandColor};color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-weight:600">${escapeHtml(inst.name)}</div>
-        <div style="border:1px solid #e5e9f0;border-top:0;padding:20px;border-radius:0 0 12px 12px">
-          <h2 style="margin:0 0 12px;font-size:17px">${escapeHtml(mail.subject)}</h2>
-          <p style="white-space:pre-line;line-height:1.6;margin:0">${escapeHtml(mail.text)}</p>
-          ${mail.link ? `<p style="margin:20px 0 0"><a href="${escapeHtml(mail.link.url)}" style="background:${inst.brandColor};color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">${escapeHtml(mail.link.label)}</a></p>` : ""}
-        </div>
-        <p style="color:#64748b;font-size:12px;margin-top:12px">This is an automated message from ${escapeHtml(inst.name)}.</p></div>`;
-      await transport().sendMail({ from: process.env.SMTP_FROM ?? `"${inst.shortName}" <${process.env.SMTP_USER}>`, to: mail.to, subject: mail.subject, text: body, html });
+      const rendered = renderEmail(mail, inst);
+      const result = await transport().sendMail({ from: process.env.SMTP_FROM?.trim() || `"${inst.shortName}" <${process.env.SMTP_USER}>`, to, subject: mail.subject, ...rendered });
+      if (!result.accepted?.length || result.rejected?.length) throw new Error("SMTP server did not accept the recipient.");
       status = "SENT";
     }
   } catch (e) {
     status = "FAILED";
-    error = e instanceof Error ? e.message.slice(0, 500) : String(e);
+    error = e instanceof Error ? e.message.slice(0, 500) : "Email delivery failed.";
+    if (process.env.SMTP_PASS) error = error.replaceAll(process.env.SMTP_PASS, "[redacted]");
   }
-  try {
-    await db.emailLog.create({ data: { to: mail.to, subject: mail.subject.slice(0, 190), body, status, error } });
-  } catch (e) {
-    console.error("email log failed", e);
-  }
+  try { await db.emailLog.update({ where: { id: row.id }, data: { status, error } }); }
+  catch { console.error("Email outcome could not be recorded; check the SENDING outbox row before resending."); }
   return status;
 }
 
-/** Absolute URL for links inside emails. Set APP_URL in production. */
 export function appUrl(path: string) {
   return `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}${path}`;
 }

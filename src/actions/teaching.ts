@@ -1,16 +1,16 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { assertOffering, currentTerm, programScope } from "@/lib/scope";
-import { offeringResults } from "@/lib/results";
-import { recordAttendance } from "@/lib/attendance-core";
-import { DAYS } from "@/lib/format";
-import { notifyStudents } from "@/lib/notify";
 import type { ActionState } from "@/lib/action-state";
+import { recordAttendance } from "@/lib/attendance-core";
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { DAYS } from "@/lib/format";
+import { offeringResults } from "@/lib/results";
+import { assertOffering,currentTerm,programScope } from "@/lib/scope";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 // ───────── Timetable ─────────
 
@@ -50,6 +50,7 @@ export async function saveTimetable(_: ActionState, fd: FormData): Promise<Actio
     db.timetableSlot.createMany({ data: entries.map((e) => ({ ...e, batchId })) }),
   ]);
   await audit(me.id, "SAVE", "Timetable", batchId, `${entries.length} slots`);
+  notifyAcademic({ type: "timetable", id: batchId });
   revalidatePath("/timetable");
   return { ok: true, message: `Timetable saved (${entries.length} periods).` };
 }
@@ -61,7 +62,10 @@ export async function saveAttendance(_: ActionState, fd: FormData): Promise<Acti
   const offeringId = String(fd.get("offeringId"));
   const marks = Object.fromEntries([...fd].filter(([k]) => k.startsWith("s_")).map(([k, v]) => [k.slice(2), String(v)]));
   const result = await recordAttendance(me, { offeringId, date: String(fd.get("date")), period: Number(fd.get("period")), topic: String(fd.get("topic") ?? "").trim().slice(0, 200), marks });
-  if (result.ok) revalidatePath(`/attendance/${offeringId}`);
+  if (result.ok) {
+    revalidatePath(`/attendance/${offeringId}`);
+    notifyAcademic({ type: "attendance", id: offeringId, date: String(fd.get("date")) });
+  }
   return result;
 }
 
@@ -167,7 +171,10 @@ export async function publishResults(_: ActionState, fd: FormData): Promise<Acti
   const me = await requireUser(["ADMIN", "HOD"]);
   const offeringId = String(fd.get("offeringId"));
   try { await assertOffering(me, offeringId); } catch (e) { return { error: (e as Error).message }; }
-  const { offering, rows } = await offeringResults(offeringId);
+  const { offering, rows: allRows } = await offeringResults(offeringId);
+  // Lateral entrants did not take earlier-semester courses; match the preview's enrollment rule.
+  const rows = allRows.filter(({ student }) => student.entrySemester <= offering.subject.semester);
+  if (offering.resultsPublished) return { ok: true, message: "These results are already published." };
   if (!offering.assessments.some((a) => a.type === "END_SEM")) return { error: "Add the end-semester exam and its marks before publishing." };
   const incomplete = rows.filter((r) => !r.result.complete).length;
   if (incomplete) return { error: `${incomplete} students have missing marks. Enter marks (or AB) for everyone first.` };
@@ -183,10 +190,7 @@ export async function publishResults(_: ActionState, fd: FormData): Promise<Acti
     db.courseOffering.update({ where: { id: offeringId }, data: { resultsPublished: true } }),
   ]);
   await audit(me.id, "PUBLISH", "Results", offeringId, `${rows.length} students`);
-  await notifyStudents(rows.map((r) => r.student.id), (s) => ({
-    title: `Result published: ${offering.subject.name}`, href: "/results", email: true,
-    body: `The result for ${offering.subject.name} (${offering.subject.code}) is now available for ${s.name} (${s.rollNo}). Sign in to the portal to view the grade card.`,
-  }));
+  notifyAcademic({ type: "results", id: offeringId });
 
   revalidatePath(`/exams/${offeringId}`);
   return { ok: true, message: `Results published for ${rows.length} students.` };
@@ -195,11 +199,13 @@ export async function publishResults(_: ActionState, fd: FormData): Promise<Acti
 export async function unpublishResults(_: ActionState, fd: FormData): Promise<ActionState> {
   const me = await requireUser(["ADMIN"]);
   const offeringId = String(fd.get("offeringId"));
+  const affected = await db.subjectResult.findMany({ where: { offeringId }, select: { studentId: true } });
   await db.$transaction([
     db.subjectResult.deleteMany({ where: { offeringId } }),
     db.courseOffering.update({ where: { id: offeringId }, data: { resultsPublished: false } }),
   ]);
   await audit(me.id, "UNPUBLISH", "Results", offeringId);
+  notifyAcademic({ type: "student-update", id: `withdraw:${offeringId}:${Date.now()}`, studentIds: affected.map(r => r.studentId), message: "A previously published course result was withdrawn for review. Check the portal for the latest publication status." });
   revalidatePath(`/exams/${offeringId}`);
   return { ok: true, message: "Results withdrawn; marks are editable again." };
 }

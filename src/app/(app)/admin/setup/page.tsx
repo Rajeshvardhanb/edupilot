@@ -1,14 +1,14 @@
-import Link from "next/link";
-import { Building2, CalendarRange, Check, Download, FileSpreadsheet, GraduationCap, Layers, Palette, Users, Wallet, BookOpen, ArrowRight } from "lucide-react";
+import { importSetup } from "@/actions/setup";
+import { ActionForm,SubmitButton } from "@/components/forms";
+import { Gauge } from "@/components/infographics";
+import { Badge,LinkButton } from "@/components/ui";
+import { PageHeader,Tabs } from "@/components/ui-server";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getInstitution } from "@/lib/institution";
-import { SETUP_KINDS, setupTemplate, type SetupKind } from "@/lib/setup";
-import { importSetup } from "@/actions/setup";
-import { ActionForm, SubmitButton } from "@/components/forms";
-import { Gauge } from "@/components/infographics";
-import { Badge, LinkButton } from "@/components/ui";
-import { PageHeader, Tabs } from "@/components/ui-server";
+import { SETUP_KINDS,setupTemplate,type SetupKind } from "@/lib/setup";
+import { ArrowRight,BookOpen,Building2,CalendarRange,Check,Download,FileSpreadsheet,GraduationCap,Layers,Palette,Users } from "lucide-react";
+import Link from "next/link";
 import { ADMIN_TABS } from "../tabs";
 
 export const metadata = { title: "College setup" };
@@ -18,22 +18,21 @@ type Step = { n: number; title: string; why: string; done: boolean; status: stri
 /** A guided checklist for bringing a new college onto the system, with spreadsheet import for the bulk steps. */
 export default async function SetupPage() {
   await requireUser(["ADMIN"]);
-  const [inst, depts, programs, terms, currentTerm, batches, subjects, faculty, structures, students] = await Promise.all([
+  const [inst, depts, programs, terms, currentTerm, batches, subjects, faculty, students] = await Promise.all([
     getInstitution(), db.department.count(), db.program.count(), db.term.count(), db.term.count({ where: { isCurrent: true } }),
-    db.batch.count(), db.subject.count(), db.faculty.count(), db.feeStructure.count(), db.student.count(),
+    db.batch.count(), db.subject.count(), db.faculty.count(), db.student.count(),
   ]);
   const branded = !!inst.address && !!inst.principalName;
   const count = (n: number, one: string, many = `${one}s`) => (n ? `${n.toLocaleString("en-IN")} ${n === 1 ? one : many}` : "Not started");
   const steps: Step[] = [
-    { n: 1, title: "College details", why: "Name, logo, address and principal. These print on every receipt, hall ticket and certificate.", done: branded, status: branded ? inst.name : "Address or principal's name is missing", href: "/admin/settings", action: "Open branding", icon: Palette },
+    { n: 1, title: "College details", why: "Name, logo, address and principal. These print on hall tickets and academic documents.", done: branded, status: branded ? inst.name : "Address or principal's name is missing", href: "/admin/settings", action: "Open branding", icon: Palette },
     { n: 2, title: "Departments", why: "The branches of the college, such as CSE or Mechanical.", done: depts > 0, status: count(depts, "department"), href: "/academics", action: "Add one by one", icon: Building2, kind: "departments" },
     { n: 3, title: "Programmes", why: "The courses each department offers: Diploma, B.Tech, M.Tech.", done: programs > 0, status: count(programs, "programme"), href: "/academics/programs", action: "Add one by one", icon: GraduationCap, kind: "programs" },
     { n: 4, title: "Academic term", why: "The current semester's dates. Attendance, timetable and dashboards all follow it.", done: currentTerm > 0, status: currentTerm ? count(terms, "term") : terms ? "No term is marked current" : "Not started", href: "/academics/terms", action: "Add the term", icon: CalendarRange },
     { n: 5, title: "Batches and sections", why: "Each admission year and section of a programme, with the semester it is in now.", done: batches > 0, status: count(batches, "batch", "batches"), href: "/academics/batches", action: "Add one by one", icon: Layers, kind: "batches" },
     { n: 6, title: "Curriculum", why: "Every subject with its semester, credits, hours and marks split.", done: subjects > 0, status: count(subjects, "subject"), href: "/academics/subjects", action: "Add one by one", icon: BookOpen, kind: "subjects" },
-    { n: 7, title: "Faculty", why: "Teachers and their departments. Each one gets a login.", done: faculty > 0, status: count(faculty, "teacher"), href: "/faculty/new", action: "Add one by one", icon: Users, kind: "faculty" },
-    { n: 8, title: "Fee structures", why: "The fee heads for each programme and year of study.", done: structures > 0, status: count(structures, "structure"), href: "/fees/structures", action: "Add one by one", icon: Wallet, kind: "fees" },
-    { n: 9, title: "Students", why: "Import each batch from the admissions list. Every student gets a login.", done: students > 0, status: count(students, "student"), href: "/students/import", action: "Import students", icon: GraduationCap, note: "Students are imported batch by batch on their own page, because each file belongs to one batch." },
+    { n: 7, title: "Teacher accounts", why: "Teachers and their departments. Each one gets a login.", done: faculty > 0, status: count(faculty, "teacher"), href: "/academics/teachers", action: "Add one by one", icon: Users, kind: "faculty" },
+    { n: 8, title: "Students", why: "Import each batch from the admissions list. Every student gets a login.", done: students > 0, status: count(students, "student"), href: "/students/import", action: "Import students", icon: GraduationCap, note: "Students are imported batch by batch on their own page, because each file belongs to one batch." },
   ];
   const done = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);

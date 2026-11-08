@@ -1,20 +1,19 @@
-import { Download, Upload, UserPlus, MessagesSquare, GraduationCap, ClipboardCheck, AlertTriangle, PencilLine } from "lucide-react";
-import type { Prisma } from "@prisma/client";
-import { isOffice, requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { studentScope, programScope, currentTerm } from "@/lib/scope";
+import { Filters,SearchInput } from "@/components/filters";
+import { SavedFilters } from "@/components/saved-filters";
+import { LinkButton,Pagination } from "@/components/ui";
+import { Card,EmptyState,PageHeader,StatCard } from "@/components/ui-server";
 import { attendanceSummary } from "@/lib/attendance";
+import { isOffice,requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { batchLabel,pct,titleCase } from "@/lib/format";
+import { batchOptions } from "@/lib/options";
 import { studentStandings } from "@/lib/results";
 import { getRules } from "@/lib/rules";
-import { pct } from "@/lib/format";
-import { batchOptions } from "@/lib/options";
-import { batchLabel, titleCase } from "@/lib/format";
-import { LinkButton, Pagination } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard } from "@/components/ui-server";
-import { Filters, SearchInput } from "@/components/filters";
+import { currentTerm,programScope,studentScope } from "@/lib/scope";
+import type { Prisma } from "@prisma/client";
+import { AlertTriangle,ClipboardCheck,Download,GraduationCap,PencilLine,Upload,UserPlus } from "lucide-react";
+import { STATUS_TONE,studentFilter } from "./filter";
 import { StudentTable } from "./student-table";
-import { SavedFilters } from "@/components/saved-filters";
-import { STATUS_TONE, studentFilter } from "./filter";
 
 export const metadata = { title: "Students" };
 const SORTS: Record<string, (dir: "asc" | "desc") => Prisma.StudentOrderByWithRelationInput[]> = {
@@ -44,11 +43,10 @@ export default async function StudentsPage(props: PageProps<"/students">) {
     batchOptions(user),
   ]);
   // Headline figures across everyone this person can see, and attendance and CGPA for the rows on this page.
-  const [term, rules, scopeIds, programCount, corrections] = await Promise.all([
+  const [term, rules, scopeIds, programCount] = await Promise.all([
     currentTerm(), getRules(),
     db.student.findMany({ where: { AND: [studentScope(user), { status: "ACTIVE" }] }, select: { id: true } }),
     db.program.count({ where: programScope(user) }),
-    isOffice(user) ? db.profileChange.count({ where: { status: "PENDING" } }) : Promise.resolve(null),
   ]);
   const ids = scopeIds.map((x) => x.id);
   const offerings = term ? (await db.courseOffering.findMany({ where: { termId: term.id }, select: { id: true } })).map((o) => o.id) : [];
@@ -72,13 +70,11 @@ export default async function StudentsPage(props: PageProps<"/students">) {
     <>
       <PageHeader
         title="Students"
+        illustration="students"
         subtitle={`${total.toLocaleString("en-IN")} students match`}
         actions={
           <>
             <a href={`/students/export?${query}`} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:bg-surface-2"><Download className="size-4" /> Export CSV</a>
-            {isOffice(user) && <LinkButton variant="secondary" href="/students/changes">Profile corrections</LinkButton>}
-            {(isOffice(user) || user.role === "HOD") && <LinkButton variant="secondary" href="/students/id-cards">ID cards by batch</LinkButton>}
-            <LinkButton variant="secondary" href="/students/contacts"><MessagesSquare className="size-4" /> Parent contact log</LinkButton>
             {isOffice(user) && <LinkButton variant="secondary" href="/students/import"><Upload className="size-4" /> Bulk import</LinkButton>}
             {isOffice(user) && <LinkButton href="/students/new"><UserPlus className="size-4" /> New admission</LinkButton>}
           </>
@@ -88,9 +84,7 @@ export default async function StudentsPage(props: PageProps<"/students">) {
         <StatCard label="Active" value={ids.length.toLocaleString("en-IN")} icon={<GraduationCap className="size-5" />} hint={`${programCount} programmes`} href="/students?status=ACTIVE" />
         <StatCard label={`Below ${rules.attendanceRequired}% attendance`} value={below} tone="danger" icon={<ClipboardCheck className="size-5" />} hint="across all batches" href="/attendance/report" />
         <StatCard label="With backlogs" value={withBacklogs} tone="warning" icon={<AlertTriangle className="size-5" />} hint="one or more" />
-        {corrections !== null
-          ? <StatCard label="Profile corrections" value={corrections} tone="brand" icon={<PencilLine className="size-5" />} hint="waiting for approval" href="/students/changes" />
-          : <StatCard label="Average CGPA" value={(ids.reduce((s, sid) => s + (standings.get(sid)?.cgpa ?? 0), 0) / Math.max(1, ids.length)).toFixed(2)} tone="brand" icon={<PencilLine className="size-5" />} hint="active students" />}
+        <StatCard label="Average CGPA" value={(ids.reduce((s, sid) => s + (standings.get(sid)?.cgpa ?? 0), 0) / Math.max(1, ids.length)).toFixed(2)} tone="brand" icon={<PencilLine className="size-5" />} hint="active students" />
       </div>
       <Filters>
         <SearchInput placeholder="Search by name, roll no, email or phone" defaultValue={sp.q as string} />

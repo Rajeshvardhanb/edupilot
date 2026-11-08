@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
-import { Keyboard, X } from "lucide-react";
+import { Keyboard,X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect,useMemo,useState } from "react";
 import { NAV } from "./nav";
 
 const GO: [string, string, string][] = [
   ["d", "/dashboard", "Dashboard"], ["s", "/students", "Students"], ["a", "/attendance", "Attendance"], ["t", "/timetable", "Timetable"],
-  ["e", "/exams", "Marks entry"], ["r", "/results", "Results"], ["f", "/fees", "Fees"], ["n", "/notifications", "Notifications"], ["p", "/profile", "My profile"],
+  ["e", "/exams", "Marks entry"], ["r", "/results", "Results"], ["p", "/profile", "My profile"],
 ];
 
 function Key({ children }: { children: React.ReactNode }) {
@@ -19,7 +19,7 @@ function Key({ children }: { children: React.ReactNode }) {
 export function Shortcuts({ role }: { role: Role }) {
   const router = useRouter();
   const [help, setHelp] = useState(false);
-  const allowed = useMemo(() => GO.filter(([, href]) => href === "/notifications" || NAV.some((n) => n.href === href && n.roles.includes(role))), [role]);
+  const allowed = useMemo(() => GO.filter(([, href]) => NAV.some((n) => n.href === href && n.roles.includes(role))), [role]);
 
   useEffect(() => {
     let armed = 0;

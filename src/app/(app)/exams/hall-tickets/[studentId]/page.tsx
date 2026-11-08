@@ -1,16 +1,16 @@
-import { notFound } from "next/navigation";
-import { Download, ShieldAlert } from "lucide-react";
-import { getInstitution } from "@/lib/institution";
+import { Avatar } from "@/components/avatar";
+import { Letterhead,Sheet } from "@/components/letterhead";
+import { PrintButton } from "@/components/print-button";
+import { LinkButton,buttonClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { currentTerm, studentScope } from "@/lib/scope";
 import { hallTicketStatus } from "@/lib/eligibility";
-import { batchLabel, fmtDate } from "@/lib/format";
-import { Avatar } from "@/components/avatar";
-import { Letterhead, Sheet } from "@/components/letterhead";
-import { PrintButton } from "@/components/print-button";
+import { batchLabel,fmtDate } from "@/lib/format";
+import { getInstitution } from "@/lib/institution";
 import { qrSvg } from "@/lib/qr";
-import { LinkButton, buttonClass } from "@/components/ui";
+import { currentTerm,studentScope } from "@/lib/scope";
+import { Download,ShieldAlert } from "lucide-react";
+import { notFound } from "next/navigation";
 
 export const metadata = { title: "Hall ticket" };
 
@@ -36,7 +36,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
           <p className="mt-1 text-sm text-muted">{s.user.name} · {s.rollNo}</p>
           <ul className="mx-auto mt-4 max-w-sm space-y-2 text-left text-sm">{st.reasons.map((r) => <li key={r} className="rounded-lg bg-danger-soft px-3 py-2 text-danger">{r}</li>)}</ul>
           <p className="mt-4 text-xs text-muted">Clear the dues at the accounts section, or apply for condonation under Leave &amp; OD with a medical certificate.</p>
-          <div className="mt-6 flex justify-center gap-2"><LinkButton variant="secondary" href="/fees">Fees</LinkButton><LinkButton href="/leave">Leave &amp; OD</LinkButton></div>
+          <div className="mt-6 flex justify-center gap-2"><LinkButton href="/leave">Leave &amp; OD</LinkButton></div>
         </div>
       </Sheet>
     );

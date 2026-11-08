@@ -62,7 +62,7 @@ async function BatchResults({ user, searchParams: sp }: { user: CurrentUser; sea
 
   return (
     <>
-      <PageHeader title="Results" subtitle="Semester result sheet with SGPA, CGPA and backlogs" actions={<PrintButton />} />
+      <PageHeader illustration="graduation" title="Results" subtitle="Semester result sheet with SGPA, CGPA and backlogs" actions={<PrintButton />} />
       <Filters>
         <select name="batch" aria-label="Batch" defaultValue={batchId} className="input w-auto">{batches.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select>
         <select name="term" aria-label="Term" defaultValue={termId} className="input w-auto">{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>

@@ -25,7 +25,7 @@ export default async function AllocationPage(props: PageProps<"/academics/alloca
   });
   const faculty = await db.faculty.findMany({
     where: user.role === "HOD" ? { departmentId: user.departmentId ?? "-" } : {},
-    include: { user: true, department: true, _count: { select: { offerings: { where: { termId } } } } },
+    include: { user: true, department: true },
     orderBy: [{ department: { code: "asc" } }, { user: { name: "asc" } }],
   });
   const unassigned = offerings.filter((o) => !o.facultyId).length;
@@ -54,7 +54,7 @@ export default async function AllocationPage(props: PageProps<"/academics/alloca
                         <input type="hidden" name="offeringId" value={o.id} />
                         <select name="facultyId" aria-label="Faculty" defaultValue={o.facultyId ?? ""} className="input min-w-44 py-1 text-xs">
                           <option value="">— Unassigned —</option>
-                          {faculty.map((f) => <option key={f.id} value={f.id}>{f.user.name} ({f.department.code}, {f._count.offerings})</option>)}
+                          {faculty.map((f) => <option key={f.id} value={f.id}>{f.user.name} ({f.department.code})</option>)}
                         </select>
                         <SubmitButton size="sm" variant="secondary">Save</SubmitButton>
                       </ActionForm>
@@ -78,13 +78,7 @@ export default async function AllocationPage(props: PageProps<"/academics/alloca
               <SubmitButton>Generate</SubmitButton>
             </ActionForm>
           </Card>
-          <Card title="Faculty workload (courses this term)">
-            <ul className="space-y-1.5 text-sm">
-              {faculty.map((f) => (
-                <li key={f.id} className="flex justify-between"><span>{f.user.name} <span className="text-xs text-muted">· {f.department.code}</span></span><Badge tone={f._count.offerings > 4 ? "danger" : f._count.offerings === 0 ? "neutral" : "brand"}>{f._count.offerings}</Badge></li>
-              ))}
-            </ul>
-          </Card>
+
         </div>
       </div>
     </>

@@ -1,4 +1,5 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -66,6 +67,7 @@ export async function createStudent(_: ActionState, formData: FormData): Promise
     return uniqueError(e) ?? { error: "Could not save the student." };
   }
   await audit(me.id, "CREATE", "Student", id, data.rollNo);
+  notifyAcademic({ type: "account", id: (await db.student.findUniqueOrThrow({ where: { id }, select: { userId: true } })).userId });
   redirect(`/students/${id}?created=1`);
 }
 
@@ -117,12 +119,13 @@ export async function importStudents(_: ActionState, formData: FormData): Promis
     }
     const { name, email, phone, ...data } = parsed.data;
     try {
-      await db.user.create({
+      const imported = await db.user.create({
         data: {
           name, email, phone, role: "STUDENT", passwordHash: await bcrypt.hash(data.rollNo.toLowerCase(), 10), mustChangePassword: true,
           student: { create: { ...data, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } },
         },
       });
+      notifyAcademic({ type: "account", id: imported.id });
       created++;
     } catch (e) {
       errors.push(`Row ${i + 2} (${data.rollNo}): ${uniqueError(e)?.fieldErrors ? "duplicate roll number or email" : "could not be saved"}`);

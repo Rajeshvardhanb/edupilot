@@ -4,20 +4,20 @@
 :root {
   color-scheme: light;
   /* ICL theme: indigo to violet, on a soft lavender canvas. */
-  --bg: #f4f4fb;
+  --bg: #f3efff;
   --surface: #ffffff;
   --surface-2: #f4f5fa;
   --fg: #12142b;
   --fg-2: #2c2f4a;
   --muted: #5d6280;
-  --line: #e8e9f3;
-  --line-strong: #dcdeec;
-  --brand: #4f46e5;
-  --brand-2: #7c3aed;
-  --brand-start: #4f46e5;
-  --brand-end: #8b3dee;
+  --line: #e6dff5;
+  --line-strong: #d7cbea;
+  --brand: #7135d8;
+  --brand-2: #913aeb;
+  --brand-start: #6734d5;
+  --brand-end: #a347f1;
   --brand-fg: #ffffff;
-  --brand-soft: #eef0ff;
+  --brand-soft: #f0e7ff;
   --success: #0e7a4f;
   --success-soft: #dcf7ea;
   --warning: #b45309;
@@ -194,13 +194,20 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
   }
   .btn-secondary:hover:not(:disabled) { @apply border-brand/30 bg-brand-soft/40; }
 
-  /* Sidebar: white column; each group has its own colour (--g). */
+  /* Deep violet navigation with high-contrast labels and colored active links. */
   .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--line);
+    --fg: #faf8ff;
+    --fg-2: #e9e0ff;
+    --muted: #c4b5e3;
+    --line: #ffffff24;
+    --line-strong: #ffffff30;
+    --surface-2: #ffffff12;
+    color: var(--fg);
+    background: linear-gradient(170deg, #21164e, #30205e 55%, #211744);
+    border-right: 1px solid #3f2a6a;
   }
   .side-link { @apply relative flex items-center gap-3 rounded-[11px] px-2.5 py-[7px] text-sm text-fg-2 transition-colors; }
-  .side-icon { @apply grid size-7 shrink-0 place-items-center rounded-lg; color: var(--g); background-color: color-mix(in oklab, var(--g) 12%, white); }
+  .side-icon { @apply grid size-7 shrink-0 place-items-center rounded-lg; color: #e3d5ff; background-color: #ffffff0d; }
   .side-link:hover { @apply bg-surface-2 text-fg; }
   .side-link[aria-current="page"] {
     @apply font-semibold text-white;
@@ -213,6 +220,23 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
   .segmented { @apply inline-flex gap-1 rounded-xl bg-[#ebecf5] p-1; }
   .segmented > * { @apply rounded-[9px] px-3.5 py-1.5 text-sm whitespace-nowrap text-muted transition-colors hover:text-fg; }
   .segmented > [aria-current="page"], .segmented > [aria-pressed="true"] { @apply bg-surface font-semibold text-brand shadow-[0_1px_3px_rgb(30_27_75/0.12)]; }
+}
+
+.sidebar .brand-text { background-image: none; color: #e3c4ff; }
+.sidebar-college { border-color: #ffffff24; background: #ffffff0c; }
+.sidebar .side-link:hover { background: #ffffff12; }
+.auth-campus { background: radial-gradient(ellipse at 20% 85%, #a44ce570, transparent 55%), linear-gradient(140deg, #6631d3, #41209f 48%, #27165f); }
+.auth-form-panel { background: radial-gradient(circle at 90% 5%, #e4d4ff 0%, transparent 40%), linear-gradient(145deg, #faf7ff, #f1eaff); }
+.academic-heading { background: radial-gradient(ellipse at 90% 90%, #d8c2ff 0%, transparent 55%), linear-gradient(110deg, #fff, #f1e7ff); }
+.card-heading { border-bottom: 1px solid #eee5fa; padding-bottom: 0.85rem; background: linear-gradient(100deg, #fbf8ff, #fff); border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.academic-welcome { background: radial-gradient(ellipse at 95% 100%, #b15ee2 0%, transparent 55%), linear-gradient(115deg, #4c239b, #7339c9 65%, #9656dc); }
+.academic-welcome::after { content: ""; position: absolute; top: -6rem; right: 2rem; width: 19rem; height: 19rem; border: 3rem solid #ffffff08; border-radius: 50%; pointer-events: none; }
+
+@media print {
+  .academic-heading, .academic-welcome, .card-heading { background: white !important; color: black !important; }
+  .academic-heading img, .academic-welcome img { display: none; }
+  .academic-heading { padding: 0 !important; min-height: 0 !important; border: 0; }
+  .academic-welcome p { color: black !important; }
 }
 
 /* On a phone a table becomes a list of cards: one card per row, each cell on its own line with its
@@ -265,4 +289,6 @@ p > a.text-brand { text-decoration: underline; text-underline-offset: 2px; }
 /* Phones: a section page's name is already in the top bar, so its heading is kept for screen readers only. */
 @media (max-width: 639px) {
   main[data-section] .page-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .academic-heading { min-height: 0; }
+  main[data-section] .academic-heading .page-title { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; }
 }

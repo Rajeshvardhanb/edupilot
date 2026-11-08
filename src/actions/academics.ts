@@ -1,4 +1,5 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -117,6 +118,8 @@ export async function promoteReviewed(_: ActionState, fd: FormData): Promise<Act
     }
   });
   await audit(me.id, final ? "GRADUATE" : "PROMOTE", "Batch", batch.id, `${move.length} ${final ? "graduated" : `to sem ${batch.currentSemester + 1}`}, ${detain.length} detained`);
+  notifyAcademic({ type: "student-update", id: `promotion:${batch.id}:${batch.currentSemester}`, studentIds: move, message: final ? "Your student record has been marked as graduated." : `Your batch has been promoted to semester ${batch.currentSemester + 1}.` });
+  if (detain.length) notifyAcademic({ type: "student-update", id: `detention:${batch.id}:${batch.currentSemester}`, studentIds: detain, message: "Your progression review is complete. Contact the department and check your current academic status in the portal." });
   revalidatePath("/academics/batches");
   redirect(`/academics/batches?done=${encodeURIComponent(`${move.length} ${final ? "graduated" : "promoted"}${detain.length ? `, ${detain.length} detained${junior ? " and moved to the junior batch" : ""}` : ""}`)}`);
 }
@@ -130,11 +133,14 @@ export async function promoteBatch(_: ActionState, fd: FormData): Promise<Action
     const grads = await db.student.findMany({ where: { batchId: batch.id, status: "GRADUATED" }, select: { id: true } });
     await db.alumniProfile.createMany({ data: grads.map((g) => ({ studentId: g.id, graduationYear: batch.admissionYear + batch.program.durationYears })), skipDuplicates: true });
     await audit(me.id, "GRADUATE", "Batch", batch.id, `${n.count} students`);
+    notifyAcademic({ type: "student-update", id: `graduation:${batch.id}`, studentIds: grads.map(s => s.id), message: "Your student record has been marked as graduated." });
     revalidatePath("/academics/batches");
     return { ok: true, message: `${n.count} students marked as graduated.` };
   }
   await db.batch.update({ where: { id: batch.id }, data: { currentSemester: batch.currentSemester + 1 } });
   await audit(me.id, "PROMOTE", "Batch", batch.id, `→ sem ${batch.currentSemester + 1}`);
+  const promoted = await db.student.findMany({ where: { batchId: batch.id, status: "ACTIVE" }, select: { id: true } });
+  notifyAcademic({ type: "student-update", id: `promotion:${batch.id}:${batch.currentSemester}`, studentIds: promoted.map(s => s.id), message: `Your batch has been promoted to semester ${batch.currentSemester + 1}.` });
   revalidatePath("/academics/batches");
   return { ok: true, message: "Batch promoted." };
 }
@@ -198,6 +204,7 @@ export async function allocateFaculty(_: ActionState, fd: FormData): Promise<Act
     await assertProgramAccess(me, o.batch.programId);
     await db.courseOffering.update({ where: { id: offeringId }, data: { facultyId } });
     await audit(me.id, "ALLOCATE", "CourseOffering", offeringId, facultyId ?? "unassigned");
+    if (facultyId) notifyAcademic({ type: "course-allocation", id: offeringId });
   } catch (e) { return fail(e, "allocation"); }
   revalidatePath("/academics/allocation");
   return { ok: true, message: "Faculty allocated." };

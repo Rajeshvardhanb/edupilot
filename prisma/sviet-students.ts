@@ -1,0 +1,25 @@
+// Transcribed from the supplied student list (rows 13–33).
+// Only names and roll numbers were supplied; other seed data remains illustrative.
+export const SVIET_STUDENTS = [
+  { rollNo: "23MQ1A05B5", name: "P. BHARGAV NAGA SAI SAMPATH" },
+  { rollNo: "23MQ1A0570", name: "BORRA ABHINAYA" },
+  { rollNo: "24MQ5A0508", name: "KUNAPAREDDY SYAMKUMAR" },
+  { rollNo: "24MQ5A0511", name: "N. SIVA KANAKA NAGA SANDHYA" },
+  { rollNo: "23MQ1A0594", name: "KUNAPAREDDY PREMITH" },
+  { rollNo: "24MQ5A0509", name: "LANKE SANDHYA" },
+  { rollNo: "23MQ1A05C4", name: "TURAKA SRILAKSHMI" },
+  { rollNo: "24MQ5A0510", name: "MADALA REVANTH KUMAR" },
+  { rollNo: "23MQ1A05B0", name: "PEDDINTI YOGESH" },
+  { rollNo: "23MQ1A05A7", name: "NARAGAM KAVYA" },
+  { rollNo: "23MQ1A0578", name: "GOLLA SRIVIDYA" },
+  { rollNo: "23MQ1A0579", name: "G.LAKSHMANA SIVA SAI" },
+  { rollNo: "23MQ1A0569", name: "BOORADA SHANMUKHA" },
+  { rollNo: "23MQ1A05A9", name: "PARIMKAYALA AMRUTHA" },
+  { rollNo: "23MQ1A05A0", name: "MATHI VARSHITHA DURGA BHAVANI" },
+  { rollNo: "23MQ1A05C8", name: "YARLAGADDA JYOSHNA DEVI" },
+  { rollNo: "23MQ1A05A5", name: "MURARI GANESH VENKATA RATNAM" },
+  { rollNo: "23MQ1A0582", name: "KAGITA DURGA BHAVANI" },
+  { rollNo: "23MQ1A05B3", name: "PINNENTI JHANSI" },
+  { rollNo: "23MQ1A05C0", name: "DANDAY SHARON PRADEEPA" },
+  { rollNo: "23MQ1A0568", name: "BEZAWADA JAGADEESH" },
+] as const;

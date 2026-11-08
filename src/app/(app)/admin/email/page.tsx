@@ -1,17 +1,17 @@
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { retryEmail, sendTestEmail } from "@/actions/admin";
+import { ActionForm,SubmitButton } from "@/components/forms";
+import { Badge,Pagination,Td,type Tone } from "@/components/ui";
+import { Card,EmptyState,PageHeader,StatCard,Table,Tabs,Th } from "@/components/ui-server";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { mailConfigured } from "@/lib/mail";
 import { fmtDateTime } from "@/lib/format";
-import { sendTestEmail } from "@/actions/alerts";
-import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, Pagination, Td, type Tone } from "@/components/ui";
-import { Card, EmptyState, PageHeader, StatCard, Tabs, Th, Table } from "@/components/ui-server";
+import { mailConfigured, PRIVATE_EMAIL_LOG } from "@/lib/mail";
+import { AlertTriangle,CheckCircle2 } from "lucide-react";
 import { ADMIN_TABS } from "../tabs";
 
 export const metadata = { title: "Email outbox" };
-const TONE: Record<string, Tone> = { SENT: "success", FAILED: "danger", NOT_CONFIGURED: "warning" };
-const LABEL: Record<string, string> = { SENT: "Sent", FAILED: "Failed", NOT_CONFIGURED: "Not delivered" };
+const TONE: Record<string, Tone> = { SENT: "success", FAILED: "danger", NOT_CONFIGURED: "warning", SENDING: "info", RETRYING: "info", RETRIED: "neutral" };
+const LABEL: Record<string, string> = { SENT: "SMTP accepted", SENDING: "Sending / check outcome", FAILED: "Failed", NOT_CONFIGURED: "Not delivered", RETRYING: "Retrying", RETRIED: "Retry recorded" };
 const PAGE = 40;
 
 export default async function EmailPage(props: PageProps<"/admin/email">) {
@@ -32,12 +32,12 @@ export default async function EmailPage(props: PageProps<"/admin/email">) {
       <div className={`mb-6 flex items-start gap-3 rounded-[var(--radius-card)] border p-4 text-sm ${ok ? "border-success/30 bg-success-soft text-success" : "border-warning/30 bg-warning-soft text-warning"}`}>
         {ok ? <CheckCircle2 className="mt-0.5 size-5 shrink-0" /> : <AlertTriangle className="mt-0.5 size-5 shrink-0" />}
         <div>
-          <p className="font-semibold">{ok ? `Mail server connected (${process.env.SMTP_HOST})` : "No mail server configured: emails are saved below but not delivered"}</p>
+          <p className="font-semibold">{ok ? `SMTP configured (${process.env.SMTP_HOST})` : "No mail server configured: emails are saved below but not delivered"}</p>
           {!ok && <p className="mt-1 text-fg/80">Add these lines to <code>.env</code> and restart. A free Gmail account works (create an “App password” in your Google account): <code className="mt-1 block rounded bg-surface px-2 py-1 text-xs text-fg">SMTP_HOST=smtp.gmail.com · SMTP_PORT=587 · SMTP_USER=you@gmail.com · SMTP_PASS=app-password · APP_URL=http://localhost:3001</code></p>}
         </div>
       </div>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
-        <StatCard label="Sent" value={c("SENT")} tone="success" /><StatCard label="Not delivered" value={c("NOT_CONFIGURED")} tone="warning" /><StatCard label="Failed" value={c("FAILED")} tone="danger" />
+        <StatCard label="SMTP accepted" value={c("SENT")} tone="success" /><StatCard label="Not delivered" value={c("NOT_CONFIGURED")} tone="warning" /><StatCard label="Failed" value={c("FAILED")} tone="danger" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2" title="Outbox">
@@ -49,7 +49,7 @@ export default async function EmailPage(props: PageProps<"/admin/email">) {
                   <Td className="text-xs whitespace-nowrap">{fmtDateTime(r.createdAt)}</Td>
                   <Td className="text-xs">{r.to}</Td>
                   <Td><details><summary className="cursor-pointer text-sm font-medium">{r.subject}</summary><p className="mt-2 text-xs whitespace-pre-line text-muted">{r.body}</p>{r.error && <p className="mt-1 text-xs text-danger">{r.error}</p>}</details></Td>
-                  <Td><Badge tone={TONE[r.status]}>{LABEL[r.status] ?? r.status}</Badge></Td>
+                  <Td><Badge tone={TONE[r.status]}>{LABEL[r.status] ?? r.status}</Badge>{["FAILED", "NOT_CONFIGURED"].includes(r.status) && !r.body.startsWith(PRIVATE_EMAIL_LOG) && !/sign-in code|reset your password/i.test(r.subject) && <ActionForm action={retryEmail} className="mt-2"><input type="hidden" name="id" value={r.id} /><SubmitButton variant="secondary" confirm="Retry this message? SMTP acceptance does not guarantee inbox delivery.">Retry email</SubmitButton></ActionForm>}</Td>
                 </tr>
               ))}</tbody>
             </Table>
@@ -61,7 +61,7 @@ export default async function EmailPage(props: PageProps<"/admin/email">) {
             <input name="to" type="email" placeholder="you@example.com" className="input" required />
             <SubmitButton>Send test</SubmitButton>
           </ActionForm>
-          <p className="mt-4 text-xs text-muted">Emails go out for: password resets, fee receipts, results, leave decisions, certificates, placement selection, attendance shortage and fee reminders.</p>
+          <p className="mt-4 text-xs text-muted">Emails cover account security, student registration, results, requests, learning activities, exams and placements. SMTP accepted means the provider accepted the message; inbox delivery is not confirmed.</p>
         </Card>
       </div>
     </>

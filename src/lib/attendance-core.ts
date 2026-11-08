@@ -1,11 +1,10 @@
+import { Prisma,type AttendanceStatus } from "@prisma/client";
 import "server-only";
-import { Prisma, type AttendanceStatus } from "@prisma/client";
-import { db } from "./db";
-import type { CurrentUser } from "./auth";
-import { assertOffering } from "./scope";
-import { audit } from "./audit";
-import { notifyStudents } from "./notify";
 import type { ActionState } from "./action-state";
+import { audit } from "./audit";
+import type { CurrentUser } from "./auth";
+import { db } from "./db";
+import { assertOffering } from "./scope";
 
 const STATUSES: AttendanceStatus[] = ["PRESENT", "ABSENT", "LATE", "ON_DUTY"];
 
@@ -40,8 +39,6 @@ export async function recordAttendance(me: CurrentUser, input: AttendanceInput):
     .filter((r) => STATUSES.includes(r.status) && enrolled.has(r.studentId));
   if (!rows.length) return { error: "No students to mark." };
 
-  // Absence alerts go out when a class is first marked, not on every later correction.
-  const firstTime = !(await db.attendanceSession.findUnique({ where: { offeringId_date_period: { offeringId: input.offeringId, date, period: input.period } }, select: { id: true } }));
   const save = () => db.$transaction(async (tx) => {
     const session = await tx.attendanceSession.upsert({
       where: { offeringId_date_period: { offeringId: input.offeringId, date, period: input.period } },
@@ -59,11 +56,6 @@ export async function recordAttendance(me: CurrentUser, input: AttendanceInput):
     await save();
   }
   await audit(me.id, "MARK", "Attendance", input.offeringId, `${input.date} P${input.period}`);
-  const absentees = rows.filter((r) => r.status === "ABSENT").map((r) => r.studentId);
-  if (absentees.length && firstTime) {
-    const subject = await db.subject.findUniqueOrThrow({ where: { id: offering.subjectId }, select: { name: true } });
-    await notifyStudents(absentees, { title: `Marked absent: ${subject.name}`, body: `${input.date}, period ${input.period}. Speak to your teacher within 3 days if this is a mistake.`, href: "/attendance" });
-  }
   const absent = rows.filter((r) => r.status === "ABSENT").length;
   return { ok: true, message: `Saved: ${rows.length - absent} present, ${absent} absent.` };
 }

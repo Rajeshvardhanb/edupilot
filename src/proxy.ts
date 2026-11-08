@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { SESSION_COOKIE,verifySession } from "@/lib/session";
+import { NextResponse,type NextRequest } from "next/server";
 
 // Optimistic auth check: real authorization happens in the Data Access Layer (lib/auth.ts).
 export async function proxy(request: NextRequest) {
@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";
   // Reachable without signing in.
-  if (pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/login/verify" || pathname === "/session/expired" || pathname === "/reports/cron") return NextResponse.next();
+  if (pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/login/verify" || pathname === "/session/expired") return NextResponse.next();
 
   if (!session && !isLogin) {
     const url = new URL("/login", request.url);
@@ -19,5 +19,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|offline|brand/logo|.*\\.(?:png|svg|jpg|ico)$).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|brand/logo|.*\\.(?:png|svg|jpg|webp|ico)$).*)"],
 };

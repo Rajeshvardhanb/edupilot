@@ -6,6 +6,7 @@ const ITEMS = [
   { href: "/academics/batches", label: "Batches & sections" },
   { href: "/academics/terms", label: "Academic terms" },
   { href: "/academics/subjects", label: "Subjects / curriculum" },
+  { href: "/academics/teachers", label: "Teacher accounts" },
   { href: "/academics/allocation", label: "Course allocation" },
 ];
 

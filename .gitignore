@@ -55,3 +55,30 @@ next-env.d.ts
 
 /.next-deploy/
 /.next-test/
+
+# Only the Windows deployment guide is versioned documentation.
+*.[mM][dD]
+*.[pP][dD][fF]
+*.[dD][oO][cC]
+*.[dD][oO][cC][xX]
+*.[oO][dD][tT]
+*.[pP][pP][tT]
+*.[pP][pP][tT][xX]
+!/WINDOWS_DEPLOYMENT_GUIDE.md
+/docs/
+/assets/
+/scripts/report/
+/scripts/guide/
+
+# Local AWS/container deployment tooling and credentials.
+/scripts/deploy/
+/scripts/compose.sh
+/Dockerfile
+/docker-compose.yml
+/.dockerignore
+/.aws/
+*.sql.gz
+*.tar.gz
+
+# Explicitly requested: version the original application environment.
+!/.env

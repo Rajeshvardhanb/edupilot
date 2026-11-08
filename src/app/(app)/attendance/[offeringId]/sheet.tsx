@@ -1,14 +1,12 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
-import { ActionForm, SubmitButton } from "@/components/forms";
-import { Badge, buttonClass } from "@/components/ui";
-import { useToast } from "@/components/toast";
-import { queueAttendance } from "@/components/offline";
 import { saveAttendance } from "@/actions/teaching";
+import { Avatar } from "@/components/avatar";
+import { ActionForm,SubmitButton } from "@/components/forms";
+import { Badge,buttonClass } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
-import { Avatar } from "@/components/avatar";
+import { useRef,useState } from "react";
 
 type Status = "PRESENT" | "ABSENT" | "LATE" | "ON_DUTY";
 const OPTIONS: { v: Status; label: string; name: string; cls: string }[] = [
@@ -18,7 +16,7 @@ const OPTIONS: { v: Status; label: string; name: string; cls: string }[] = [
   { v: "ON_DUTY", label: "OD", name: "on duty", cls: "bg-[#0ea5e9] text-white shadow-xs" },
 ];
 
-export function AttendanceSheet({ offeringId, date, period, topic, students, initial, leave, label, required, condonable }: {
+export function AttendanceSheet({ offeringId, date, period, topic, students, initial, leave, required, condonable }: {
   /** Attendance thresholds from the college rules. */
   required: number; condonable: number;
   offeringId: string; date: string; period: number; topic: string; label: string;
@@ -29,21 +27,10 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
 }) {
   const [marks, setMarks] = useState<Record<string, Status>>(() =>
     Object.fromEntries(students.map((s) => [s.id, initial[s.id] ?? (leave[s.id] === "ON_DUTY" ? "ON_DUTY" : leave[s.id] === "LEAVE" ? "ABSENT" : "PRESENT")])));
-  const { toast } = useToast();
   const touch = useRef<{ id: string; x: number; y: number } | null>(null);
   const set = (id: string, v: Status) => setMarks((m) => ({ ...m, [id]: v }));
   const setAll = (v: Status) => setMarks(Object.fromEntries(students.map((s) => [s.id, leave[s.id] === "ON_DUTY" ? "ON_DUTY" : v])));
   const absent = Object.values(marks).filter((v) => v === "ABSENT").length;
-
-  // No connection: keep the sheet on this device; OfflineSync uploads it when the network returns.
-  function interceptOffline(e: FormEvent<HTMLDivElement>) {
-    if (navigator.onLine) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const fd = new FormData(e.target as HTMLFormElement);
-    queueAttendance({ offeringId, date, period, topic: String(fd.get("topic") ?? ""), marks, label });
-    toast({ message: "You're offline. Attendance is saved on this device and will upload automatically.", tone: "info" }, 7000);
-  }
 
   const onDuty = Object.values(marks).filter((v) => v === "ON_DUTY").length;
   const present = students.length - absent;
@@ -52,7 +39,7 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
   const ring = students.length ? present / students.length : 0;
 
   return (
-    <div onSubmitCapture={interceptOffline}>
+    <div>
       <ActionForm action={saveAttendance} className="space-y-4">
         <input type="hidden" name="offeringId" value={offeringId} />
         <input type="hidden" name="date" value={date} />

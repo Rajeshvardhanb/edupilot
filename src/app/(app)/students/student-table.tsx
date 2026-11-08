@@ -1,16 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Eye, Phone, Mail, X, Download } from "lucide-react";
-import { ActionForm, SubmitButton } from "@/components/forms";
-import { Avatar } from "@/components/avatar";
-import { Badge, type Tone } from "@/components/ui";
 import { bulkUpdateStudents } from "@/actions/students";
+import { Avatar } from "@/components/avatar";
+import { ActionForm,SubmitButton } from "@/components/forms";
+import { Badge,type Tone } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { Download,Eye,Mail,Phone,X } from "lucide-react";
+import Link from "next/link";
+import { useEffect,useState } from "react";
 
 export type Row = { id: string; userId: string; hasPhoto: boolean; rollNo: string; name: string; email: string; phone: string | null; batch: string; semester: number; admissionType: string; status: string; attendance?: number | null; cgpa?: number | null };
-type Summary = Row & { program: string; guardian: string | null; guardianPhone: string | null; attendance: number | null; attendanceRequired: number; cgpa: number; backlogs: number; feeDue: number | null };
+type Summary = Row & { program: string; guardian: string | null; guardianPhone: string | null; attendance: number | null; attendanceRequired: number; cgpa: number; backlogs: number };
 
 const STATUS_TONE: Record<string, Tone> = { ACTIVE: "success", DETAINED: "danger", SUSPENDED: "warning", DROPPED: "neutral", GRADUATED: "info" };
 const title = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
@@ -135,7 +135,6 @@ function QuickView({ id, onClose }: { id: string; onClose: () => void }) {
               {tile("Attendance", data.attendance == null ? "—" : `${data.attendance}%`, data.attendance != null && data.attendance < data.attendanceRequired ? "text-danger" : "")}
               {tile("CGPA", data.cgpa.toFixed(2))}
               {tile("Backlogs", data.backlogs, data.backlogs ? "text-danger" : "")}
-              {data.feeDue != null && tile("Fee due", `₹${data.feeDue.toLocaleString("en-IN")}`, data.feeDue ? "text-warning" : "")}
             </div>
             <div className="mt-5 space-y-2 text-sm">
               <p className="flex items-center gap-2"><Mail className="size-4 text-muted" />{data.email}</p>

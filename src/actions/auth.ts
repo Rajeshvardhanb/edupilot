@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { notifyAcademic } from "@/lib/academic-email";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -59,7 +60,7 @@ export async function login(_: ActionState, formData: FormData): Promise<ActionS
   await db.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
   if (user.twoStep) {
     // Password accepted: the session starts only after the emailed code is entered.
-    await sendLoginCode(user);
+    if (!await sendLoginCode(user)) return { error: "The sign-in code could not be sent. Contact the administrator or try again later." };
     (await cookies()).set(PENDING_COOKIE, await signPending(user.id), { ...cookieBase(), maxAge: PENDING_TTL_SECONDS });
     redirect(`/login/verify${dest === "/dashboard" ? "" : `?next=${encodeURIComponent(dest)}`}`);
   }
@@ -85,8 +86,9 @@ async function sendLoginCode(user: { id: string; email: string; name: string }) 
   const code = newCode();
   await db.loginCode.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
   await db.loginCode.create({ data: { userId: user.id, codeHash: sha256(`${user.id}:${code}`), expiresAt: new Date(Date.now() + CODE_MINUTES * 60_000) } });
-  await sendMail({ to: user.email, subject: `Your sign-in code: ${code}`, text: `Hello ${user.name},\n\nYour sign-in code is ${code}. It works once and expires in ${CODE_MINUTES} minutes.\n\nIf you didn't try to sign in, change your password now: someone else knows it.` });
+  const status = await sendMail({ to: user.email, category: "security", subject: "Your sign-in verification code", code, logText: "A sign-in verification code was requested. The code is not stored in this outbox.", text: `Hello ${user.name},\n\nUse the code below to complete sign-in. It works once and expires in ${CODE_MINUTES} minutes.\n\nIf you did not try to sign in, contact the college administrator and change your password.` });
   if (showCodeOnScreen()) (await cookies()).set(DEV_CODE_COOKIE, code, { ...cookieBase(), maxAge: CODE_MINUTES * 60 });
+  return status === "SENT" || showCodeOnScreen();
 }
 
 /** Checks a code for this user. Each wrong try is counted; after five the code is dead. */
@@ -135,7 +137,7 @@ export async function resendLoginCode(): Promise<ActionState> {
   if (!userId) redirect("/login?expired=1");
   const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
   if ((await db.loginCode.count({ where: { userId, createdAt: { gte: new Date(Date.now() - CODE_MINUTES * 60_000) } } })) >= 4) return { error: "Too many codes requested. Wait a few minutes and try again." };
-  await sendLoginCode(user);
+  if (!await sendLoginCode(user)) return { error: "The sign-in code could not be sent. Contact the administrator or try again later." };
   return { ok: true, message: "A new code has been sent." };
 }
 
@@ -146,7 +148,7 @@ export async function startTwoStep(): Promise<ActionState> {
   if (me.role === "STUDENT" || me.role === "PARENT") return { error: "Two-step sign-in is for staff accounts." };
   if (!mailConfigured() && process.env.NODE_ENV === "production") return { error: "Email is not set up on this server yet, so codes could not reach you. Ask the administrator to connect a mail account first." };
   if ((await db.loginCode.count({ where: { userId: me.id, createdAt: { gte: new Date(Date.now() - CODE_MINUTES * 60_000) } } })) >= 4) return { error: "Too many codes requested. Wait a few minutes and try again." };
-  await sendLoginCode(me);
+  if (!await sendLoginCode(me)) return { error: "The verification code could not be sent. Check email configuration before enabling two-step sign-in." };
   const dev = showCodeOnScreen() ? ` (No mail server is configured, so here is the code for testing: ${(await cookies()).get(DEV_CODE_COOKIE)?.value})` : "";
   return { ok: true, message: `We sent a six-digit code to ${me.email}. Enter it below to turn two-step sign-in on.${dev}` };
 }
@@ -159,6 +161,7 @@ export async function confirmTwoStep(_: ActionState, formData: FormData): Promis
   await db.user.update({ where: { id: me.id }, data: { twoStep: true } });
   (await cookies()).delete(DEV_CODE_COOKIE);
   await audit(me.id, "TWO_STEP_ON", "User", me.id);
+  notifyAcademic({ type: "security", id: me.id, action: "Two-step sign-in was enabled for your account.", version: String(Date.now()) });
   revalidatePath("/profile");
   return { ok: true, message: "Two-step sign-in is on. You'll be asked for an emailed code each time you sign in." };
 }
@@ -170,6 +173,7 @@ export async function disableTwoStep(_: ActionState, formData: FormData): Promis
   if (!(await bcrypt.compare(String(formData.get("current") ?? ""), user.passwordHash))) return { fieldErrors: { current: ["Password is incorrect"] } };
   await db.user.update({ where: { id: me.id }, data: { twoStep: false } });
   await audit(me.id, "TWO_STEP_OFF", "User", me.id);
+  notifyAcademic({ type: "security", id: me.id, action: "Two-step sign-in was disabled for your account.", version: String(Date.now()) });
   revalidatePath("/profile");
   return { ok: true, message: "Two-step sign-in is off." };
 }
@@ -194,6 +198,7 @@ export async function changePassword(_: ActionState, formData: FormData): Promis
   await db.user.update({ where: { id: me.id }, data: { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: false, passwordChangedAt: passwordChangedNow() } });
   await startSession(user); // other devices are signed out; this one continues
   await audit(me.id, "CHANGE_PASSWORD", "User", me.id);
+  notifyAcademic({ type: "security", id: me.id, action: "Your account password was changed.", version: String(Date.now()) });
   if (formData.get("forced")) redirect("/dashboard");
   return { ok: true, message: "Password updated. Other devices have been signed out." };
 }
@@ -214,7 +219,7 @@ export async function forgotPassword(_: ActionState, formData: FormData): Promis
   const token = newToken();
   await db.passwordResetToken.create({ data: { userId: user.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + RESET_MINUTES * 60_000) } });
   const url = appUrl(`/reset-password?token=${token}`);
-  await sendMail({ to: user.email, subject: "Reset your password", text: `Hello ${user.name},\n\nWe received a request to reset your password. The link below works once and expires in ${RESET_MINUTES} minutes.\n\nIf you didn't ask for this, you can ignore this email.`, link: { label: "Choose a new password", url } });
+  await sendMail({ to: user.email, category: "security", logText: "A password reset was requested. The single-use link is hidden from the outbox.", subject: "Reset your password", text: `Hello ${user.name},\n\nWe received a request to reset your password. The link below works once and expires in ${RESET_MINUTES} minutes.\n\nIf you didn't ask for this, you can ignore this email.`, link: { label: "Choose a new password", url } });
   await audit(user.id, "RESET_REQUESTED", "User", user.id, ip);
   // Local development without a mail server: show the link so the flow can be tried end to end.
   if (process.env.NODE_ENV !== "production" && !mailConfigured()) return { ...done, message: `${done.message} (No mail server is configured, so here is the link for testing: ${url})` };
@@ -233,5 +238,6 @@ export async function resetPassword(_: ActionState, formData: FormData): Promise
     db.passwordResetToken.updateMany({ where: { userId: row.userId, usedAt: null }, data: { usedAt: new Date() } }),
   ]);
   await audit(row.userId, "RESET_PASSWORD", "User", row.userId);
+  notifyAcademic({ type: "security", id: row.userId, action: "Your password was changed using a recovery link.", version: row.id });
   redirect("/login?reset=1");
 }

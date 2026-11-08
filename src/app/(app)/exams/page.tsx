@@ -22,7 +22,7 @@ export default async function ExamsPage(props: PageProps<"/exams">) {
   });
   return (
     <>
-      <PageHeader title="Examinations" subtitle="Continuous internal evaluation, end-semester marks and result publication" />
+      <PageHeader illustration="graduation" title="Examinations" subtitle="Continuous internal evaluation, end-semester marks and result publication" />
       <Filters>
         <select name="term" aria-label="Term" defaultValue={termId} className="input w-auto">{terms.map((t) => <option key={t.id} value={t.id}>{t.name}{t.isCurrent ? " (current)" : ""}</option>)}</select>
       </Filters>

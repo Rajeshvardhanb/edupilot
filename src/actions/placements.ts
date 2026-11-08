@@ -1,15 +1,15 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
 
-import { getRules } from "@/lib/rules";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { studentStandings } from "@/lib/results";
-import { ineligibility } from "@/lib/placements";
-import { notifyStudents } from "@/lib/notify";
 import type { ActionState } from "@/lib/action-state";
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { ineligibility } from "@/lib/placements";
+import { studentStandings } from "@/lib/results";
+import { getRules } from "@/lib/rules";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const DriveSchema = z.object({
   company: z.string().trim().min(2, "Company is required"),
@@ -32,6 +32,7 @@ export async function createDrive(_: ActionState, fd: FormData): Promise<ActionS
   const c = await db.company.upsert({ where: { name: company }, create: { name: company, industry }, update: industry ? { industry } : {} });
   const d = await db.placementDrive.create({ data: { ...data, companyId: c.id, driveDate: new Date(`${driveDate}T00:00:00Z`), eligibleLevels: levels.join(","), status: "OPEN" } });
   await audit(me.id, "CREATE", "PlacementDrive", d.id, `${company} ${data.role}`);
+  notifyAcademic({ type: "placement-open", id: d.id });
   revalidatePath("/placements");
   return { ok: true, message: "Drive published. Eligible students can now apply." };
 }
@@ -42,6 +43,7 @@ export async function setDriveStatus(_: ActionState, fd: FormData): Promise<Acti
   const status = z.enum(["UPCOMING", "OPEN", "CLOSED", "COMPLETED"]).parse(fd.get("status"));
   await db.placementDrive.update({ where: { id }, data: { status } });
   await audit(me.id, "STATUS", "PlacementDrive", id, status);
+  if (status === "OPEN") notifyAcademic({ type: "placement-open", id });
   revalidatePath(`/placements/${id}`);
   return { ok: true };
 }
@@ -54,8 +56,9 @@ export async function applyToDrive(_: ActionState, fd: FormData): Promise<Action
   const st = (await studentStandings([s.id])).get(s.id)!;
   const reason = ineligibility(drive, s, st, (await getRules()).placementSemestersLeft);
   if (reason) return { error: `Not eligible: ${reason}.` };
-  await db.placementApplication.upsert({ where: { driveId_studentId: { driveId: drive.id, studentId: s.id } }, create: { driveId: drive.id, studentId: s.id }, update: {} });
+  const application = await db.placementApplication.upsert({ where: { driveId_studentId: { driveId: drive.id, studentId: s.id } }, create: { driveId: drive.id, studentId: s.id }, update: {} });
   await audit(me.id, "APPLY", "PlacementDrive", drive.id);
+  notifyAcademic({ type: "placement-application", id: application.id });
   revalidatePath("/placements");
   return { ok: true, message: "Applied successfully." };
 }
@@ -76,10 +79,7 @@ export async function setApplicationStatus(_: ActionState, fd: FormData): Promis
   const status = z.enum(["APPLIED", "SHORTLISTED", "SELECTED", "REJECTED"]).parse(fd.get("status"));
   const a = await db.placementApplication.update({ where: { id }, data: { status } });
   await audit(me.id, "STATUS", "PlacementApplication", id, status);
-  if (status === "SELECTED" || status === "SHORTLISTED") {
-    const drive = await db.placementDrive.findUniqueOrThrow({ where: { id: a.driveId }, include: { company: true } });
-    await notifyStudents([a.studentId], { title: status === "SELECTED" ? `Congratulations! Selected by ${drive.company.name}` : `Shortlisted by ${drive.company.name}`, body: `${drive.role} · ${drive.ctcLpa} LPA`, href: "/placements", email: true });
-  }
+  notifyAcademic({ type: "placement-status", id: a.id });
   revalidatePath(`/placements/${a.driveId}`);
   return { ok: true };
 }

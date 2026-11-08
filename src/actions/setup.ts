@@ -1,13 +1,13 @@
 "use server";
 
+import type { ActionState } from "@/lib/action-state";
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { csvRecords } from "@/lib/csv";
+import { db } from "@/lib/db";
+import { SETUP_KINDS,type SetupKind } from "@/lib/setup";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { csvRecords } from "@/lib/csv";
-import { SETUP_KINDS, type SetupKind } from "@/lib/setup";
-import type { ActionState } from "@/lib/action-state";
 
 const num = (v: string) => (v === "" ? NaN : Number(v));
 const int = (v: string, lo: number, hi: number) => { const n = num(v); return Number.isInteger(n) && n >= lo && n <= hi ? n : null; };
@@ -36,7 +36,6 @@ export async function importSetup(_: ActionState, fd: FormData): Promise<ActionS
   const errors: string[] = [];
   let saved = 0;
   const skip = (line: number, why: string) => { errors.push(`Row ${line}: ${why}`); };
-  const feeGroups = new Map<string, { programId: string; code: string; year: number; ay: string; items: { head: string; amount: number }[] }>();
 
   for (const { line, data: r } of records) {
     const blank = spec.required.find((c) => !r[c]);
@@ -77,26 +76,15 @@ export async function importSetup(_: ActionState, fd: FormData): Promise<ActionS
         const dept = deptId.get(r.department.toUpperCase()), email = r.email.toLowerCase(), employeeId = r.employeeId.toUpperCase();
         if (!dept) { skip(line, `department "${r.department}" does not exist — import departments first`); continue; }
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { skip(line, "email is not valid"); continue; }
-        if (r.joiningDate && !/^\d{4}-\d{2}-\d{2}$/.test(r.joiningDate)) { skip(line, "joiningDate must be YYYY-MM-DD"); continue; }
-        const data = { departmentId: dept, designation: r.designation, qualification: r.qualification || null, specialization: r.specialization || null, joiningDate: r.joiningDate ? new Date(`${r.joiningDate}T00:00:00Z`) : null };
+        const data = { departmentId: dept, designation: "Teacher" };
         const existing = await db.faculty.findUnique({ where: { employeeId } });
         if (existing) {
           await db.faculty.update({ where: { id: existing.id }, data });
-          await db.user.update({ where: { id: existing.userId }, data: { name: r.name, phone: r.phone || null } });
+          await db.user.update({ where: { id: existing.userId }, data: { name: r.name } });
         } else {
           if (await db.user.findUnique({ where: { email }, select: { id: true } })) { skip(line, `email ${email} is already used by another account`); continue; }
-          await db.user.create({ data: { name: r.name, email, phone: r.phone || null, role: "FACULTY", mustChangePassword: true, passwordHash: await bcrypt.hash(employeeId.toLowerCase(), 10), faculty: { create: { employeeId, ...data } } } });
+          await db.user.create({ data: { name: r.name, email, role: "FACULTY", mustChangePassword: true, passwordHash: await bcrypt.hash(employeeId.toLowerCase(), 10), faculty: { create: { employeeId, ...data } } } });
         }
-      } else if (kind === "fees") {
-        const pid = programId.get(r.program.toUpperCase()), year = int(r.yearOfStudy, 1, 6), amount = num(r.amount.replace(/[₹,\s]/g, ""));
-        if (!pid) { skip(line, `programme "${r.program}" does not exist — import programmes first`); continue; }
-        if (!year) { skip(line, "yearOfStudy must be 1–6"); continue; }
-        if (!/^\d{4}-\d{2}$/.test(r.academicYear)) { skip(line, "academicYear must look like 2026-27"); continue; }
-        if (!(amount > 0)) { skip(line, "amount must be a positive number"); continue; }
-        const key = `${pid}|${year}|${r.academicYear}`;
-        const g = feeGroups.get(key) ?? { programId: pid, code: r.program.toUpperCase(), year, ay: r.academicYear, items: [] };
-        g.items.push({ head: r.head, amount }); feeGroups.set(key, g);
-        continue; // counted when the structure is written below
       }
       saved++;
     } catch (e) {
@@ -105,18 +93,9 @@ export async function importSetup(_: ActionState, fd: FormData): Promise<ActionS
     }
   }
 
-  // Fee heads are grouped into one structure per programme, year and academic year.
-  for (const g of feeGroups.values()) {
-    const existing = await db.feeStructure.findFirst({ where: { programId: g.programId, yearOfStudy: g.year, academicYear: g.ay }, include: { _count: { select: { invoices: true } } } });
-    if (existing?._count.invoices) { errors.push(`${g.code} year ${g.year} (${g.ay}): invoices were already raised from this structure, so it was left unchanged`); continue; }
-    if (existing) await db.feeStructure.update({ where: { id: existing.id }, data: { items: { deleteMany: {}, create: g.items } } });
-    else await db.feeStructure.create({ data: { name: `${g.code} — Year ${g.year} (${g.ay})`, programId: g.programId, yearOfStudy: g.year, academicYear: g.ay, items: { create: g.items } } });
-    saved++;
-  }
-
   await audit(me.id, "IMPORT", spec.label, undefined, `${saved} saved, ${errors.length} skipped`);
   revalidatePath("/admin/setup");
-  const what = kind === "fees" ? "fee structure(s)" : "row(s)";
+  const what = "row(s)";
   if (errors.length) return { ok: saved > 0, message: saved ? `${saved} ${what} saved.` : undefined, error: `${errors.length} skipped — ${errors.slice(0, 6).join(" | ")}${errors.length > 6 ? " …" : ""}` };
   return { ok: true, message: `${saved} ${what} saved.` };
 }

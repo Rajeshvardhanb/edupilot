@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import {
-  Activity, Award, BarChart3, BedDouble, Bell, BookOpen, Boxes, Briefcase, Building2, Bus, CalendarDays, CheckCircle2, ClipboardCheck,
-  Clock, DoorOpen, FileText, Filter, GraduationCap, HandCoins, History, IdCard, LayoutGrid, Library, LifeBuoy, ListChecks, Lock, Mail,
+  Activity, Award, BarChart3, BookOpen, Briefcase, Building2, CalendarDays, CheckCircle2, ClipboardCheck,
+  Clock, FileText, Filter, GraduationCap, HandCoins, History, IdCard, LayoutGrid, ListChecks, Lock, Mail,
   Megaphone, MessageSquareHeart, Palette, PieChart, Plus, ScrollText, Settings, ShieldCheck, Target, TrendingUp, Upload,
-  UserCircle, UserPlus, Users, Wallet, AlertTriangle, Shapes, Wrench, Phone, Eye,
+  UserCircle, UserPlus, Users, AlertTriangle, Shapes, Wrench, Phone, Eye,
 } from "lucide-react";
 
 /** Keyword (in the card's English title) → icon and chip colour. The first match wins, so specific words come first. */
@@ -13,11 +13,9 @@ const MAP: [RegExp, typeof Activity, string][] = [
   [/attention|shortage|risk|overdue|backlog|withheld|error/i, AlertTriangle, "chip-danger"],
   [/attendance|present|absent/i, ClipboardCheck, "chip-success"],
   [/timetable|today|schedule|calendar|coming up|term|week/i, CalendarDays, "chip-info"],
-  [/fee|payment|collection|invoice|instalment|realisation|ledger|payroll|salary|refund|closing|cash|mode/i, Wallet, "chip-success"],
   [/scholarship/i, HandCoins, "chip-success"],
   [/placement|drive|recruit|offer|funnel|career/i, Briefcase, "chip-warning"],
   [/notice|announcement|circular/i, Megaphone, "chip-warning"],
-  [/notification|alert/i, Bell, "chip-warning"],
   [/result|grade|cgpa|sgpa|marks|assessment|revaluation|grace/i, Award, "chip-violet"],
   [/exam|hall ticket|seating|invigilat|supplementary/i, FileText, "chip-violet"],
   [/outcome|co-po|attainment|accreditation/i, Target, "chip-violet"],
@@ -30,13 +28,7 @@ const MAP: [RegExp, typeof Activity, string][] = [
   [/admission|enquir|follow-up/i, UserPlus, "chip-pink"],
   [/faculty|staff|member|users?$|room-mate|parent|guardian|applicant|visitor/i, Users, "chip-pink"],
   [/profile|account|personal/i, UserCircle, "chip-pink"],
-  [/library|book/i, Library, "chip-success"],
-  [/hostel|room/i, BedDouble, "chip-pink"],
-  [/transport|bus|route|pass/i, Bus, "chip-warning"],
-  [/inventory|asset|equipment/i, Boxes, "chip-brand"],
-  [/gate/i, DoorOpen, "chip-info"],
   [/certificate|bonafide|document/i, ScrollText, "chip-warning"],
-  [/helpdesk|ticket|complaint|support/i, LifeBuoy, "chip-info"],
   [/id card|identity/i, IdCard, "chip-info"],
   [/contact|call|whatsapp/i, Phone, "chip-warning"],
   [/report|chart|distribution|trend|progress|by programme|by year/i, BarChart3, "chip-brand"],

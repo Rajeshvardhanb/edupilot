@@ -1,19 +1,17 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+import type { Role } from "@prisma/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useState, type ReactNode } from "react";
-import type { Role } from "@prisma/client";
-import { Sidebar } from "./sidebar";
-import { Topbar, type ShellNotice } from "./topbar";
-import { ToastProvider } from "./toast";
+import { useCallback,useState,type ReactNode } from "react";
+import { BrowserCleanup } from "./browser-cleanup";
 import { ConfirmProvider } from "./confirm";
-import { Tour } from "./tour";
-import { OfflineSync } from "./offline";
+import { NAV,activeHref } from "./nav";
 import { Shortcuts } from "./shortcuts";
-import { NAV, activeHref } from "./nav";
-import { cn } from "@/lib/utils";
-import type { Lang } from "@/lib/i18n";
+import { Sidebar } from "./sidebar";
+import { ToastProvider } from "./toast";
+import { Topbar } from "./topbar";
 
 export type ShellUser = { id: string; name: string; email: string; role: Role; hasPhoto: boolean; children: { id: string; name: string; rollNo: string }[]; studentId: string | null; subtitle: string };
 export type ShellTerm = { name: string; week: number; weeks: number; percent: number };
@@ -21,13 +19,13 @@ export type Brand = { name: string; shortName: string; tagline: string; hasLogo:
 
 /** The phone's bottom bar for each role: the four or five places that person goes most. */
 const TABS: Record<Role, string[]> = {
-  STUDENT: ["/dashboard", "/attendance", "/results", "/fees", "/timetable"],
-  PARENT: ["/dashboard", "/attendance", "/results", "/fees", "/profile"],
+  STUDENT: ["/dashboard", "/attendance", "/results", "/timetable", "/profile"],
+  PARENT: ["/dashboard", "/attendance", "/results", "/timetable", "/profile"],
   FACULTY: ["/dashboard", "/attendance", "/students", "/timetable", "/profile"],
   HOD: ["/dashboard", "/students", "/attendance", "/exams", "/profile"],
-  ADMIN: ["/dashboard", "/students", "/fees", "/notices", "/profile"],
-  ACCOUNTANT: ["/dashboard", "/fees", "/scholarships", "/reports", "/profile"],
-  OFFICE: ["/dashboard", "/admissions", "/students", "/certificates", "/profile"],
+  ADMIN: ["/dashboard", "/students", "/attendance", "/exams", "/profile"],
+  ACCOUNTANT: ["/dashboard", "/students", "/calendar", "/profile"],
+  OFFICE: ["/dashboard", "/students", "/calendar", "/profile"],
 };
 
 /** The page name shown in the middle of the phone's top bar (the dashboard shows the logo instead). */
@@ -37,12 +35,12 @@ function phoneTitle(pathname: string, active: string | undefined, t: (k: string)
   return item ? t(item.label) : null;
 }
 
-export function AppShell({ user, notices, unread, term, brand, lang, dict, children }: {
-  user: ShellUser; notices: ShellNotice[]; unread: number; term?: ShellTerm; brand: Brand; lang: Lang; dict: Record<string, string>; children: ReactNode;
+export function AppShell({ user, term, brand, children }: {
+  user: ShellUser; term?: ShellTerm; brand: Brand; children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const t = useCallback((k: string) => dict[k] ?? k, [dict]);
+  const t = useCallback((k: string) => k, []);
   const tabs = TABS[user.role].map((h) => NAV.find((n) => n.href === h && n.roles.includes(user.role))).filter((n) => !!n);
   const active = activeHref(pathname, NAV);
 
@@ -53,7 +51,7 @@ export function AppShell({ user, notices, unread, term, brand, lang, dict, child
         <div className="min-h-screen">
           <Sidebar user={user} open={open} onClose={() => setOpen(false)} term={term} brand={brand} t={t} />
           <div className="lg:pl-60">
-            <Topbar user={user} notices={notices} unread={unread} onMenu={() => setOpen(true)} lang={lang} t={t} title={phoneTitle(pathname, active, t)} />
+            <Topbar user={user} onMenu={() => setOpen(true)} t={t} title={phoneTitle(pathname, active, t)} />
             {/* Printed pages carry the college name and the date instead of the menu and top bar. */}
             <div className="mb-4 hidden items-end justify-between border-b border-black/70 pb-2 text-xs print:flex"><span className="text-sm font-bold uppercase">{brand.name}</span><span suppressHydrationWarning>Printed {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
             <main id="main" tabIndex={-1} data-section={pathname.split("/").filter(Boolean).length <= 1 ? "" : undefined} className={cn("mx-auto max-w-7xl px-4 pt-6 pb-12 outline-none sm:px-6 lg:px-8", tabs.length > 0 && "pb-28 lg:pb-12")}>{children}</main>
@@ -67,8 +65,7 @@ export function AppShell({ user, notices, unread, term, brand, lang, dict, child
               ))}
             </nav>
           )}
-          <Tour role={user.role} userId={user.id} />
-          <OfflineSync />
+          <BrowserCleanup />
           <Shortcuts role={user.role} />
         </div>
       </ConfirmProvider>

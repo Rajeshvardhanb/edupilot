@@ -23,7 +23,7 @@ export default async function RulesPage() {
             <div className="space-y-6">
               <Card title="What changes when you save">
                 <ul className="space-y-3 text-sm text-muted">
-                  <li><b className="text-fg">Straight away:</b> dashboards, the shortage report, attendance badges, reminder messages and hall-ticket eligibility.</li>
+                  <li><b className="text-fg">Straight away:</b> dashboards, the shortage report, attendance badges and hall-ticket eligibility.</li>
                   <li><b className="text-fg">From the next publish:</b> grades, pass or fail, SGPA and CGPA for results that are not yet published.</li>
                   <li><b className="text-fg">Not changed:</b> results already published. Republish a course to apply new rules to it.</li>
                 </ul>

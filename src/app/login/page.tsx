@@ -1,6 +1,6 @@
 import { BrandMark, Wordmark } from "@/components/brand-mark";
 import { Suspense } from "react";
-import { Lock, ShieldCheck, History } from "lucide-react";
+import { Lock, ShieldCheck, History, UserRound } from "lucide-react";
 import { LoginForm } from "./login-form";
 import { getInstitution } from "@/lib/institution";
 import { CampusPanel } from "@/components/campus-panel";
@@ -17,12 +17,13 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <div className="grid min-h-screen bg-bg lg:grid-cols-[1.12fr_1fr]">
       <CampusPanel />
-      <main className="relative flex flex-col bg-surface px-5 py-8 sm:px-10">
+      <main className="auth-form-panel relative flex flex-col px-5 py-8 sm:px-10">
         <div className="flex items-center gap-2.5 lg:hidden"><BrandMark size={32} /><Wordmark className="text-lg" /></div>
         {inst.phone && <p className="mt-2 text-right text-sm text-muted lg:mt-6">Need help? <a href={`tel:${inst.phone.replace(/[^0-9+]/g, "")}`} className="font-semibold text-brand">{inst.phone}</a></p>}
-        <div className="mx-auto my-auto w-full max-w-[400px] animate-fade-up py-8">
-          <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight">Welcome back</h2>
-          <p className="mt-1.5 mb-7 text-sm text-muted">Sign in to {inst.shortName} with your college email.</p>
+        <div className="auth-login-card mx-auto my-auto w-full max-w-[460px] animate-fade-up rounded-3xl border border-white bg-white/95 p-6 shadow-lift sm:p-8">
+          <span className="mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-violet-100 text-brand"><UserRound className="size-8" /></span>
+          <h2 className="text-center text-[1.75rem] leading-tight font-bold tracking-tight">Welcome back!</h2>
+          <p className="mt-1.5 mb-7 text-center text-sm text-muted">Sign in to your {inst.shortName} account.</p>
           <Suspense>
             <LoginForm searchParams={props.searchParams} showDemo={showDemo} />
           </Suspense>

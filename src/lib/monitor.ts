@@ -29,7 +29,7 @@ export async function recordError(err: unknown, request: { path: string; method:
     if (!existing && mailConfigured() && Date.now() - lastAlertAt > 3600_000) {
       lastAlertAt = Date.now();
       const admins = await db.user.findMany({ where: { role: "ADMIN", isActive: true }, select: { email: true } });
-      await Promise.all(admins.map((a) => sendMail({ to: a.email, subject: "A page in the college system reported an error", text: `Something went wrong on ${route} (${request.method}).\n\n${message}\n\nIt is listed under Administration → System health, where repeats are counted. You will get at most one of these emails an hour.` })));
+      await Promise.all(admins.map((a) => sendMail({ to: a.email, category: "system", subject: "A page in the college system reported an error", text: `Something went wrong on ${route} (${request.method}).\n\n${message}\n\nIt is listed under Administration → System health, where repeats are counted. You will get at most one of these emails an hour.` })));
     }
   } catch (e) {
     console.error("could not record error", e, err);

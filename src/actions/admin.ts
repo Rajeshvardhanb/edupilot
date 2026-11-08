@@ -1,53 +1,17 @@
 "use server";
+import { notifyAcademic } from "@/lib/academic-email";
+import { mailConfigured, PRIVATE_EMAIL_LOG, sendMail } from "@/lib/mail";
 
-import bcrypt from "bcryptjs";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
-import { db } from "@/lib/db";
-import { forgetInstitution, getInstitution } from "@/lib/institution";
-import { parseGradeScale } from "@/lib/grading";
-import { requireUser } from "@/lib/auth";
-import { audit } from "@/lib/audit";
-import { notifyUsers } from "@/lib/notify";
 import type { ActionState } from "@/lib/action-state";
-
-// ── Notices ──
-const NoticeSchema = z.object({
-  title: z.string().trim().min(3, "Title is required").max(200),
-  body: z.string().trim().min(5, "Message is required"),
-  audience: z.enum(["ALL", "STUDENTS", "FACULTY"]),
-  pinned: z.literal("on").optional(),
-});
-
-export async function createNotice(_: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireUser(["ADMIN", "HOD", "FACULTY", "ACCOUNTANT", "OFFICE"]);
-  const p = NoticeSchema.safeParse(Object.fromEntries(fd));
-  if (!p.success) return { error: p.error.issues[0].message };
-  const n = await db.notice.create({
-    data: { title: p.data.title, body: p.data.body, audience: p.data.audience, pinned: me.role === "ADMIN" && !!p.data.pinned, createdById: me.id, departmentId: me.role === "HOD" || me.role === "FACULTY" ? me.departmentId : null },
-  });
-  await audit(me.id, "CREATE", "Notice", n.id, n.title);
-  const roles = n.audience === "STUDENTS" ? ["STUDENT", "PARENT"] : n.audience === "FACULTY" ? ["FACULTY", "HOD", "ACCOUNTANT", "OFFICE"] : ["STUDENT", "PARENT", "FACULTY", "HOD", "ACCOUNTANT", "OFFICE"];
-  const audience = await db.user.findMany({ where: { role: { in: roles as never }, isActive: true, id: { not: me.id } }, select: { id: true } });
-  await notifyUsers(audience.map((u) => u.id), { title: `Notice: ${n.title}`, body: n.body.slice(0, 600), href: "/notices", email: fd.get("email") === "on" });
-  revalidatePath("/notices");
-  return { ok: true, message: "Notice published." };
-}
-
-export async function deleteNotice(_: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireUser(["ADMIN", "HOD", "FACULTY", "ACCOUNTANT", "OFFICE"]);
-  const n = await db.notice.findUniqueOrThrow({ where: { id: String(fd.get("id")) } });
-  if (me.role !== "ADMIN" && n.createdById !== me.id) return { error: "You can only delete your own notices." };
-  await db.$transaction([
-    db.notice.delete({ where: { id: n.id } }),
-    // Take back the bell notifications it sent, so a withdrawn notice does not linger in anyone's list.
-    db.notification.deleteMany({ where: { title: `Notice: ${n.title}`, href: "/notices", createdAt: { gte: new Date(n.createdAt.getTime() - 1000) } } }),
-  ]);
-  await audit(me.id, "DELETE", "Notice", n.id, n.title);
-  revalidatePath("/notices");
-  return { ok: true };
-}
+import { audit } from "@/lib/audit";
+import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { parseGradeScale } from "@/lib/grading";
+import { forgetInstitution,getInstitution } from "@/lib/institution";
+import { Prisma } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 // ── Users ──
 export async function toggleUserActive(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -68,6 +32,7 @@ export async function resetPassword(_: ActionState, fd: FormData): Promise<Actio
   const temp = `Edu@${Math.random().toString(36).slice(2, 8)}`;
   await db.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(temp, 10), mustChangePassword: true, passwordChangedAt: new Date(Math.floor(Date.now() / 1000) * 1000 + 1000), failedLogins: 0, lockedUntil: null } });
   await audit(me.id, "RESET_PASSWORD", "User", id, u.email);
+  notifyAcademic({ type: "security", id, action: "An administrator reset your password. Obtain your temporary credentials through the college process.", version: String(Date.now()) });
   return { ok: true, message: `Temporary password for ${u.email}: ${temp}` };
 }
 
@@ -75,6 +40,7 @@ export async function turnOffTwoStep(_: ActionState, fd: FormData): Promise<Acti
   const me = await requireUser(["ADMIN"]);
   const u = await db.user.update({ where: { id: String(fd.get("id")) }, data: { twoStep: false } });
   await audit(me.id, "TWO_STEP_OFF", "User", u.id, `by administrator for ${u.email}`);
+  notifyAcademic({ type: "security", id: u.id, action: "An administrator disabled two-step sign-in for your account.", version: String(Date.now()) });
   revalidatePath("/admin");
   return { ok: true, message: `Two-step sign-in turned off for ${u.email}.` };
 }
@@ -94,6 +60,7 @@ export async function createStaffUser(_: ActionState, fd: FormData): Promise<Act
   if (await db.user.findUnique({ where: { email: p.data.email } })) return { error: "Email already registered." };
   const u = await db.user.create({ data: { name: p.data.name, email: p.data.email, role: p.data.role, mustChangePassword: true, passwordHash: await bcrypt.hash(p.data.password, 10) } });
   await audit(me.id, "CREATE", "User", u.id, `${u.role} ${u.email}`);
+  notifyAcademic({ type: "account", id: u.id });
   revalidatePath("/admin");
   return { ok: true, message: "User created." };
 }
@@ -157,4 +124,31 @@ export async function resolveAllErrors(): Promise<ActionState> {
   await db.errorLog.updateMany({ where: { resolvedAt: null }, data: { resolvedAt: new Date() } });
   revalidatePath("/admin/health");
   return { ok: true, message: "All errors marked as resolved." };
+}
+
+/** Verify recovery/security mail delivery from the administration screen. */
+export async function sendTestEmail(_: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireUser(["ADMIN"]);
+  const email = z.email().safeParse(String(fd.get("to") ?? ""));
+  if (!email.success) return { error: "Enter a valid email address." };
+  const { sendMail } = await import("@/lib/mail");
+  const status = await sendMail({ to: email.data, category: "system", subject: "SVIET mail test", text: "This is a test of the password recovery and security email connection." });
+  await audit(me.id, "TEST_EMAIL", "System", undefined, status);
+  return status === "SENT" ? { ok: true, message: "Test email sent." } : { error: "Email was not delivered. Check the mail configuration and outbox." };
+}
+
+/** Explicit retries only: uncertain SENDING outcomes and expired secrets are never resent. */
+export async function retryEmail(_: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireUser(["ADMIN"]);
+  if (!mailConfigured()) return { error: "Configure SMTP and restart before retrying." };
+  const row = await db.emailLog.findUnique({ where: { id: String(fd.get("id")) } });
+  if (!row || !["FAILED", "NOT_CONFIGURED"].includes(row.status)) return { error: "Only failed or unconfigured messages can be retried." };
+  if (row.body.startsWith(PRIVATE_EMAIL_LOG) || /sign-in code|reset your password/i.test(row.subject)) return { error: "Request a fresh verification code or password reset link instead." };
+  const claimed = await db.emailLog.updateMany({ where: { id: row.id, status: row.status }, data: { status: "RETRYING" } });
+  if (!claimed.count) return { error: "Another retry already started." };
+  const status = await sendMail({ to: row.to, subject: row.subject, text: row.body, key: `retry:${row.id}` });
+  await db.emailLog.update({ where: { id: row.id }, data: { status: "RETRIED", error: "A retry was recorded in a new outbox entry. Check its status." } });
+  await audit(me.id, "RETRY", "EmailLog", row.id);
+  revalidatePath("/admin/email");
+  return status === "SENT" ? { ok: true, message: "SMTP accepted the retry. Inbox delivery is not confirmed." } : { error: "Retry was not accepted. Check the newest outbox entry." };
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cloneElement, Fragment, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -7,15 +8,16 @@ import { LiveError } from "./live-validation";
 import { MoreMenu } from "./more-menu";
 import { cardIcon, statIcon } from "./card-icons";
 
-export function PageHeader({ title, subtitle, actions, eyebrow }: { title: string; subtitle?: ReactNode; actions?: ReactNode; eyebrow?: string }) {
+export function PageHeader({ title, subtitle, actions, eyebrow, illustration }: { title: string; subtitle?: ReactNode; actions?: ReactNode; eyebrow?: string; illustration?: "students" | "learning" | "graduation" }) {
   return (
-    <div className="relative z-20 mb-6 flex animate-fade-up flex-wrap items-end justify-between gap-3">
+    <div className={cn("relative z-20 mb-6 flex animate-fade-up flex-wrap items-end justify-between gap-3", illustration && "academic-heading min-h-32 rounded-2xl border border-violet-200/70 p-5 sm:min-h-40 sm:pr-52")}>
       <div>
         {eyebrow && <p className="mb-1 text-xs font-semibold text-brand">{eyebrow}</p>}
         <h1 className="page-title text-[1.6rem] leading-tight font-bold tracking-tight sm:text-[1.75rem]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="no-print flex flex-wrap items-center gap-2"><HeaderActions actions={actions} /></div>}
+      {illustration && <div aria-hidden className="pointer-events-none absolute right-4 bottom-0 hidden h-40 w-44 overflow-hidden sm:block"><Image src={`/images/academic/${illustration}.webp`} alt="" fill sizes="176px" className="object-contain object-bottom" /></div>}
     </div>
   );
 }
@@ -48,7 +50,7 @@ export function Card({ className, title, actions, children, icon }: {
   return (
     <section className={cn("tile animate-fade-up", className)}>
       {(title || actions) && (
-        <header className="flex min-h-14 flex-wrap items-center justify-between gap-2 px-5 pt-4">
+        <header className="card-heading flex min-h-14 flex-wrap items-center justify-between gap-2 px-5 pt-4">
           <h2 className="flex min-w-0 items-center gap-2.5 font-sans text-[15px] font-semibold tracking-normal">{chip}<span className="min-w-0">{title}</span></h2>
           {actions}
         </header>
@@ -128,11 +130,12 @@ export function StatCard({ label, value, hint, tone = "brand", icon, trend, char
   const good = trend ? (trend.good ?? trend.up) : true;
   return (
     <div
-      className={cn("tile group relative min-w-0 animate-fade-up overflow-hidden p-4 sm:p-5", href && "tile-hover")}
-      style={{ backgroundImage: `linear-gradient(145deg, #fff 45%, color-mix(in oklab, ${WASH[tone]} 7%, white))` }}
+      className={cn("tile stat-tile group relative min-w-0 animate-fade-up overflow-hidden p-4 sm:p-5", href && "tile-hover")}
+      style={{ backgroundImage: `linear-gradient(135deg, #fff 25%, color-mix(in oklab, ${WASH[tone]} 15%, white))`, borderColor: `color-mix(in oklab, ${WASH[tone]} 22%, white)` }}
     >
       {/* Soft circle of the tile's colour in the corner. */}
       <span aria-hidden className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full" style={{ background: `color-mix(in oklab, ${WASH[tone]} 11%, transparent)` }} />
+      <span aria-hidden className="pointer-events-none absolute -right-4 -bottom-7 h-14 w-40 -rotate-12 rounded-[50%]" style={{ background: `color-mix(in oklab, ${WASH[tone]} 12%, transparent)` }} />
       <div className="relative flex items-center gap-2.5">
         {icon
           ? <span className={cn("chip size-9 shrink-0 [&_svg]:size-[18px]", chipClasses[tone])}>{icon}</span>

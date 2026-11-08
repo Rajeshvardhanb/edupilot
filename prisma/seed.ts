@@ -1,8 +1,9 @@
-import { Prisma, PrismaClient, type AssessmentType, type ProgramLevel, type SubjectType } from "@prisma/client";
+import { Prisma,PrismaClient,type AssessmentType,type ProgramLevel,type SubjectType } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
+import { SVIET_COLLEGE } from "../src/lib/college";
 import { computeResult } from "../src/lib/grading";
-import { addDemoExtras } from "./demo-extras";
+import { SVIET_STUDENTS } from "./sviet-students";
 
 const db = new PrismaClient();
 
@@ -139,7 +140,7 @@ async function main() {
   const hash = await bcrypt.hash("password123", 10);
 
   // ── Staff ──
-  await db.user.create({ data: { email: "admin@edupilot.edu", name: "Dr. Ramesh Babu (Principal)", role: "ADMIN", passwordHash: hash, phone: "9000000001" } });
+  await db.user.create({ data: { email: "admin@edupilot.edu", name: SVIET_COLLEGE.principalName, role: "ADMIN", passwordHash: hash, phone: SVIET_COLLEGE.phone } });
   await db.user.create({ data: { email: "accounts@edupilot.edu", name: "Srinivas Murthy", role: "ACCOUNTANT", passwordHash: hash, phone: "9000000002" } });
   await db.user.create({ data: { email: "office@edupilot.edu", name: "Lakshmi Prasad", role: "OFFICE", passwordHash: hash, phone: "9000000003" } });
 
@@ -233,20 +234,23 @@ async function main() {
     const usedNames = new Set<string>();
     const lateral = p.level === "UG" && year <= 2025 && section === "A" ? 4 : 0;
     for (let i = 0; i < regular + lateral; i++) {
+      // Use the supplied identities in the existing demo class so its linked
+      // marks/attendance examples remain available. This is not a real batch assignment.
+      const supplied = code === "BTCSE" && year === 2024 && section === "A" ? SVIET_STUDENTS[i] : undefined;
       const isLateral = i >= regular;
       const female = rand() < 0.42;
       let first: string, last: string;
       do { first = pick(female ? FIRST_F : FIRST_M); last = pick(LAST); } while (usedNames.has(`${first} ${last}`));
       usedNames.add(`${first} ${last}`);
       const seq = isLateral ? 300 + i - regular + 1 : (section === "B" ? 100 : 0) + i + 1;
-      const rollNo = `${String(isLateral ? year + 1 : year).slice(2)}${code}${String(seq).padStart(3, "0")}`;
+      const rollNo = supplied?.rollNo ?? `${String(isLateral ? year + 1 : year).slice(2)}${code}${String(seq).padStart(3, "0")}`;
       const demo: boolean = !studentDemoAssigned && code === "BTCSE" && year === 2024 && section === "A";
       studentDemoAssigned ||= demo;
       const ability = demo ? 0.82 : Math.min(0.97, Math.max(0.4, between(0.52, 0.95) + (rand() < 0.08 ? -0.15 : 0)));
       const user = await db.user.create({
         data: {
           email: demo ? "student@edupilot.edu" : `${rollNo.toLowerCase()}@student.edupilot.edu`,
-          name: `${first} ${last}`, role: "STUDENT", passwordHash: hash, phone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
+          name: supplied?.name ?? `${first} ${last}`, role: "STUDENT", passwordHash: hash, phone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
           student: {
             create: {
               rollNo, batchId: batch.id,
@@ -383,56 +387,6 @@ async function main() {
   for (let i = 0; i < records.length; i += 10000) await db.attendanceRecord.createMany({ data: records.slice(i, i + 10000) });
   console.log(`Timetable slots: ${slots.length}, attendance sessions: ${sessions.length}, records: ${records.length}`);
 
-  // ── Fees (2026-27) ──
-  const accountant = await db.user.findUniqueOrThrow({ where: { email: "accounts@edupilot.edu" } });
-  let invNo = 1, rcptNo = 1;
-  for (const [code, { id: programId, p }] of programs) {
-    for (let y = 1; y <= p.years; y++) {
-      const ug = p.level === "UG", pg = p.level === "PG";
-      const items = [
-        { head: "Tuition Fee", amount: pg ? 57000 : ug ? 85000 : 22000 },
-        { head: "Special / Development Fee", amount: ug || pg ? 5000 : 2000 },
-        { head: "Examination Fee", amount: ug || pg ? 3500 : 1500 },
-        { head: "Library & Lab Fee", amount: ug || pg ? 4000 : 1500 },
-        ...(y === 1 ? [{ head: "Admission & Caution Deposit", amount: 3000 }] : []),
-      ];
-      const structure = await db.feeStructure.create({
-        data: { name: `${code} — Year ${y} (2026-27)`, programId, yearOfStudy: y, academicYear: "2026-27", items: { create: items } },
-      });
-      const total = items.reduce((sum, i) => sum + i.amount, 0);
-      for (const b of batches.filter((x) => x.code === code && 2026 - x.year + 1 === y)) {
-        for (const st of b.students) {
-          const concession = rand() < 0.12 ? Math.round(total * 0.5) : 0;
-          const inv = await db.feeInvoice.create({
-            data: { invoiceNo: `INV-2026-${String(invNo++).padStart(5, "0")}`, studentId: st.id, structureId: structure.id, title: structure.name, amount: total, concession, dueDate: day("2026-09-30") },
-          });
-          const r = rand();
-          const payable = total - concession;
-          const pays = r < 0.55 ? [payable] : r < 0.8 ? [Math.round(payable * 0.5)] : [];
-          for (const amount of pays) {
-            await db.payment.create({
-              data: { receiptNo: `RCPT-2026-${String(rcptNo++).padStart(5, "0")}`, invoiceId: inv.id, amount, mode: pick(["UPI", "UPI", "BANK_TRANSFER", "CASH", "CARD", "DD"] as const), reference: `TXN${Math.floor(rand() * 1e10)}`, paidAt: new Date(day("2026-07-01").getTime() + Math.floor(rand() ** 0.7 * 99) * 864e5), collectedById: accountant.id },
-            });
-          }
-        }
-      }
-    }
-  }
-
-  // ── Notices ──
-  const admin = await db.user.findUniqueOrThrow({ where: { email: "admin@edupilot.edu" } });
-  const hod = await db.user.findUniqueOrThrow({ where: { email: "hod.cse@edupilot.edu" } });
-  await db.notice.createMany({
-    data: [
-      { title: "Mid Term 2 examinations from 3rd November", body: "Mid Term 2 examinations for all B.Tech and Diploma semesters will be held from 3rd to 8th November 2026. Detailed time-tables will be shared by the respective departments.", audience: "ALL", pinned: true, createdById: admin.id, createdAt: new Date("2026-10-05T09:00:00Z") },
-      { title: "Attendance shortage — condonation window", body: "Students with attendance between 65% and 75% may apply for condonation with a medical certificate before 20th October. Students below 65% will be detained as per regulations.", audience: "STUDENTS", pinned: true, createdById: admin.id, createdAt: new Date("2026-10-01T09:00:00Z") },
-      { title: "Last date for fee payment extended", body: "The last date for payment of 2026-27 tuition fee without fine is extended to 15th October 2026. A late fee of ₹100/day applies thereafter.", audience: "STUDENTS", createdById: accountant.id, createdAt: new Date("2026-09-28T09:00:00Z") },
-      { title: "Faculty Development Programme on Generative AI", body: "A five-day AICTE-ATAL sponsored FDP on Generative AI in Engineering Education will be conducted from 19th October. Register with the CSE department office.", audience: "FACULTY", createdById: hod.id, departmentId: depts.get("CSE"), createdAt: new Date("2026-09-25T09:00:00Z") },
-      { title: "NAAC peer team visit — documentation", body: "All HODs are requested to keep course files, attendance registers and CO-PO attainment reports ready for the NAAC peer team visit in December.", audience: "FACULTY", createdById: admin.id, createdAt: new Date("2026-09-20T09:00:00Z") },
-      { title: "Smart India Hackathon 2026 — internal round", body: "Internal hackathon for SIH 2026 will be held on 24th October in the CSE seminar hall. Teams of 6 with at least one female member may register.", audience: "ALL", createdById: hod.id, createdAt: new Date("2026-09-15T09:00:00Z") },
-    ],
-  });
-
   // ── Placements ──
   const companies = await Promise.all(
     [["Tata Consultancy Services", "IT Services"], ["Infosys", "IT Services"], ["Zoho", "Product"], ["Bosch", "Automotive"], ["Larsen & Toubro", "Construction"], ["Accenture", "Consulting"]].map(([name, industry]) =>
@@ -462,15 +416,14 @@ async function main() {
   await seedModules();
 
   // ── Recent activity so the audit log and dashboards have history ──
+  const admin = await db.user.findUniqueOrThrow({ where: { email: "admin@edupilot.edu" } });
   const hodUser = await db.user.findUniqueOrThrow({ where: { email: "hod.cse@edupilot.edu" } });
   const facUser = await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" } });
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3600e3);
   await db.auditLog.createMany({
     data: [
       { userId: facUser.id, action: "MARK", entity: "Attendance", details: "BTCSE 2025-A · P2", createdAt: hoursAgo(1) },
-      { userId: accountant.id, action: "COLLECT", entity: "Payment", details: "₹48,750 UPI", createdAt: hoursAgo(2) },
       { userId: hodUser.id, action: "ALLOCATE", entity: "CourseOffering", details: "Machine Learning → BTCSE 2024-B", createdAt: hoursAgo(5) },
-      { userId: admin.id, action: "CREATE", entity: "Notice", details: "Mid Term 2 examinations from 3rd November", createdAt: hoursAgo(26) },
       { userId: facUser.id, action: "SAVE", entity: "Marks", details: "Mid Term 1 · 28 entries", createdAt: hoursAgo(30) },
       { userId: admin.id, action: "PUBLISH", entity: "Results", details: "2025-26 Even Semester", createdAt: hoursAgo(72) },
     ],
@@ -479,23 +432,21 @@ async function main() {
   console.log("Seed complete. Login with any demo account using password: password123");
 }
 
-/** Demo data for the service modules (calendar, leave, materials, exams, library, hostel, transport…). */
+/** Demo data for retained academic and placement features. */
 async function seedModules() {
   const hash = await bcrypt.hash("password123", 10);
   const term = await db.term.findFirstOrThrow({ where: { isCurrent: true } });
   const demo = await db.student.findFirstOrThrow({ where: { user: { email: "student@edupilot.edu" } }, include: { batch: true } });
   const facultyUser = await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" }, include: { faculty: true } });
-  const adminUser = await db.user.findUniqueOrThrow({ where: { email: "admin@edupilot.edu" } });
   const classmates = await db.student.findMany({ where: { batchId: demo.batchId }, orderBy: { rollNo: "asc" } });
-  const everyone = await db.student.findMany({ where: { status: "ACTIVE" }, select: { id: true, gender: true, rollNo: true, userId: true }, orderBy: { rollNo: "asc" } });
 
   await db.institution.upsert({
     where: { id: 1 }, update: {},
-    create: { id: 1, address: "Knowledge Park, Kukatpally, Hyderabad 500085", phone: "040-2300 1234", email: "office@edupilot.edu", principalName: "Dr. Ramesh Babu", lateFinePerDay: 25, lateFineMax: 1000 },
+    create: { id: 1, ...SVIET_COLLEGE },
   });
   // The row may already exist with blank defaults (the app creates it on first page load). Fill the demo
   // details in that case, but leave a college's own settings alone.
-  await db.institution.updateMany({ where: { id: 1, address: "" }, data: { address: "Knowledge Park, Kukatpally, Hyderabad 500085", phone: "040-2300 1234", email: "office@edupilot.edu", principalName: "Dr. Ramesh Babu", lateFinePerDay: 25, lateFineMax: 1000 } });
+  await db.institution.updateMany({ where: { id: 1, OR: [{ address: "" }, { name: "EduPilot Institute of Technology" }] }, data: { ...SVIET_COLLEGE } });
 
   // Calendar
   await db.calendarEvent.createMany({
@@ -566,89 +517,6 @@ async function seedModules() {
   // Parent login for the demo student
   await db.user.create({ data: { email: "parent@edupilot.edu", name: demo.guardianName ?? "Parent", role: "PARENT", passwordHash: hash, phone: demo.guardianPhone, children: { create: { studentId: demo.id } } } });
 
-  // Certificates and helpdesk
-  await db.certificateRequest.createMany({
-    data: [
-      { studentId: demo.id, type: "BONAFIDE", purpose: "Education loan application", status: "APPROVED", serialNo: "BON/2026/0001", issuedAt: new Date("2026-09-12T09:00:00Z") },
-      { studentId: classmates[2].id, type: "BONAFIDE", purpose: "Passport application" },
-      { studentId: classmates[6].id, type: "STUDY", purpose: "Scholarship renewal" },
-    ],
-  });
-  const t1 = await db.ticket.create({ data: { userId: demo.userId, category: "Fees", subject: "Scholarship amount not reflected in my invoice", body: "My fee reimbursement was sanctioned in August but the invoice still shows the full balance.", status: "IN_PROGRESS" } });
-  await db.ticketReply.create({ data: { ticketId: t1.id, userId: adminUser.id, body: "We have forwarded this to the accounts section. It will be credited once the funds are received from the government." } });
-  await db.ticket.create({ data: { userId: classmates[4].userId, category: "Hostel", subject: "Water cooler on the 2nd floor is not working", body: "The water cooler near room 204 has been out of order for three days." } });
-  await db.ticket.create({ data: { userId: facultyUser.id, category: "IT / login", subject: "Projector in CSE-104 needs replacement", body: "The projector lamp is very dim. Please arrange a replacement before mid-terms.", status: "RESOLVED" } });
-
-  // Admissions pipeline
-  const progs = await db.program.findMany();
-  const STAGES = ["ENQUIRY", "ENQUIRY", "ENQUIRY", "APPLIED", "APPLIED", "DOCUMENTS", "ADMITTED", "ADMITTED", "LOST"] as const;
-  await db.enquiry.createMany({
-    data: Array.from({ length: 16 }, (_, i) => ({
-      name: `${pick(rand() < 0.5 ? FIRST_M : FIRST_F)} ${pick(LAST)}`, phone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`, programId: pick(progs).id,
-      source: pick(["Walk-in", "Website", "Reference", "Counselling", "Advertisement"]), stage: STAGES[i % STAGES.length],
-      followUpDate: day(`2026-10-${String(6 + (i % 14)).padStart(2, "0")}`), notes: pick(["Asked about hostel and transport.", "Interested in lateral entry.", "Comparing with two other colleges.", "Parents will visit the campus on Saturday.", null]), ownerId: adminUser.id,
-    })),
-  });
-
-  // Scholarships
-  const SCHEMES = ["State fee reimbursement (RTF)", "Post-matric scholarship", "National Scholarship Portal", "Merit scholarship"];
-  await db.scholarship.createMany({
-    data: everyone.filter((_, i) => i % 23 === 0).map((st, i) => ({ studentId: st.id, scheme: SCHEMES[i % 4], academicYear: "2026-27", amount: [35000, 20000, 50000, 15000][i % 4], status: (["APPLIED", "SANCTIONED", "APPLIED", "REJECTED"] as const)[i % 4], reference: `APP${100000 + i * 37}` })),
-  });
-
-  // Instalment plan on the demo student's invoice
-  const inv = await db.feeInvoice.findFirst({ where: { studentId: demo.id } });
-  if (inv) {
-    // The demo student has paid the first of two instalments, leaving a balance to try online payment with.
-    const half = Math.floor(inv.amount / 2);
-    await db.payment.deleteMany({ where: { invoiceId: inv.id } });
-    await db.instalment.createMany({ data: [{ invoiceId: inv.id, dueDate: day("2026-08-31"), amount: half }, { invoiceId: inv.id, dueDate: day("2026-12-15"), amount: inv.amount - half }] });
-    await db.feeInvoice.update({ where: { id: inv.id }, data: { concession: 0, dueDate: day("2026-12-15") } });
-    await db.payment.create({ data: { receiptNo: "RCPT-2026-90001", invoiceId: inv.id, amount: half, mode: "UPI", reference: "TXN7700123456", paidAt: day("2026-08-20") } });
-  }
-
-  // Library
-  const BOOKS: [string, string, string][] = [
-    ["Introduction to Algorithms", "Cormen, Leiserson, Rivest, Stein", "Computer Science"], ["Operating System Concepts", "Silberschatz, Galvin, Gagne", "Computer Science"],
-    ["Computer Networking: A Top-Down Approach", "Kurose, Ross", "Computer Science"], ["Database System Concepts", "Korth, Sudarshan", "Computer Science"],
-    ["Artificial Intelligence: A Modern Approach", "Russell, Norvig", "Computer Science"], ["Compilers: Principles, Techniques and Tools", "Aho, Lam, Sethi, Ullman", "Computer Science"],
-    ["Signals and Systems", "Oppenheim, Willsky", "Electronics"], ["Microelectronic Circuits", "Sedra, Smith", "Electronics"], ["Electrical Machinery", "P. S. Bimbhra", "Electrical"],
-    ["Engineering Thermodynamics", "P. K. Nag", "Mechanical"], ["Theory of Machines", "S. S. Rattan", "Mechanical"], ["Strength of Materials", "R. K. Bansal", "Civil"],
-    ["Surveying Vol. 1", "B. C. Punmia", "Civil"], ["Higher Engineering Mathematics", "B. S. Grewal", "Mathematics"], ["Engineering Physics", "Gaur, Gupta", "Science"],
-  ];
-  await db.book.createMany({ data: BOOKS.map(([title, author, category], i) => ({ title, author, category, isbn: `97801${String(31000000 + i * 7919)}`, copies: 2 + (i % 3) })) });
-  const books = await db.book.findMany({ orderBy: { title: "asc" } });
-  await db.bookIssue.createMany({
-    data: [
-      { bookId: books[0].id, userId: demo.userId, issuedOn: day("2026-10-01"), dueOn: day("2026-10-15") },
-      { bookId: books[2].id, userId: classmates[1].userId, issuedOn: day("2026-09-10"), dueOn: day("2026-09-24") },
-      { bookId: books[3].id, userId: classmates[2].userId, issuedOn: day("2026-10-03"), dueOn: day("2026-10-17") },
-      { bookId: books[5].id, userId: facultyUser.id, issuedOn: day("2026-09-28"), dueOn: day("2026-10-12") },
-      { bookId: books[7].id, userId: classmates[7].userId, issuedOn: day("2026-09-01"), dueOn: day("2026-09-15"), returnedOn: day("2026-09-14") },
-    ],
-  });
-
-  // Hostel
-  for (const [name, kind, warden, gender] of [["Vivekananda Boys Hostel", "Boys", "Mr. K. Prasad", "MALE"], ["Sarojini Girls Hostel", "Girls", "Mrs. L. Devi", "FEMALE"]] as const) {
-    const h = await db.hostel.create({ data: { name, kind, warden, messFee: 4500, rooms: { create: Array.from({ length: 6 }, (_, i) => ({ number: `${101 + i}`, capacity: 3 })) } }, include: { rooms: true } });
-    const residents = everyone.filter((st) => st.gender === gender).filter((_, i) => i % 9 === 0).slice(0, 13);
-    await db.hostelAllocation.createMany({ data: residents.map((st, i) => ({ roomId: h.rooms[Math.floor(i / 3)].id, studentId: st.id, fromDate: day("2026-07-15") })) });
-  }
-
-  // Transport
-  const ROUTES: [string, string, [string, string][]][] = [
-    ["Route 1 — Kukatpally", "TS09 UA 4521", [["Miyapur", "07:20"], ["Kukatpally", "07:40"], ["Moosapet", "07:55"], ["College", "08:40"]]],
-    ["Route 2 — Secunderabad", "TS09 UB 1187", [["Secunderabad Stn", "07:10"], ["Begumpet", "07:30"], ["Ameerpet", "07:45"], ["College", "08:40"]]],
-    ["Route 3 — LB Nagar", "TS08 UC 7734", [["LB Nagar", "06:50"], ["Dilsukhnagar", "07:05"], ["Koti", "07:30"], ["College", "08:40"]]],
-  ];
-  const stops: { id: string; routeId: string }[] = [];
-  for (const [name, vehicleNo, list] of ROUTES) {
-    const r = await db.transportRoute.create({ data: { name, vehicleNo, driver: `${pick(FIRST_M)} ${pick(LAST)}`, phone: `98480${String(Math.floor(rand() * 1e5)).padStart(5, "0")}`, fee: 18000, stops: { create: list.map(([n, pickup], position) => ({ name: n, pickup, position })) } }, include: { stops: true } });
-    stops.push(...r.stops.slice(0, -1).map((st) => ({ id: st.id, routeId: r.id })));
-  }
-  const riders = [demo, ...everyone.filter((_, i) => i % 11 === 3)].slice(0, 30);
-  await db.transportPass.createMany({ data: riders.map((st, i) => ({ studentId: st.id, routeId: stops[i % stops.length].routeId, stopId: stops[i % stops.length].id })), skipDuplicates: true });
-
   // Placement: interview rounds on every drive, résumé for the demo student
   for (const d of await db.placementDrive.findMany()) {
     await db.driveRound.createMany({ data: ["Online assessment", "Technical interview", "HR interview"].map((name, i) => ({ driveId: d.id, name, position: i + 1 })) });
@@ -671,35 +539,7 @@ async function seedModules() {
     }),
   });
 
-  // ── Staff: a month of attendance, leave, appraisal records and a class swap ──
-  const staff = await db.user.findMany({ where: { role: { in: ["HOD", "FACULTY", "ACCOUNTANT"] } }, include: { faculty: true } });
-  const staffDays: { userId: string; date: Date; status: "PRESENT" | "ABSENT" | "HALF_DAY" | "ON_LEAVE" }[] = [];
-  for (let d = day("2026-09-10"); d <= day("2026-10-09"); d = new Date(d.getTime() + 864e5)) {
-    if (d.getUTCDay() === 0 || d.toISOString().slice(0, 10) === "2026-10-02") continue;
-    for (const u of staff) { const r = rand(); staffDays.push({ userId: u.id, date: d, status: r < 0.93 ? "PRESENT" : r < 0.96 ? "ON_LEAVE" : r < 0.98 ? "HALF_DAY" : "ABSENT" }); }
-  }
-  await db.staffAttendance.createMany({ data: staffDays });
-  const cseFaculty = staff.filter((u) => u.faculty && u.role === "FACULTY" && u.faculty.departmentId === facultyUser.faculty!.departmentId);
-  const hodUser = await db.user.findUniqueOrThrow({ where: { email: "hod.cse@edupilot.edu" } });
-  const colleague0 = cseFaculty.find((u) => u.id !== facultyUser.id)!;
-  await db.staffLeave.createMany({
-    data: [
-      { userId: facultyUser.id, type: "CASUAL", fromDate: day("2026-10-14"), toDate: day("2026-10-15"), reason: "Family function out of station", status: "PENDING" },
-      { userId: facultyUser.id, type: "ON_DUTY", fromDate: day("2026-09-21"), toDate: day("2026-09-22"), reason: "Resource person at AICTE workshop, JNTU", status: "APPROVED", reviewedById: hodUser.id },
-      { userId: colleague0.id, type: "SICK", fromDate: day("2026-10-12"), toDate: day("2026-10-13"), reason: "Fever; medical certificate will be submitted", status: "PENDING" },
-      { userId: hodUser.id, type: "EARNED", fromDate: day("2026-10-26"), toDate: day("2026-10-28"), reason: "Personal work", status: "PENDING" },
-    ],
-  });
-  const RECORDS: ["PUBLICATION" | "CONFERENCE" | "WORKSHOP" | "FDP" | "PATENT" | "FUNDED_PROJECT" | "AWARD", string, string][] = [
-    ["PUBLICATION", "A lightweight attention model for crop disease detection", "IEEE Access (SCI)"], ["CONFERENCE", "Energy-aware task scheduling in edge clusters", "IEEE INDICON 2025"],
-    ["FDP", "Generative AI in engineering education", "AICTE-ATAL Academy"], ["WORKSHOP", "Outcome-based education and CO-PO mapping", "NITTTR Chandigarh"],
-    ["PATENT", "IoT-based smart irrigation controller", "Indian Patent Office (published)"], ["FUNDED_PROJECT", "Low-cost air-quality monitoring network", "DST-SERB · Rs. 18 lakh"],
-    ["AWARD", "Best Teacher Award", "State Technological University"], ["PUBLICATION", "Performance of recycled-aggregate concrete under cyclic loading", "Construction and Building Materials (Scopus)"],
-  ];
-  const teachers = staff.filter((u) => u.faculty);
-  await db.achievement.createMany({
-    data: Array.from({ length: 46 }, (_, i) => { const [kind, title, venue] = RECORDS[i % RECORDS.length]; const f = i < 6 ? facultyUser : pick(teachers); return { facultyId: f.faculty!.id, kind, title: i < RECORDS.length ? title : `${title} — part ${Math.floor(i / RECORDS.length) + 1}`, venue, date: day(`${2023 + (i % 4)}-${String(1 + (i * 5) % 12).padStart(2, "0")}-15`) }; }),
-  });
+  const cseFaculty = await db.user.findMany({ where: { role: "FACULTY", faculty: { departmentId: facultyUser.faculty!.departmentId } }, include: { faculty: true } });
   // A colleague's class at a time the demo teacher is free, on the next date that weekday falls on.
   const busy = new Set((await db.timetableSlot.findMany({ where: { offering: { facultyId: facultyUser.faculty!.id, termId: term.id } } })).map((x) => `${x.dayOfWeek}:${x.period}`));
   const colleague = cseFaculty.find((u) => u.id !== facultyUser.id)!;
@@ -710,27 +550,11 @@ async function seedModules() {
     await db.swapRequest.create({ data: { slotId: mySlot.id, date: when, fromId: colleague.faculty!.id, toId: facultyUser.faculty!.id, reason: "Attending a paper presentation" } });
   }
 
-  // ── A second child for the demo parent, guardian email, notifications and a scheduled report ──
+  // A second child for the demo parent.
   const sibling = await db.student.findFirstOrThrow({ where: { batch: { program: { code: "DCSE" }, admissionYear: 2025 } }, orderBy: { rollNo: "asc" } });
   const parentUser = await db.user.findUniqueOrThrow({ where: { email: "parent@edupilot.edu" } });
   await db.parentLink.create({ data: { userId: parentUser.id, studentId: sibling.id } });
   await db.student.update({ where: { id: demo.id }, data: { guardianEmail: "parent@edupilot.edu" } });
-  const ago = (h: number) => new Date(Date.now() - h * 3600e3);
-  await db.notification.createMany({
-    data: [
-      { userId: demo.userId, title: "Result published: Operating Systems", body: "Your grade card has been updated.", href: "/results", createdAt: ago(30) },
-      { userId: demo.userId, title: "New assignment in Computer Networks", body: "Assignment 1 — Problem set, due 14 Oct", href: "/materials", createdAt: ago(8) },
-      { userId: demo.userId, title: "Leave request approved", body: "On-duty on 17–18 Sept was approved.", href: "/leave", createdAt: ago(50), readAt: ago(40) },
-      { userId: parentUser.id, title: "Payment received: ₹48,750", body: "Thank you. A receipt is available in the portal.", href: "/fees", createdAt: ago(20) },
-      { userId: facultyUser.id, title: "A colleague asks you to take a class", body: "Wednesday 14 Oct — see Class swaps.", href: "/staff/swaps", createdAt: ago(3) },
-      { userId: hodUser.id, title: "Leave request from a faculty member", body: "2 day(s) of casual leave awaiting your approval.", href: "/staff/leave", createdAt: ago(5) },
-      { userId: adminUser.id, title: "New helpdesk ticket: Water cooler not working", body: "Hostel", href: "/helpdesk", createdAt: ago(6) },
-      { userId: adminUser.id, title: "Certificate requested", body: "Bonafide certificate for passport application", href: "/certificates", createdAt: ago(12) },
-    ],
-  });
-  await db.reportSchedule.create({ data: { userId: adminUser.id, report: "attendance", frequency: "WEEKLY" } });
-  await addDemoExtras(db);
-
   await db.student.update({ where: { id: demo.id }, data: { about: "Third-year CSE student interested in backend engineering and distributed systems. Built a college event portal used by 800+ students.", skills: "Java, Spring Boot, SQL, React, Git, Linux", linkedin: "https://www.linkedin.com/", github: "https://github.com/" } });
 }
 

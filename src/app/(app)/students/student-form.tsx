@@ -67,7 +67,7 @@ export function StudentForm({ action, batches, defaults = {}, submitLabel }: {
               <legend className="mb-3 text-sm font-semibold">Parent / guardian</legend>
               <Field label="Guardian name" name="guardianName"><input id="guardianName" name="guardianName" defaultValue={d("guardianName")} className="input" /></Field>
               <Field label="Guardian phone" name="guardianPhone"><input id="guardianPhone" name="guardianPhone" defaultValue={d("guardianPhone")} className="input" inputMode="tel" /></Field>
-              <Field label="Guardian email (for alerts)" name="guardianEmail" error={e.guardianEmail}><input id="guardianEmail" name="guardianEmail" type="email" defaultValue={d("guardianEmail")} className="input" /></Field>
+              <Field label="Guardian email" name="guardianEmail" error={e.guardianEmail}><input id="guardianEmail" name="guardianEmail" type="email" defaultValue={d("guardianEmail")} className="input" /></Field>
             </fieldset>
             <div className="flex justify-end"><SubmitButton>{submitLabel}</SubmitButton></div>
           </>

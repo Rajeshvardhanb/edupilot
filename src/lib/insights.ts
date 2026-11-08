@@ -1,10 +1,9 @@
-import "server-only";
 import { Prisma } from "@prisma/client";
-import { db } from "./db";
-import { daysAgo, pct } from "./format";
-import { feeTotals, type FeeFilter } from "./fee-ledger";
-import { studentStandings } from "./results";
+import "server-only";
 import { attendanceSummary } from "./attendance";
+import { db } from "./db";
+import { daysAgo,pct } from "./format";
+import { studentStandings } from "./results";
 
 /** Daily attendance % for the given offerings over the last `days` days. */
 export async function dailyAttendance(offeringIds: string[], days = 30) {
@@ -15,19 +14,6 @@ export async function dailyAttendance(offeringIds: string[], days = 30) {
     WHERE s.date >= ${daysAgo(days)} AND s.offeringId IN (${Prisma.join(offeringIds)})
     GROUP BY s.date ORDER BY s.date`;
   return rows.map((r) => ({ date: new Date(r.d), value: pct(Number(r.present), Number(r.total)) }));
-}
-
-/** Rupees collected per ISO week for the last `weeks` weeks (oldest first). */
-export async function weeklyCollections(weeks = 10, filter: FeeFilter = {}) {
-  const rows = await db.$queryRaw<{ w: bigint; total: number }[]>`
-    SELECT FLOOR(TIMESTAMPDIFF(SECOND, p.paidAt, UTC_TIMESTAMP()) / 604800) AS w, SUM(p.amount) AS total
-    FROM Payment p
-    ${filter.departmentId ? Prisma.sql`JOIN FeeInvoice i ON i.id = p.invoiceId JOIN Student s ON s.id = i.studentId JOIN Batch b ON b.id = s.batchId JOIN Program pr ON pr.id = b.programId` : Prisma.empty}
-    WHERE p.paidAt >= ${daysAgo(weeks * 7)} ${filter.departmentId ? Prisma.sql`AND pr.departmentId = ${filter.departmentId}` : Prisma.empty}
-    GROUP BY w`;
-  const buckets = Array.from({ length: weeks }, () => 0);
-  for (const r of rows) { const idx = weeks - 1 - Number(r.w); if (idx >= 0 && idx < weeks) buckets[idx] = Number(r.total); }
-  return buckets;
 }
 
 export async function demographics(where: Prisma.StudentWhereInput) {
@@ -53,11 +39,6 @@ export async function cgpaDistribution(studentIds: string[]) {
     average: values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100 : 0,
     withBacklogs: [...st.values()].filter((s) => s.backlogs > 0).length,
   };
-}
-
-export async function feeStatusSplit(filter: FeeFilter = {}) {
-  const t = await feeTotals(filter);
-  return { split: t.split, payable: t.payable, paid: t.paid };
 }
 
 /** Per-department snapshot: students, faculty, current attendance %, last-term pass %. */
