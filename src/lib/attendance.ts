@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { db } from "./db";
+import { visibleStudentIdsSql } from "./student-visibility";
 
 /**
  * Per-student, per-offering attendance counts, keyed "studentId:offeringId".
@@ -14,7 +15,7 @@ export async function attendanceSummary(where: { studentIds?: string[]; offering
   const rows = await db.$queryRaw<{ studentId: string; offeringId: string; attended: bigint; total: bigint }[]>`
     SELECT r.studentId, s.offeringId, SUM(r.status IN ('PRESENT','LATE','ON_DUTY')) AS attended, COUNT(*) AS total
     FROM AttendanceRecord r JOIN AttendanceSession s ON s.id = r.sessionId
-    WHERE 1 = 1
+    WHERE r.studentId IN (${visibleStudentIdsSql})
       ${where.studentIds ? Prisma.sql`AND r.studentId IN (${Prisma.join(where.studentIds)})` : Prisma.empty}
       ${where.offeringIds ? Prisma.sql`AND s.offeringId IN (${Prisma.join(where.offeringIds)})` : Prisma.empty}
     GROUP BY r.studentId, s.offeringId`;

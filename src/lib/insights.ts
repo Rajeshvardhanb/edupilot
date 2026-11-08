@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import "server-only";
 import { attendanceSummary } from "./attendance";
 import { db } from "./db";
+import { visibleStudentIdsSql } from "./student-visibility";
 import { daysAgo,pct } from "./format";
 import { studentStandings } from "./results";
 
@@ -11,7 +12,7 @@ export async function dailyAttendance(offeringIds: string[], days = 30) {
   const rows = await db.$queryRaw<{ d: Date; present: bigint; total: bigint }[]>`
     SELECT s.date AS d, SUM(r.status IN ('PRESENT','LATE','ON_DUTY')) AS present, COUNT(*) AS total
     FROM AttendanceRecord r JOIN AttendanceSession s ON s.id = r.sessionId
-    WHERE s.date >= ${daysAgo(days)} AND s.offeringId IN (${Prisma.join(offeringIds)})
+    WHERE r.studentId IN (${visibleStudentIdsSql}) AND s.date >= ${daysAgo(days)} AND s.offeringId IN (${Prisma.join(offeringIds)})
     GROUP BY s.date ORDER BY s.date`;
   return rows.map((r) => ({ date: new Date(r.d), value: pct(Number(r.present), Number(r.total)) }));
 }
@@ -66,7 +67,7 @@ export async function departmentSnapshots(termId?: string, lastTermId?: string, 
     ? await db.$queryRaw<{ departmentId: string; p: bigint; t: bigint }[]>`
         SELECT pr.departmentId, SUM(r.passed) AS p, COUNT(*) AS t
         FROM SubjectResult r JOIN CourseOffering o ON o.id = r.offeringId JOIN Batch b ON b.id = o.batchId JOIN Program pr ON pr.id = b.programId
-        WHERE o.termId = ${lastTermId} GROUP BY pr.departmentId`
+        WHERE r.studentId IN (${visibleStudentIdsSql}) AND o.termId = ${lastTermId} GROUP BY pr.departmentId`
     : [];
   const passMap = new Map(pass.map((r) => [r.departmentId, { p: Number(r.p), t: Number(r.t) }]));
   return depts.map((d) => ({

@@ -69,6 +69,13 @@ export function StudentForm({ action, batches, defaults = {}, submitLabel }: {
               <Field label="Guardian phone" name="guardianPhone"><input id="guardianPhone" name="guardianPhone" defaultValue={d("guardianPhone")} className="input" inputMode="tel" /></Field>
               <Field label="Guardian email" name="guardianEmail" error={e.guardianEmail}><input id="guardianEmail" name="guardianEmail" type="email" defaultValue={d("guardianEmail")} className="input" /></Field>
             </fieldset>
+            <fieldset className="grid gap-4 sm:grid-cols-2">
+              <legend className="mb-3 text-sm font-semibold">Student profile</legend>
+              <Field label="About" name="about"><textarea id="about" name="about" className="input" rows={3} maxLength={1500} defaultValue={d("about")} /></Field>
+              <Field label="Skills" name="skills"><input id="skills" name="skills" className="input" maxLength={500} defaultValue={d("skills")} /></Field>
+              <Field label="LinkedIn URL" name="linkedin" error={e.linkedin}><input id="linkedin" name="linkedin" type="url" className="input" defaultValue={d("linkedin")} /></Field>
+              <Field label="GitHub URL" name="github" error={e.github}><input id="github" name="github" type="url" className="input" defaultValue={d("github")} /></Field>
+            </fieldset>
             <div className="flex justify-end"><SubmitButton>{submitLabel}</SubmitButton></div>
           </>
         );

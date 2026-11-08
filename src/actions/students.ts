@@ -13,7 +13,7 @@ import { audit } from "@/lib/audit";
 import type { ActionState } from "@/lib/action-state";
 
 const opt = z.string().trim().optional().transform((v) => (v ? v : undefined));
-const optDate = opt.transform((v) => (v ? new Date(`${v}T00:00:00.000Z`) : undefined));
+const optDate = opt.pipe(z.iso.date().optional()).transform(v => v ? new Date(`${v}T00:00:00.000Z`) : undefined);
 
 const StudentSchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
@@ -22,7 +22,7 @@ const StudentSchema = z.object({
   rollNo: z.string().trim().min(3, "Roll number is required").transform((v) => v.toUpperCase()),
   batchId: z.string().min(1, "Select a batch"),
   admissionType: z.enum(["REGULAR", "LATERAL", "MANAGEMENT", "SPOT"]),
-  admissionDate: z.string().min(1, "Required").transform((v) => new Date(`${v}T00:00:00.000Z`)),
+  admissionDate: z.iso.date("Enter a valid admission date").transform((v) => new Date(`${v}T00:00:00.000Z`)),
   dob: optDate,
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("").transform(() => undefined)),
   category: z.enum(["GENERAL", "OBC", "SC", "ST", "EWS"]),
@@ -33,6 +33,9 @@ const StudentSchema = z.object({
   guardianEmail: opt.pipe(z.email("Enter a valid guardian email").optional()),
   previousSchool: opt,
   previousScore: opt.transform((v) => (v ? Number(v) : undefined)).pipe(z.number().min(0).max(100).optional()),
+  about: opt.pipe(z.string().max(1500).optional()), skills: opt.pipe(z.string().max(500).optional()),
+  linkedin: opt.pipe(z.url().refine(v => /^https?:\/\//i.test(v), "Use an http:// or https:// link").optional()),
+  github: opt.pipe(z.url().refine(v => /^https?:\/\//i.test(v), "Use an http:// or https:// link").optional()),
   status: z.enum(["ACTIVE", "DETAINED", "SUSPENDED", "DROPPED", "GRADUATED"]).default("ACTIVE"),
 });
 
@@ -77,10 +80,11 @@ export async function updateStudent(_: ActionState, formData: FormData): Promise
   const parsed = StudentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors, error: "Please fix the highlighted fields." };
   const { name, email, phone, ...data } = parsed.data;
+  if (!(await db.student.findUnique({ where: { id }, select: { id: true } }))) return { error: "Student not found." };
   try {
     await db.$transaction(async (tx) => {
-      const st = await tx.student.update({ where: { id }, data: { ...data, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } });
-      await tx.user.update({ where: { id: st.userId }, data: { name, email, phone, isActive: data.status !== "DROPPED" } });
+      const st = await tx.student.update({ where: { id }, data: { ...data, dob: data.dob ?? null, gender: data.gender ?? null, bloodGroup: data.bloodGroup ?? null, address: data.address ?? null, guardianName: data.guardianName ?? null, guardianPhone: data.guardianPhone ?? null, guardianEmail: data.guardianEmail ?? null, previousSchool: data.previousSchool ?? null, previousScore: data.previousScore ?? null, about: data.about ?? null, skills: data.skills ?? null, linkedin: data.linkedin ?? null, github: data.github ?? null, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } });
+      await tx.user.update({ where: { id: st.userId }, data: { name, email, phone: phone ?? null, isActive: data.status !== "DROPPED" } });
     });
   } catch (e) {
     return uniqueError(e) ?? { error: "Could not update the student." };
@@ -178,4 +182,20 @@ export async function updateStudentContact(_: ActionState, formData: FormData): 
   await audit(me.id, "UPDATE", "Student", id, field);
   revalidatePath(`/students/${id}`);
   return { ok: true };
+}
+
+
+/** Remove a student from the application while retaining academic and audit history. */
+export async function deleteStudent(_: ActionState, formData: FormData): Promise<ActionState> {
+  const me = await requireUser(["ADMIN"]);
+  const id = String(formData.get("id") ?? "");
+  const student = await db.student.findUnique({ where: { id }, include: { user: { select: { name: true } } } });
+  if (!student) return { error: "Student not found." };
+  await db.$transaction(async tx => {
+    await tx.student.update({ where: { id }, data: { archivedAt: new Date() } });
+    await tx.user.update({ where: { id: student.userId }, data: { isActive: false } });
+    await tx.auditLog.create({ data: { userId: me.id, action: "DELETE", entity: "Student", entityId: id, details: `Archived ${student.rollNo}; academic history retained.` } });
+  });
+  revalidatePath("/", "layout");
+  redirect("/students?deleted=1");
 }

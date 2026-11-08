@@ -1,10 +1,10 @@
 import { createParentLogin } from "@/actions/services";
-import { updateStudentContact } from "@/actions/students";
+import { updateStudentContact, deleteStudent } from "@/actions/students";
 import { AcademicRecord } from "@/components/academic-record";
 import { AttendanceHeatmap } from "@/components/attendance-heatmap";
 import { Avatar } from "@/components/avatar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { ActionForm,SubmitButton } from "@/components/forms";
+import { ActionButton,ActionForm,SubmitButton } from "@/components/forms";
 import { InlineEdit } from "@/components/inline-edit";
 import { PhotoUpload } from "@/components/photo-upload";
 import { Badge,LinkButton,Progress } from "@/components/ui";
@@ -74,7 +74,9 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`}><Pencil className="size-4" /> Edit</LinkButton>}
+            {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`}><Pencil className="size-4" /> Edit student</LinkButton>}
+            {user.role === "ADMIN" && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.user.name}? Their login will be disabled. Academic records are retained.`}>Delete student</ActionButton>}
+            {user.role === "STUDENT" && user.studentId === s.id && <LinkButton href="/profile#edit-profile">Edit my profile</LinkButton>}
           </div>
         </div>
         <dl className="grid grid-cols-3 divide-x divide-line border-t border-line">

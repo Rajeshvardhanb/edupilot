@@ -244,7 +244,7 @@ async function main() {
       usedNames.add(`${first} ${last}`);
       const seq = isLateral ? 300 + i - regular + 1 : (section === "B" ? 100 : 0) + i + 1;
       const rollNo = supplied?.rollNo ?? `${String(isLateral ? year + 1 : year).slice(2)}${code}${String(seq).padStart(3, "0")}`;
-      const demo: boolean = !studentDemoAssigned && code === "BTCSE" && year === 2024 && section === "A";
+      const demo: boolean = !studentDemoAssigned && supplied?.rollNo === "24MQ5A0509";
       studentDemoAssigned ||= demo;
       const ability = demo ? 0.82 : Math.min(0.97, Math.max(0.4, between(0.52, 0.95) + (rand() < 0.08 ? -0.15 : 0)));
       const user = await db.user.create({

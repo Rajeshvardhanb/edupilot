@@ -26,7 +26,7 @@ export default async function EditStudentPage(props: PageProps<"/students/[id]/e
             id: s.id, name: s.user.name, email: s.user.email, phone: s.user.phone, rollNo: s.rollNo, batchId: s.batchId,
             admissionType: s.admissionType, admissionDate: isoDate(s.admissionDate), dob: isoDate(s.dob), gender: s.gender,
             category: s.category, bloodGroup: s.bloodGroup, address: s.address, guardianName: s.guardianName,
-            guardianPhone: s.guardianPhone, guardianEmail: s.guardianEmail, previousSchool: s.previousSchool, previousScore: s.previousScore, status: s.status,
+            guardianPhone: s.guardianPhone, guardianEmail: s.guardianEmail, previousSchool: s.previousSchool, previousScore: s.previousScore, about: s.about, skills: s.skills, linkedin: s.linkedin, github: s.github, status: s.status,
           }}
         />
       </Card>

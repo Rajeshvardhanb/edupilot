@@ -68,6 +68,7 @@ export default async function StudentsPage(props: PageProps<"/students">) {
 
   return (
     <>
+      {sp.deleted === "1" && <p role="status" className="mb-4 rounded-xl bg-success-soft p-3 text-sm text-success">Student deleted from the application. Academic history has been retained.</p>}
       <PageHeader
         title="Students"
         illustration="students"
@@ -112,7 +113,7 @@ export default async function StudentsPage(props: PageProps<"/students">) {
       <Card>
         {students.length === 0 ? <EmptyState title="No students found" action={<><LinkButton variant="secondary" href="/students">Clear the filters</LinkButton>{isOffice(user) && <LinkButton href="/students/new">New admission</LinkButton>}</>}>Nobody matches this search and these filters.</EmptyState> : (
           <StudentTable
-            canEdit={isOffice(user)} batches={batches} sortHref={sortHref} sort={sort} dir={dir}
+            canEdit={isOffice(user)} canDelete={user.role === "ADMIN"} batches={batches} sortHref={sortHref} sort={sort} dir={dir}
             rows={students.map((x) => ({ id: x.id, userId: x.userId, hasPhoto: !!x.user.photoType, rollNo: x.rollNo, name: x.user.name, email: x.user.email, phone: x.user.phone, batch: batchLabel(x.batch), semester: x.batch.currentSemester, admissionType: x.admissionType, status: x.status, attendance: attOf(x.id), cgpa: standings.get(x.id)?.cgpa ?? null }))}
             attendanceRequired={rules.attendanceRequired}
           />

@@ -342,6 +342,7 @@ model Student {
   previousSchool String? // SSC school / diploma college for lateral entries
   previousScore  Float? // % in qualifying exam
   status         StudentStatus @default(ACTIVE)
+  archivedAt     DateTime? // Deleted from the application; academic history remains stored.
   createdAt      DateTime      @default(now())
 
   attendance     AttendanceRecord[]
@@ -372,6 +373,7 @@ model Student {
 
   @@index([batchId])
   @@index([status])
+  @@index([archivedAt])
 }
 
 // ───────────────────────────── Teaching ─────────────────────────────

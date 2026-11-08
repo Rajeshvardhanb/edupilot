@@ -173,6 +173,18 @@ npm.cmd run start -- --hostname 127.0.0.1
 Keep this PowerShell window open and visit **http://localhost:3000/login**. No domain or public hosting is needed. Use the production start command rather than running a development compiler throughout the presentation.
 
 Rebuild after supplied source changes; restart after `.env` changes. If dependency files changed, repeat `npm.cmd ci`; apply newly supplied migrations with `npm.cmd run db:deploy`. Do not reseed for an ordinary update.
+
+### Update an existing older demo database with the supplied student names
+
+Back up first using Section 10. Preview the identity update, then apply it:
+
+```powershell
+node scripts/sync-student-identities.mjs
+node scripts/sync-student-identities.mjs --apply
+```
+
+This matches the original 21 demo student records to the supplied names and roll numbers, preserving IDs, marks, attendance, results and passwords. It also updates roll-based sample login addresses; `student@edupilot.edu` stays available. It saves an identity snapshot under `backups/` and sends no email. A repeat run changes nothing once the identities match. Stop if a conflict is reported; do not reset or reseed to fix it. Only names/roll numbers supplied by the client are treated as real; academic/contact data remains illustrative. The 403 original generated student identities are hidden from the application presentation, including lists, counts, exports and related academic views. Their records remain in MySQL and backups. The 21 supplied students and newly registered students remain visible.
+
 <!-- pagebreak -->
 
 ## 6. Check that the first installation worked
@@ -187,6 +199,10 @@ Sign in with `admin@edupilot.edu` and password `password123`.
 6. Download a sample grade card or hall ticket using the available screen controls and confirm that the PDF opens.
 
 The supplied student names/roll numbers are real project inputs; marks, attendance, contact details, batch placement and placement outcomes are demonstration values.
+
+Students can update their personal and contact details under **My profile → Edit my details**. Changing a login email requires the current password. Roll numbers, batches and academic status are managed by the administrator.
+
+Administrators use **Students → Add student**, **View**, **Edit**, and **Delete**. Delete asks for confirmation, disables the student's login and archives the record; marks, attendance, results and audit history remain stored.
 
 ### Optional college logo
 
@@ -245,7 +261,7 @@ Press **Ctrl+C** in the app terminal. If asked to terminate the batch job, answe
 - **Administrator:** `admin@edupilot.edu` — academic setup, student management, exams and administration.
 - **HOD:** `hod.cse@edupilot.edu` — department academic review and permitted management.
 - **Faculty:** `faculty@edupilot.edu` — assigned-course attendance, marks and teaching workflows.
-- **Student demo:** `student@edupilot.edu` — the seeded linked student with extensive sample history.
+- **Student demo:** `student@edupilot.edu` — **LANKE SANDHYA (24MQ5A0509)**, with sample academic history.
 - **Parent:** `parent@edupilot.edu` — records of the student linked by the seed.
 - **Office:** `office@edupilot.edu` — student registration and permitted student-record work.
 - **Accountant:** `accounts@edupilot.edu` — retained login and permitted student-record views; finance modules are removed.

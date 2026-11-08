@@ -1,8 +1,8 @@
 "use client";
 
-import { bulkUpdateStudents } from "@/actions/students";
+import { bulkUpdateStudents, deleteStudent } from "@/actions/students";
 import { Avatar } from "@/components/avatar";
-import { ActionForm,SubmitButton } from "@/components/forms";
+import { ActionButton,ActionForm,SubmitButton } from "@/components/forms";
 import { Badge,type Tone } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { Download,Eye,Mail,Phone,X } from "lucide-react";
@@ -23,8 +23,8 @@ function Th({ href, active, desc, children, className }: { href?: string; active
   );
 }
 
-export function StudentTable({ rows, canEdit, batches, sortHref, sort, dir, attendanceRequired = 75 }: {
-  rows: Row[]; canEdit: boolean; batches: { id: string; label: string }[]; sortHref: Record<string, string>; sort: string; dir: string; attendanceRequired?: number;
+export function StudentTable({ rows, canEdit, canDelete = false, batches, sortHref, sort, dir, attendanceRequired = 75 }: {
+  rows: Row[]; canEdit: boolean; canDelete?: boolean; batches: { id: string; label: string }[]; sortHref: Record<string, string>; sort: string; dir: string; attendanceRequired?: number;
 }) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [op, setOp] = useState("status");
@@ -65,7 +65,7 @@ export function StudentTable({ rows, canEdit, batches, sortHref, sort, dir, atte
           <thead>
             <tr>
               <Th className="w-8"><input type="checkbox" aria-label="Select all" checked={all} onChange={() => setPicked(all ? new Set() : new Set(rows.map((r) => r.id)))} /></Th>
-              <Th {...sortProps("rollNo")}>Roll no</Th><Th {...sortProps("name")}>Name</Th><Th {...sortProps("batch")}>Batch</Th><Th>Admission</Th><Th>Attendance</Th><Th className="text-right">CGPA</Th><Th {...sortProps("status")}>Status</Th><Th />
+              <Th {...sortProps("rollNo")}>Roll no</Th><Th {...sortProps("name")}>Name</Th><Th>Actions</Th><Th {...sortProps("batch")}>Batch</Th><Th>Admission</Th><Th>Attendance</Th><Th className="text-right">CGPA</Th><Th {...sortProps("status")}>Status</Th>
             </tr>
           </thead>
           <tbody>
@@ -74,6 +74,12 @@ export function StudentTable({ rows, canEdit, batches, sortHref, sort, dir, atte
                 <td className="border-b border-line px-4 py-3"><input type="checkbox" aria-label={`Select ${s.name}`} checked={picked.has(s.id)} onChange={() => toggle(s.id)} /></td>
                 <td data-label="Roll no" className="border-b border-line px-4 py-3 font-mono text-xs">{s.rollNo}</td>
                 <td data-label="Name" className="border-b border-line px-4 py-3"><Link href={`/students/${s.id}`} className="flex items-center gap-3 hover:text-brand"><Avatar name={s.name} userId={s.userId} hasPhoto={s.hasPhoto} size={34} /><span className="min-w-0"><span className="block font-medium">{s.name}</span><span className="block text-xs text-muted">{s.email}</span></span></Link></td>
+                <td className="border-b border-line px-4 py-3"><div className="flex items-center gap-2 whitespace-nowrap">
+                  <Link href={`/students/${s.id}`} className="text-xs font-semibold text-brand" aria-label={`View ${s.name}`}>View</Link>
+                  {canEdit && <Link href={`/students/${s.id}/edit`} className="text-xs font-semibold text-brand" aria-label={`Edit ${s.name}`}>Edit</Link>}
+                  {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? Their login will be disabled. Academic records are retained.`}>Delete</ActionButton>}
+                  <button onClick={() => setOpen(s.id)} aria-label={`Quick view ${s.name}`} title="Quick view" className="grid size-8 place-items-center rounded-lg border border-line text-muted hover:border-brand/30 hover:text-brand"><Eye className="size-4" /></button>
+                </div></td>
                 <td data-label="Batch" className="border-b border-line px-4 py-3">{s.batch}</td>
                 <td data-label="Admission" className="border-b border-line px-4 py-3"><Badge tone={s.admissionType === "REGULAR" ? "neutral" : "info"}>{title(s.admissionType)}</Badge></td>
                 <td data-label="Attendance" className="border-b border-line px-4 py-3">{s.attendance == null ? <span className="text-xs text-muted">—</span> : (
@@ -81,7 +87,7 @@ export function StudentTable({ rows, canEdit, batches, sortHref, sort, dir, atte
                 )}</td>
                 <td data-label="CGPA" className="border-b border-line px-4 py-3 text-right font-semibold tabular-nums">{s.cgpa ? s.cgpa.toFixed(2) : "—"}</td>
                 <td data-label="Status" className="border-b border-line px-4 py-3"><Badge tone={STATUS_TONE[s.status]}>{title(s.status)}</Badge></td>
-                <td className="border-b border-line px-4 py-3"><button onClick={() => setOpen(s.id)} aria-label={`Quick view ${s.name}`} title="Quick view" className="grid size-8 place-items-center rounded-lg border border-line text-muted hover:border-brand/30 hover:text-brand"><Eye className="size-4" /></button></td>
+
               </tr>
             ))}
           </tbody>
@@ -90,13 +96,18 @@ export function StudentTable({ rows, canEdit, batches, sortHref, sort, dir, atte
       {/* Phones: one line per student, attendance as a coloured pill; tap the name for the record. */}
       <ul className="divide-y divide-line sm:hidden">
         {rows.map((s) => (
-          <li key={s.id} className="flex items-center gap-3 py-2.5">
+          <li key={s.id} className="flex flex-wrap items-center gap-3 py-2.5">
             <Link href={`/students/${s.id}`} className="flex min-w-0 flex-1 items-center gap-3">
               <Avatar name={s.name} userId={s.userId} hasPhoto={s.hasPhoto} size={38} />
               <span className="min-w-0"><span className="block truncate text-sm font-semibold">{s.name}</span><span className="block font-mono text-[11px] text-muted">{s.rollNo} · {s.batch}</span></span>
             </Link>
             {s.attendance != null && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${s.attendance >= attendanceRequired ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}><span className="size-1.5 rounded-full bg-current" />{s.attendance}%</span>}
             <button onClick={() => setOpen(s.id)} aria-label={`Quick view ${s.name}`} className="grid size-9 place-items-center rounded-lg bg-[#e7f8f0] text-success"><Eye className="size-4" /></button>
+            {canEdit && <div className="flex w-full items-center gap-4 pl-[50px]">
+              <Link href={`/students/${s.id}`} className="text-xs font-semibold text-brand">View</Link>
+              <Link href={`/students/${s.id}/edit`} className="text-xs font-semibold text-brand" aria-label={`Edit ${s.name}`}>Edit</Link>
+              {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? Their login will be disabled. Academic records are retained.`}>Delete</ActionButton>}
+            </div>}
           </li>
         ))}
       </ul>

@@ -79,3 +79,54 @@ test("marks and attendance can still be saved", async ({ browser }) => {
   await expect.poll(async () => (await db.attendanceRecord.findFirst({ where: { studentId, session: { offeringId, date: new Date(`${date}T00:00:00Z`), period: 1 } } }))?.status).toBe("ABSENT");
   await teacher.context().close();
 });
+
+
+test("presentation shows the supplied roster and hides preserved sample records", async ({ browser }) => {
+  const hidden = await db.student.findFirstOrThrow({ where: { rollNo: "24BTCSE022" }, include: { user: true } });
+  const before = await db.student.count();
+  const page = await session(browser, "admin@edupilot.edu");
+  await page.goto("/students?status=ALL");
+  await expect(page.getByText("21 students match", { exact: true })).toBeVisible();
+  const exported = await page.request.get("/students/export?status=ALL");
+  const csv = await exported.text();
+  expect(exported.status()).toBe(200);
+  expect(csv).toContain("LANKE SANDHYA");
+  expect(csv).not.toContain(hidden.rollNo);
+  await page.goto(`/students/${hidden.id}`);
+  await expect(page.getByRole("heading", { name: "Not found", exact: true })).toBeVisible();
+  await page.goto(`/students?q=${hidden.rollNo}&status=ALL`);
+  await expect(page.getByText("0 students match", { exact: true })).toBeVisible();
+  expect(await db.student.count()).toBe(before);
+  expect(await db.student.findUnique({ where: { id: hidden.id } })).not.toBeNull();
+  await page.context().close();
+});
+
+test("default student owns the profile editor; admins have student CRUD controls", async ({ browser }) => {
+  const owner=await db.student.findFirstOrThrow({where:{user:{email:"student@edupilot.edu"}},include:{user:true}});
+  expect(owner.rollNo).toBe("24MQ5A0509");expect(owner.user.name).toBe("LANKE SANDHYA");
+  const student=await session(browser,"student@edupilot.edu");await student.goto("/profile");
+  await student.getByLabel("Phone number",{exact:true}).fill("9876543210");
+  await student.getByLabel("Address",{exact:true}).fill("SVIET profile edit test");
+  await student.getByRole("button",{name:"Save profile",exact:true}).click();
+  await expect(student.getByText("Your profile has been updated.",{exact:true})).toBeVisible();
+  await student.reload();await expect(student.getByLabel("Address",{exact:true})).toHaveValue("SVIET profile edit test");
+  await student.goto(`/students/${owner.id}/edit`);await expect(student).toHaveURL(/dashboard\?denied=1/);
+  const admin=await session(browser,"admin@edupilot.edu");await admin.goto(`/students?q=${owner.rollNo}`);
+  await admin.getByRole("link",{name:`Edit ${owner.user.name}`,exact:true}).filter({visible:true}).first().click();
+  await admin.locator('[name=address]').fill("Administrator updated address");await admin.getByRole("button",{name:"Save changes",exact:true}).click();
+  await expect(admin).toHaveURL(new RegExp(`/students/${owner.id}$`));
+  expect((await db.student.findUniqueOrThrow({where:{id:owner.id}})).address).toBe("Administrator updated address");
+  await admin.setViewportSize({width:390,height:844});await admin.goto(`/students?q=${owner.rollNo}`);
+  await expect(admin.getByRole("link",{name:`Edit ${owner.user.name}`,exact:true}).filter({visible:true}).first()).toBeVisible();
+  expect(await admin.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+  await admin.setViewportSize({width:1400,height:900});
+  const registered=await db.user.create({data:{name:"CRUD Test Student",email:"crud-test@example.invalid",role:"STUDENT",passwordHash:owner.user.passwordHash,student:{create:{rollNo:"CRUD2026",batchId:owner.batchId,admissionDate:new Date("2026-08-01")}}},include:{student:true}});
+  await admin.goto("/students?q=CRUD2026");await expect(admin.getByText("CRUD Test Student",{exact:true}).first()).toBeVisible();
+  const before=await db.student.count();
+  await admin.getByRole("button",{name:"Delete",exact:true}).filter({visible:true}).first().click();
+  await admin.getByRole("alertdialog").getByRole("button").last().click();await expect(admin).toHaveURL(/students\?deleted=1/);
+  await admin.goto("/students?q=CRUD2026&status=ALL");await expect(admin.getByText("0 students match",{exact:true})).toBeVisible();
+  const archived=await db.student.findUniqueOrThrow({where:{id:registered.student!.id},include:{user:true}});
+  expect(archived.archivedAt).not.toBeNull();expect(archived.user.isActive).toBe(false);expect(await db.student.count()).toBe(before);
+  await admin.context().close();await student.context().close();
+});
