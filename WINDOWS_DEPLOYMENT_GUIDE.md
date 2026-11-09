@@ -4,6 +4,8 @@
 
 **Project owner / presenter: LANKE SANDHYA — 24MQ5A0509**
 
+**Repository branch: `sandhya`.** Select this branch when opening the guide or downloading the student-management project.
+
 Install **Node.js and MySQL Community Server directly on Windows**, then open the application in a browser. **Docker, WSL, virtual machines and Git Bash are not required.**
 
 - **Application:** a Node.js process started from PowerShell.
@@ -256,15 +258,50 @@ Press **Ctrl+C** in the app terminal. If asked to terminate the batch job, answe
 
 ## 8. Demo login details
 
-**Seeded demo password for all accounts below: `password123`.** This applies immediately after a successful seed; an account's later password change replaces it.
+**All 57 currently available application accounts are listed below:** 1 administrator, 5 HODs, 27 faculty, 1 office, 1 accountant, 1 parent and 21 students. Their active status and `password123` password were verified against AWS on **9 November 2026**. Two-step sign-in is currently off for the listed staff accounts. This check did not reset passwords or change accounts.
 
-- **Administrator:** `admin@edupilot.edu` — academic setup, student management, exams and administration.
-- **HOD:** `hod.cse@edupilot.edu` — department academic review and permitted management.
-- **Faculty:** `faculty@edupilot.edu` — assigned-course attendance, marks and teaching workflows.
-- **Student demo:** `sandhya.lanke@edupilot.edu` — **LANKE SANDHYA (24MQ5A0509)**, with sample academic history.
-- **Parent:** `parent@edupilot.edu` — records of the student linked by the seed.
-- **Office:** `office@edupilot.edu` — student registration and permitted student-record work.
-- **Accountant:** `accounts@edupilot.edu` — retained login and permitted student-record views; finance modules are removed.
+Freshly seeded demo accounts use the same password. Any later password change replaces the listed default. The 403 hidden sample students are excluded from this login list.
+
+### All administrator, HOD, faculty, office, accountant and parent accounts
+
+| Role | Department | Login username | Password |
+|---|---|---|---|
+| Administrator | College-wide | `admin@edupilot.edu` | `password123` |
+| HOD | CSE | `hod.cse@edupilot.edu` | `password123` |
+| HOD | ECE | `ece.fac1@edupilot.edu` | `password123` |
+| HOD | EEE | `eee.fac1@edupilot.edu` | `password123` |
+| HOD | ME | `me.fac1@edupilot.edu` | `password123` |
+| HOD | CE | `ce.fac1@edupilot.edu` | `password123` |
+| Faculty | CSE | `faculty@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac2@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac4@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac5@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac6@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac7@edupilot.edu` | `password123` |
+| Faculty | CSE | `cse.fac8@edupilot.edu` | `password123` |
+| Faculty | ECE | `ece.fac2@edupilot.edu` | `password123` |
+| Faculty | ECE | `ece.fac3@edupilot.edu` | `password123` |
+| Faculty | ECE | `ece.fac4@edupilot.edu` | `password123` |
+| Faculty | ECE | `ece.fac5@edupilot.edu` | `password123` |
+| Faculty | ECE | `ece.fac6@edupilot.edu` | `password123` |
+| Faculty | EEE | `eee.fac2@edupilot.edu` | `password123` |
+| Faculty | EEE | `eee.fac3@edupilot.edu` | `password123` |
+| Faculty | EEE | `eee.fac4@edupilot.edu` | `password123` |
+| Faculty | EEE | `eee.fac5@edupilot.edu` | `password123` |
+| Faculty | EEE | `eee.fac6@edupilot.edu` | `password123` |
+| Faculty | ME | `me.fac2@edupilot.edu` | `password123` |
+| Faculty | ME | `me.fac3@edupilot.edu` | `password123` |
+| Faculty | ME | `me.fac4@edupilot.edu` | `password123` |
+| Faculty | ME | `me.fac5@edupilot.edu` | `password123` |
+| Faculty | ME | `me.fac6@edupilot.edu` | `password123` |
+| Faculty | CE | `ce.fac2@edupilot.edu` | `password123` |
+| Faculty | CE | `ce.fac3@edupilot.edu` | `password123` |
+| Faculty | CE | `ce.fac4@edupilot.edu` | `password123` |
+| Faculty | CE | `ce.fac5@edupilot.edu` | `password123` |
+| Faculty | CE | `ce.fac6@edupilot.edu` | `password123` |
+| Office | College-wide | `office@edupilot.edu` | `password123` |
+| Accountant | College-wide | `accounts@edupilot.edu` | `password123` |
+| Parent | College-wide | `parent@edupilot.edu` | `password123` |
 
 ### Sandhya's own student account
 
@@ -279,29 +316,29 @@ This is the same account opened by the Student demo button. The seeded parent ac
 
 Password for every account in this table immediately after seed: `password123`.
 
-| Student | Login username |
-|---|---|
-| P. BHARGAV NAGA SAI SAMPATH | `bhargav.p@edupilot.edu` |
-| BORRA ABHINAYA | `abhinaya.borra@edupilot.edu` |
-| KUNAPAREDDY SYAMKUMAR | `syamkumar.kunapareddy@edupilot.edu` |
-| N. SIVA KANAKA NAGA SANDHYA | `siva.n@edupilot.edu` |
-| KUNAPAREDDY PREMITH | `premith.kunapareddy@edupilot.edu` |
-| LANKE SANDHYA | `sandhya.lanke@edupilot.edu` |
-| TURAKA SRILAKSHMI | `srilakshmi.turaka@edupilot.edu` |
-| MADALA REVANTH KUMAR | `revanth.madala@edupilot.edu` |
-| PEDDINTI YOGESH | `yogesh.peddinti@edupilot.edu` |
-| NARAGAM KAVYA | `kavya.naragam@edupilot.edu` |
-| GOLLA SRIVIDYA | `srividya.golla@edupilot.edu` |
-| G.LAKSHMANA SIVA SAI | `lakshmana.g@edupilot.edu` |
-| BOORADA SHANMUKHA | `shanmukha.boorada@edupilot.edu` |
-| PARIMKAYALA AMRUTHA | `amrutha.parimkayala@edupilot.edu` |
-| MATHI VARSHITHA DURGA BHAVANI | `varshitha.mathi@edupilot.edu` |
-| YARLAGADDA JYOSHNA DEVI | `jyoshna.yarlagadda@edupilot.edu` |
-| MURARI GANESH VENKATA RATNAM | `ganesh.murari@edupilot.edu` |
-| KAGITA DURGA BHAVANI | `durga.kagita@edupilot.edu` |
-| PINNENTI JHANSI | `jhansi.pinnenti@edupilot.edu` |
-| DANDAY SHARON PRADEEPA | `sharon.danday@edupilot.edu` |
-| BEZAWADA JAGADEESH | `jagadeesh.bezawada@edupilot.edu` |
+| Student | Login username | Password |
+|---|---|---|
+| P. BHARGAV NAGA SAI SAMPATH | `bhargav.p@edupilot.edu` | `password123` |
+| BORRA ABHINAYA | `abhinaya.borra@edupilot.edu` | `password123` |
+| KUNAPAREDDY SYAMKUMAR | `syamkumar.kunapareddy@edupilot.edu` | `password123` |
+| N. SIVA KANAKA NAGA SANDHYA | `siva.n@edupilot.edu` | `password123` |
+| KUNAPAREDDY PREMITH | `premith.kunapareddy@edupilot.edu` | `password123` |
+| LANKE SANDHYA | `sandhya.lanke@edupilot.edu` | `password123` |
+| TURAKA SRILAKSHMI | `srilakshmi.turaka@edupilot.edu` | `password123` |
+| MADALA REVANTH KUMAR | `revanth.madala@edupilot.edu` | `password123` |
+| PEDDINTI YOGESH | `yogesh.peddinti@edupilot.edu` | `password123` |
+| NARAGAM KAVYA | `kavya.naragam@edupilot.edu` | `password123` |
+| GOLLA SRIVIDYA | `srividya.golla@edupilot.edu` | `password123` |
+| G.LAKSHMANA SIVA SAI | `lakshmana.g@edupilot.edu` | `password123` |
+| BOORADA SHANMUKHA | `shanmukha.boorada@edupilot.edu` | `password123` |
+| PARIMKAYALA AMRUTHA | `amrutha.parimkayala@edupilot.edu` | `password123` |
+| MATHI VARSHITHA DURGA BHAVANI | `varshitha.mathi@edupilot.edu` | `password123` |
+| YARLAGADDA JYOSHNA DEVI | `jyoshna.yarlagadda@edupilot.edu` | `password123` |
+| MURARI GANESH VENKATA RATNAM | `ganesh.murari@edupilot.edu` | `password123` |
+| KAGITA DURGA BHAVANI | `durga.kagita@edupilot.edu` | `password123` |
+| PINNENTI JHANSI | `jhansi.pinnenti@edupilot.edu` | `password123` |
+| DANDAY SHARON PRADEEPA | `sharon.danday@edupilot.edu` | `password123` |
+| BEZAWADA JAGADEESH | `jagadeesh.bezawada@edupilot.edu` | `password123` |
 
 For an existing database, take a backup using Section 10, preview with `node scripts/sync-student-emails.mjs`, then apply with `node scripts/sync-student-emails.mjs --apply`. This changes only the 21 supplied students' login emails and invalidates their outstanding recovery/sign-in codes. Names, passwords, IDs and academic records remain unchanged. Sign out and sign in using the new username.
 
@@ -320,7 +357,7 @@ Newly registered students use a different initial-password rule: their lowercase
 
 **Attendance and marks — 2 minutes.** As faculty, open an assigned course. Show an existing attendance sheet and its report. Demonstrate a rehearsed attendance or marks save if required. Show published results from an earlier term rather than trying to publish a class with incomplete assessments.
 
-**Student and parent views — 1 minute.** Sign in using the appropriate student account and show personal attendance, results and timetable. Explain that the parent sees only the linked child. Use Sandhya's account when presenting her identity; use the generic student/parent pair when demonstrating their link.
+**Student and parent views — 1 minute.** Sign in using the appropriate student account and show personal attendance, results and timetable. Explain that the parent sees only the linked child. Use `sandhya.lanke@edupilot.edu` and the linked `parent@edupilot.edu` account when demonstrating their student–parent relationship.
 
 **Additional retained features — 2 minutes.** Show a hall ticket, exam schedule/seating, materials or assignments, leave/on-duty requests and placements/alumni. Choose two or three screens rather than rushing through every menu. Avoid changing placement eligibility or exam allocations during an unrehearsed demo.
 
