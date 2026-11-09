@@ -195,26 +195,19 @@ Edit **`college-data.json` in the project root**. It contains the college brandi
 
 Keep `employeeId`, department `code`, account `key` and student `rollNo` unchanged when editing details. To change a staff account username, put its current login in `matchEmail` and the desired login in `email`; refresh `matchEmail` to the current login before a later username change. Department `hodEmployeeId: null` preserves its current head; choose an employee ID from that department to assign a new head. Optional phone/address/guardian fields are preserved when omitted and cleared when set to `null`. Register a new student through the app before adding their roll number to this file. Removing a JSON entry does not delete a database record.
 
-For an **existing database**, back up with Section 10, stop the application, then validate and preview:
+After saving the file, press **Ctrl+C** in the app's PowerShell window to stop it, then run this **single command** from the project folder:
 
 ```powershell
-npm.cmd run college:validate
-npm.cmd run college:preview
+npm.cmd run college:update
 ```
 
-The preview reads `.env`'s `DATABASE_URL` and makes no changes. Check the counts and IDs it lists. If it will create new faculty accounts, set their initial password in this PowerShell session, then apply:
+The command checks the file and database changes, saves a full compressed SQL backup, builds the application, imports the data, then starts it at **http://localhost:3000/login**. Keep that PowerShell window open while presenting. A build can take a few minutes. It stops on errors and does not import if validation, backup or build fails. If port 3000 is already in use, it asks you to stop the running app and run the command again; it does not terminate other programs.
 
-```powershell
-$env:COLLEGE_IMPORT_PASSWORD = 'ChooseANewFacultyPassword'
-npm.cmd run college:import
-Remove-Item Env:COLLEGE_IMPORT_PASSWORD
-npm.cmd run build
-npm.cmd run start -- --hostname 127.0.0.1
-```
+New faculty demo accounts receive **`password123`**; existing passwords and active/inactive states stay unchanged. A maintainer can override the initial password using `COLLEGE_IMPORT_PASSWORD` before running the command. Marks, attendance, results and existing student IDs are preserved. No email is sent. This command uses local MySQL from `.env`; it does not update AWS or push changes to Git.
 
-Use a password of at least 10 characters and no more than 72 UTF-8 bytes. This password applies only to newly created faculty accounts; existing passwords and active/inactive states stay unchanged. For a demonstration using the guide's default credentials, use `password123`. The importer saves the previous edited fields under `backups/college-data-.../before.json`, applies changes in one transaction and leaves student IDs, marks, attendance and results intact. Keep the full SQL backup as well. No email is sent by the importer.
+The full database backup is saved under `backups/college-before-update-...sql.gz` (or `BACKUP_DIR`, if configured). The importer also keeps the previous edited fields under `backups/college-data-.../before.json`. Backups are not automatically restored after an error; use Section 10 with the project maintainer if recovery is needed. The command finds MySQL's `mysqldump.exe` in the usual Windows installation folder automatically. For a custom installation, add its `bin` folder to PATH or have the maintainer set `MYSQLDUMP_PATH` in `.env`.
 
-New installations load this file automatically through the **first-setup-only** seed command. **Do not reseed an existing database to update details**. Rebuild and restart after editing the file so the bundled branding defaults and demo buttons match the imported database. SMTP and other infrastructure secrets remain in `.env`.
+New installations load the file automatically through the **first-setup-only** seed command. **Do not reseed or reset an existing database to update details**. The individual `college:validate`, `college:preview` and `college:import` commands remain available for maintainers. SMTP and infrastructure secrets remain in `.env`.
 
 <!-- pagebreak -->
 

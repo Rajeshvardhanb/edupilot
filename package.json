@@ -23,7 +23,8 @@
     "college:validate": "node --import tsx scripts/college-data.mts --validate",
     "college:preview": "node --import tsx scripts/college-data.mts",
     "college:import": "node --import tsx scripts/college-data.mts --apply",
-    "test:college-data": "node --import tsx tests/integration/college-data.mts"
+    "test:college-data": "node --import tsx tests/integration/college-data.mts",
+    "college:update": "node scripts/college-update.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
