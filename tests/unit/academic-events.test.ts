@@ -5,10 +5,11 @@ vi.mock('@/lib/mail', () => ({ sendMail: m.send, appUrl: (p: string) => 'http://
 vi.mock('@/lib/results', () => ({ studentStandings: m.standings }));
 vi.mock('@/lib/rules', () => ({ getRules: m.rules }));
 vi.mock('@/lib/attendance', () => ({ attendanceSummary: m.summary }));
-vi.mock('@/lib/db', () => ({ db: new Proxy({}, { get: (_, table) => table === 'user' ? { findMany: m.users } : table === 'student' ? { findMany: m.students, findUniqueOrThrow: m.find } : table === 'parentLink' ? { findMany: m.parents } : { findUniqueOrThrow: m.find, findMany: m.many } }) }));
+vi.mock('@/lib/db', () => ({ db: new Proxy({}, { get: (_, table) => table === 'user' ? { findMany: m.users } : table === 'student' ? { findMany: m.students, findUniqueOrThrow: m.find } : table === 'parentLink' ? { findMany: m.parents } : { findUniqueOrThrow: m.find, findMany: m.many, createMany: vi.fn() } }) }));
 import { dispatchAcademicEmail, notifyAcademic, type AcademicEvent } from '@/lib/academic-email';
 const fixture = {
  id: 'record', userId: 'user', studentId: 'student', facultyId: 'teacher', batchId: 'batch', termId: 'term', optionId: 'option', driveId: 'drive', subjectId: 'subject',
+ fromDate: new Date('2026-11-10'), toDate: new Date('2026-11-11'),
  status: 'OPEN', roundNo: 1, marks: 8, feedback: 'private feedback', submittedAt: new Date('2026-11-01'), date: new Date('2026-11-10'), session: 'FN', period: 2,
  offering: { subject: { name: 'Networks', semester: 5 } }, subject: { name: 'Networks', semester: 5 }, faculty: { userId: 'teacher-user' }, room: { name: 'Hall A' }, roomId: 'room',
  option: { subject: { name: 'AI elective' } }, from: { userId: 'requestor' }, to: { userId: 'colleague' },
@@ -24,7 +25,7 @@ beforeEach(() => {
 });
 describe('retained academic email events', () => {
  it.each([
-  ['account', 'Your student management account is ready'], ['parent-link', 'A student has been linked to your parent account'], ['security', 'Your account security settings changed'],
+  ['parent-link', 'A student has been linked to your parent account'], ['security', 'Your account security settings changed'],
   ['student-update', 'Your academic record has been updated'], ['submission', 'Your assignment submission was received'], ['graded', 'Your assignment feedback is ready'],
   ['exam', 'Your examination schedule has been updated'], ['supplementary', 'Supplementary examination registration confirmed'], ['elective', 'Your elective selection is confirmed'],
   ['placement-application', 'Your placement application was received'], ['placement-status', 'Your placement application has an update'],

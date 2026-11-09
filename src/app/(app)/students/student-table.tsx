@@ -9,7 +9,7 @@ import { Download,Eye,Mail,Phone,X } from "lucide-react";
 import Link from "next/link";
 import { useEffect,useState } from "react";
 
-export type Row = { id: string; userId: string; hasPhoto: boolean; rollNo: string; name: string; email: string; phone: string | null; batch: string; semester: number; admissionType: string; status: string; attendance?: number | null; cgpa?: number | null };
+export type Row = { id: string; userId: string; rollNo: string; name: string; email: string; phone: string | null; batch: string; semester: number; admissionType: string; status: string; attendance?: number | null; cgpa?: number | null };
 type Summary = Row & { program: string; guardian: string | null; guardianPhone: string | null; attendance: number | null; attendanceRequired: number; cgpa: number; backlogs: number };
 
 const STATUS_TONE: Record<string, Tone> = { ACTIVE: "success", DETAINED: "danger", SUSPENDED: "warning", DROPPED: "neutral", GRADUATED: "info" };
@@ -73,7 +73,7 @@ export function StudentTable({ rows, canEdit, canDelete = false, batches, sortHr
               <tr key={s.id} className={cn("transition-colors", picked.has(s.id) && "bg-brand-soft/50")}>
                 <td className="border-b border-line px-4 py-3"><input type="checkbox" aria-label={`Select ${s.name}`} checked={picked.has(s.id)} onChange={() => toggle(s.id)} /></td>
                 <td data-label="Roll no" className="border-b border-line px-4 py-3 font-mono text-xs">{s.rollNo}</td>
-                <td data-label="Name" className="border-b border-line px-4 py-3"><Link href={`/students/${s.id}`} className="flex items-center gap-3 hover:text-brand"><Avatar name={s.name} userId={s.userId} hasPhoto={s.hasPhoto} size={34} /><span className="min-w-0"><span className="block font-medium">{s.name}</span><span className="block text-xs text-muted">{s.email}</span></span></Link></td>
+                <td data-label="Name" className="border-b border-line px-4 py-3"><Link href={`/students/${s.id}`} className="flex items-center gap-3 hover:text-brand"><Avatar name={s.name} size={34} /><span className="min-w-0"><span className="block font-medium">{s.name}</span><span className="block text-xs text-muted">{s.email}</span></span></Link></td>
                 <td className="border-b border-line px-4 py-3"><div className="flex items-center gap-2 whitespace-nowrap">
                   <Link href={`/students/${s.id}`} className="text-xs font-semibold text-brand" aria-label={`View ${s.name}`}>View</Link>
                   {canEdit && <Link href={`/students/${s.id}/edit`} className="text-xs font-semibold text-brand" aria-label={`Edit ${s.name}`}>Edit</Link>}
@@ -98,7 +98,7 @@ export function StudentTable({ rows, canEdit, canDelete = false, batches, sortHr
         {rows.map((s) => (
           <li key={s.id} className="flex flex-wrap items-center gap-3 py-2.5">
             <Link href={`/students/${s.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar name={s.name} userId={s.userId} hasPhoto={s.hasPhoto} size={38} />
+              <Avatar name={s.name} size={38} />
               <span className="min-w-0"><span className="block truncate text-sm font-semibold">{s.name}</span><span className="block font-mono text-[11px] text-muted">{s.rollNo} · {s.batch}</span></span>
             </Link>
             {s.attendance != null && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${s.attendance >= attendanceRequired ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}><span className="size-1.5 rounded-full bg-current" />{s.attendance}%</span>}
@@ -136,7 +136,7 @@ function QuickView({ id, onClose }: { id: string; onClose: () => void }) {
           <div className="animate-pulse space-y-4"><div className="size-20 rounded-full bg-surface-2" /><div className="h-5 w-40 rounded bg-surface-2" /><div className="h-24 rounded-xl bg-surface-2" /></div>
         ) : (
           <>
-            <Avatar name={data.name} userId={data.userId} hasPhoto={data.hasPhoto} size={80} />
+            <Avatar name={data.name} size={80} />
             <h2 className="mt-3 text-xl font-semibold">{data.name}</h2>
             <p className="font-mono text-xs text-muted">{data.rollNo}</p>
             <p className="mt-1 text-sm">{data.program}</p>

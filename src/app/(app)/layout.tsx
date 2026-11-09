@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     : dept ? `${ROLE_LABEL[user.role]} · ${dept.code}` : ROLE_LABEL[user.role];
   return (
     <AppShell
-      user={{ id: user.id, name: user.name, email: user.email, role: user.role, hasPhoto: user.hasPhoto, children: user.children, studentId: user.studentId, subtitle }}
+      user={{ id: user.id, name: user.name, email: user.email, role: user.role, children: user.children, studentId: user.studentId, subtitle }}
       term={term ? { name: term.name, ...termProgress(term) } : undefined}
       brand={{ name: inst.name, shortName: inst.shortName, tagline: inst.tagline, hasLogo: !!inst.logoType }}
     >

@@ -1,3 +1,4 @@
+import { resendAccountSetup } from "@/actions/account-setup";
 import { createParentLogin } from "@/actions/services";
 import { updateStudentContact, deleteStudent } from "@/actions/students";
 import { AcademicRecord } from "@/components/academic-record";
@@ -6,7 +7,6 @@ import { Avatar } from "@/components/avatar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ActionButton,ActionForm,SubmitButton } from "@/components/forms";
 import { InlineEdit } from "@/components/inline-edit";
-import { PhotoUpload } from "@/components/photo-upload";
 import { Badge,LinkButton,Progress } from "@/components/ui";
 import { Card } from "@/components/ui-server";
 import { attendanceSummary } from "@/lib/attendance";
@@ -61,9 +61,7 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
       <section className="tile mb-6 animate-fade-up">
         <div className="flex flex-wrap items-center gap-4 p-5 sm:p-6">
           <div className="shrink-0">
-            {isOffice(user)
-              ? <PhotoUpload compact userId={s.userId} current={<Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={72} />} />
-              : <Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} size={72} />}
+            <Avatar name={s.user.name} size={72} />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold sm:text-2xl">{s.user.name}</h1>
@@ -75,6 +73,7 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
           </div>
           <div className="flex flex-wrap gap-2">
             {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`}><Pencil className="size-4" /> Edit student</LinkButton>}
+            {isOffice(user) && s.user.mustChangePassword && <ActionButton action={resendAccountSetup} fields={{ studentId: s.id }} variant="secondary">Resend password setup</ActionButton>}
             {user.role === "ADMIN" && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.user.name}? Their login will be disabled. Academic records are retained.`}>Delete student</ActionButton>}
             {user.role === "STUDENT" && user.studentId === s.id && <LinkButton href="/profile#edit-profile">Edit my profile</LinkButton>}
           </div>
@@ -85,6 +84,7 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
           ))}
         </dl>
       </section>
+      {isOffice(user) && s.user.mustChangePassword && <div className="mb-6 rounded-xl border border-line bg-brand-soft p-4 text-sm"><strong>Password setup pending</strong><p className="mt-1">Login username: {s.user.email}. The setup invitation includes a link to choose a password after email OTP verification. Check Administration → Email delivery for delivery status, or use Resend password setup above. A working email inbox is required.</p></div>}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Profile">
           <div className="mb-4 space-y-1.5 text-sm">

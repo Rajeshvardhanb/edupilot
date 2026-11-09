@@ -80,7 +80,7 @@
       "key": "parent",
       "matchEmail": "parent@edupilot.edu",
       "email": "parent@edupilot.edu",
-      "name": "Parent of Lanke Sandhya",
+      "name": "Lanke Bhavani / Lanke Dharma Rao",
       "role": "PARENT"
     }
   ],
@@ -444,7 +444,8 @@
     {
       "rollNo": "24MQ5A0509",
       "name": "LANKE SANDHYA",
-      "email": "sandhya.lanke@edupilot.edu"
+      "email": "sandhya.lanke@edupilot.edu",
+      "guardianName": "Lanke Bhavani / Lanke Dharma Rao"
     },
     {
       "rollNo": "23MQ1A05C4",
@@ -521,5 +522,14 @@
       "name": "BEZAWADA JAGADEESH",
       "email": "jagadeesh.bezawada@edupilot.edu"
     }
-  ]
+  ],
+  "projectTeam": {
+    "ownerRollNo": "24MQ5A0509",
+    "memberRollNos": [
+      "24MQ5A0509",
+      "23MQ1A05C4",
+      "24MQ5A0510",
+      "23MQ1A05B0"
+    ]
+  }
 }

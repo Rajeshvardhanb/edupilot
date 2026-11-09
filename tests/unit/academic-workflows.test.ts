@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  students: vi.fn(), offerings: vi.fn(), attendance: vi.fn(), backlogs: vi.fn(),
+  decisions: vi.fn(), students: vi.fn(), offerings: vi.fn(), attendance: vi.fn(), backlogs: vi.fn(),
   registrations: vi.fn(), register: vi.fn(), audit: vi.fn(), revalidate: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({ db: {
-  student: { findMany: mocks.students }, courseOffering: { findMany: mocks.offerings },
+  attendanceCondonation: { findMany: mocks.decisions }, student: { findMany: mocks.students }, courseOffering: { findMany: mocks.offerings },
   supplementaryRegistration: { findMany: mocks.registrations, createMany: mocks.register },
 } }));
 vi.mock("@/lib/auth", () => ({ requireUser: vi.fn(async () => ({ id: "user", studentId: "student", role: "STUDENT" })) }));
@@ -21,6 +21,7 @@ import { registerSupplementary } from "@/actions/exams";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.decisions.mockResolvedValue([]);
   mocks.offerings.mockResolvedValue([{ id: "course" }]);
   mocks.registrations.mockResolvedValue([]);
   mocks.register.mockResolvedValue({ count: 1 });
@@ -33,13 +34,30 @@ describe("hall-ticket eligibility without finance", () => {
     const status = (await hallTicketStatus(["student"], "term")).get("student");
     expect(status).toMatchObject({ eligible: true, attendance: 80, reasons: [] });
   });
-  it("still withholds low-attendance tickets and accepts approved medical condonation", async () => {
+  it("still withholds low-attendance tickets and requires a term-specific explicit approval", async () => {
     mocks.students.mockResolvedValue([{ id: "student", batchId: "batch", leaves: [] }]);
     mocks.attendance.mockResolvedValue(new Map([["student:course", { attended: 7, total: 10 }]]));
     expect((await hallTicketStatus(["student"], "term")).get("student")?.eligible).toBe(false);
-    mocks.students.mockResolvedValue([{ id: "student", batchId: "batch", leaves: [{ id: "medical" }] }]);
+    mocks.decisions.mockResolvedValue([{ studentId: "student", status: "APPROVED" }]);
     expect((await hallTicketStatus(["student"], "term")).get("student")).toMatchObject({ eligible: true, condoned: true });
   });
+});
+
+describe("condonation boundaries", () => {
+ it("does not override the absolute minimum attendance and ignores rejected decisions", async () => {
+  mocks.students.mockResolvedValue([{ id: "student", batchId: "batch" }]);
+  mocks.decisions.mockResolvedValue([{ studentId: "student", status: "APPROVED" }]);
+  mocks.attendance.mockResolvedValue(new Map([["student:course", { attended: 6, total: 10 }]]));
+  expect((await hallTicketStatus(["student"], "term")).get("student")?.eligible).toBe(false);
+  mocks.attendance.mockResolvedValue(new Map([["student:course", { attended: 7, total: 10 }]]));
+  mocks.decisions.mockResolvedValue([{ studentId: "student", status: "REVOKED" }]);
+  expect((await hallTicketStatus(["student"], "term")).get("student")?.eligible).toBe(false);
+  expect(mocks.decisions.mock.calls.at(-1)![0].where.termId).toBe("term");
+ });
+ it("withholds hall tickets when no term is configured", async () => {
+  mocks.students.mockResolvedValue([{ id: "student", batchId: "batch" }]);
+  expect((await hallTicketStatus(["student"], undefined)).get("student")?.eligible).toBe(false);
+ });
 });
 
 describe("supplementary registration without fees", () => {

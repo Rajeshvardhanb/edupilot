@@ -16,7 +16,6 @@ export type CurrentUser = {
   studentId: string | null;
   facultyId: string | null;
   departmentId: string | null;
-  hasPhoto: boolean;
   mustChangePassword: boolean;
   /** A parent's linked children (empty for everyone else). */
   children: { id: string; name: string; rollNo: string }[];
@@ -50,7 +49,6 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     children: user.children.map((c) => ({ id: c.studentId, name: c.student.user.name, rollNo: c.student.rollNo })),
     facultyId: user.faculty?.id ?? null,
     departmentId: user.faculty?.departmentId ?? null,
-    hasPhoto: !!user.photoType,
     mustChangePassword: user.mustChangePassword,
   };
 });

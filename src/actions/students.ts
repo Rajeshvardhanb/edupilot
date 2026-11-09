@@ -2,6 +2,7 @@
 import { notifyAcademic } from "@/lib/academic-email";
 
 import bcrypt from "bcryptjs";
+import { newToken } from "@/lib/security";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -60,7 +61,7 @@ export async function createStudent(_: ActionState, formData: FormData): Promise
     const user = await db.user.create({
       data: {
         name, email, phone, role: "STUDENT",
-        passwordHash: await bcrypt.hash(data.rollNo.toLowerCase(), 10), mustChangePassword: true,
+        passwordHash: await bcrypt.hash(newToken(), 10), mustChangePassword: true,
         student: { create: { ...data, entrySemester } },
       },
       include: { student: true },
@@ -84,7 +85,14 @@ export async function updateStudent(_: ActionState, formData: FormData): Promise
   try {
     await db.$transaction(async (tx) => {
       const st = await tx.student.update({ where: { id }, data: { ...data, dob: data.dob ?? null, gender: data.gender ?? null, bloodGroup: data.bloodGroup ?? null, address: data.address ?? null, guardianName: data.guardianName ?? null, guardianPhone: data.guardianPhone ?? null, guardianEmail: data.guardianEmail ?? null, previousSchool: data.previousSchool ?? null, previousScore: data.previousScore ?? null, about: data.about ?? null, skills: data.skills ?? null, linkedin: data.linkedin ?? null, github: data.github ?? null, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } });
-      await tx.user.update({ where: { id: st.userId }, data: { name, email, phone: phone ?? null, isActive: data.status !== "DROPPED" } });
+      const before = await tx.user.findUniqueOrThrow({ where: { id: st.userId }, select: { email: true } });
+      await tx.user.update({ where: { id: st.userId }, data: { name, email, phone: phone ?? null, isActive: data.status !== "DROPPED", ...(before.email !== email ? { emailVerifiedAt: null } : {}) } });
+      if (before.email !== email) {
+        await tx.emailChallenge.updateMany({ where: { userId: st.userId, usedAt: null }, data: { usedAt: new Date() } });
+        await tx.accountSetupToken.updateMany({ where: { userId: st.userId, usedAt: null }, data: { usedAt: new Date() } });
+        await tx.passwordResetToken.updateMany({ where: { userId: st.userId, usedAt: null }, data: { usedAt: new Date() } });
+        await tx.loginCode.updateMany({ where: { userId: st.userId, usedAt: null }, data: { usedAt: new Date() } });
+      }
     });
   } catch (e) {
     return uniqueError(e) ?? { error: "Could not update the student." };
@@ -125,7 +133,7 @@ export async function importStudents(_: ActionState, formData: FormData): Promis
     try {
       const imported = await db.user.create({
         data: {
-          name, email, phone, role: "STUDENT", passwordHash: await bcrypt.hash(data.rollNo.toLowerCase(), 10), mustChangePassword: true,
+          name, email, phone, role: "STUDENT", passwordHash: await bcrypt.hash(newToken(), 10), mustChangePassword: true,
           student: { create: { ...data, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } },
         },
       });
@@ -138,7 +146,7 @@ export async function importStudents(_: ActionState, formData: FormData): Promis
   await audit(me.id, "IMPORT", "Student", undefined, `${created} created, ${errors.length} failed`);
   revalidatePath("/students");
   if (errors.length) return { ok: created > 0, message: `${created} students imported.`, error: `${errors.length} rows skipped — ${errors.slice(0, 5).join(" | ")}${errors.length > 5 ? " …" : ""}` };
-  return { ok: true, message: `${created} students imported. Initial password is each student's roll number in lowercase.` };
+  return { ok: true, message: `${created} students imported. Password setup invitations are queued for their registered email addresses.` };
 }
 
 /** Bulk change from the student list: status or batch for many students at once. */

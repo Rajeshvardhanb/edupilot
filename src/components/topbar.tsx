@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationBell } from "./notification-bell";
 import { logout } from "@/actions/auth";
 import { setChild } from "@/actions/prefs";
 import { cn } from "@/lib/utils";
@@ -24,10 +25,7 @@ function useOutside(onOut: () => void) {
 }
 
 function UserAvatar({ user, size = 34 }: { user: ShellUser; size?: number }) {
-  return user.hasPhoto
-    // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={`/photo/${user.id}`} alt="" style={{ width: size, height: size }} className="rounded-lg object-cover" />
-    : <span aria-hidden style={{ width: size, height: size }} className="brand-gradient grid place-items-center rounded-lg text-[11px] font-bold text-white">{initials(user.name)}</span>;
+  return <span aria-hidden style={{ width: size, height: size }} className="brand-gradient grid place-items-center rounded-lg text-[11px] font-bold text-white">{initials(user.name)}</span>;
 }
 
 export function Topbar({ user, onMenu, t, title }: {
@@ -74,6 +72,7 @@ export function Topbar({ user, onMenu, t, title }: {
               </select>
             </form>
           )}
+          <NotificationBell />
           <div ref={menuRef} data-tour="user" className="relative">
             <button onClick={() => setMenu((m) => !m)} aria-haspopup="menu" aria-expanded={menu} className="hidden h-10 items-center gap-2.5 rounded-xl border border-line bg-surface p-1 pr-1.5 shadow-xs transition-colors hover:border-brand/30 sm:flex sm:pr-2.5">
               <UserAvatar user={user} size={30} />

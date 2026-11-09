@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";
   // Reachable without signing in.
-  if (pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/login/verify" || pathname === "/session/expired") return NextResponse.next();
+  if (pathname === "/setup-password" || pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/login/verify" || pathname === "/session/expired") return NextResponse.next();
 
   if (!session && !isLogin) {
     const url = new URL("/login", request.url);

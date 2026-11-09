@@ -6,6 +6,7 @@ const optionalText = z.string().trim().max(1000).nullable().optional();
 
 export const collegeDataSchema = z.object({
   schemaVersion: z.literal(1),
+  projectTeam: z.object({ ownerRollNo: text, memberRollNos: z.array(text).min(1).max(20) }).strict(),
   instructions: z.array(z.string()),
   sources: z.object({ cseFaculty: z.url(), governingBody: z.url(), checkedOn: text }).strict(),
   college: z.object({
@@ -43,6 +44,11 @@ export const collegeDataSchema = z.object({
   unique(data.departments.map(d => d.code), "department code");
   unique(data.faculty.map(f => f.employeeId), "faculty employee ID");
   unique(data.students.map(s => s.rollNo), "student roll number");
+  unique(data.projectTeam.memberRollNos, "project group roll number");
+  for (const roll of data.projectTeam.memberRollNos) {
+    if (!data.students.some(s => s.rollNo === roll)) fail(`Project group member ${roll} is missing from students.`);
+  }
+  if (!data.projectTeam.memberRollNos.includes(data.projectTeam.ownerRollNo)) fail("Project owner must be in the project group.");
   unique(data.accounts.map(a => a.key), "account key");
   unique(data.accounts.map(a => a.matchEmail), "account matching email");
   unique([...data.accounts, ...data.faculty, ...data.students].map(u => u.email), "login email");

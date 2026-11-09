@@ -10,8 +10,8 @@ import { daysAgo } from "./format";
  * never by spreading: for a student the scope is itself an `id` filter and would overwrite yours.
  */
 export function studentScope(user: CurrentUser): Prisma.StudentWhereInput {
-  if ((user.role === "HOD" || user.role === "FACULTY") && user.departmentId)
-    return { batch: { program: { departmentId: user.departmentId } } };
+  if (user.role === "HOD" || user.role === "FACULTY")
+    return { batch: { program: { departmentId: user.departmentId ?? "-" } } };
   if (user.role === "STUDENT" || user.role === "PARENT") return { id: user.studentId ?? "-" };
   return {};
 }
@@ -29,7 +29,7 @@ export function offeringScope(user: CurrentUser): Prisma.CourseOfferingWhereInpu
 }
 
 export function programScope(user: CurrentUser): Prisma.ProgramWhereInput {
-  return user.role === "HOD" && user.departmentId ? { departmentId: user.departmentId } : {};
+  return user.role === "HOD" ? { departmentId: user.departmentId ?? "-" } : {};
 }
 
 // The current term is read by almost every page and changes twice a year: keep it briefly in memory.

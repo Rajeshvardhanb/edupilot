@@ -25,6 +25,8 @@ try {
     data.departments = data.departments.map(d => ({ ...d, code: tag + d.code, hodEmployeeId: d.hodEmployeeId ? tag + d.hodEmployeeId : null }));
     data.faculty = data.faculty.map((f, i) => ({ ...f, employeeId: tag + f.employeeId, departmentCode: tag + f.departmentCode, email: `${tag}.faculty${i}@example.org` }));
     data.students = data.students.map((s, i) => ({ ...s, rollNo: tag + s.rollNo, email: `${tag}.student${i}@example.org` }));
+    data.projectTeam.ownerRollNo = tag + data.projectTeam.ownerRollNo;
+    data.projectTeam.memberRollNos = data.projectTeam.memberRollNos.map(roll => tag + roll);
     data.accounts = data.accounts.map(a => ({ ...a, matchEmail: tag + a.email, email: tag + a.email }));
     data.demoLogins.hodEmployeeId = tag + data.demoLogins.hodEmployeeId;
     data.demoLogins.facultyEmployeeId = tag + data.demoLogins.facultyEmployeeId;

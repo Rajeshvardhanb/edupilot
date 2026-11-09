@@ -13,7 +13,7 @@ import { Sidebar } from "./sidebar";
 import { ToastProvider } from "./toast";
 import { Topbar } from "./topbar";
 
-export type ShellUser = { id: string; name: string; email: string; role: Role; hasPhoto: boolean; children: { id: string; name: string; rollNo: string }[]; studentId: string | null; subtitle: string };
+export type ShellUser = { id: string; name: string; email: string; role: Role; children: { id: string; name: string; rollNo: string }[]; studentId: string | null; subtitle: string };
 export type ShellTerm = { name: string; week: number; weeks: number; percent: number };
 export type Brand = { name: string; shortName: string; tagline: string; hasLogo: boolean };
 

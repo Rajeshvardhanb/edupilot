@@ -11,7 +11,7 @@ export default async function NewStudentPage() {
   const user = await requireUser(["ADMIN", "OFFICE"]);
   return (
     <>
-      <PageHeader illustration="students" title="New admission" subtitle="Initial login password will be the roll number in lowercase." />
+      <PageHeader illustration="students" title="New admission" subtitle="Use a working email address. The student will receive their username and a password setup link with email verification." />
       <Card><StudentForm action={createStudent} batches={await batchOptions(user)} defaults={{ admissionDate: isoDate(new Date()) }} submitLabel="Admit student" /></Card>
     </>
   );

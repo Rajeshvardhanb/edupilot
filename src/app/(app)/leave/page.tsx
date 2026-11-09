@@ -79,7 +79,7 @@ export default async function LeavePage(props: PageProps<"/leave">) {
   const status = typeof sp.status === "string" && sp.status ? sp.status : "PENDING";
   const where = { student: studentScope(user) };
   const [rows, counts] = await Promise.all([
-    db.leaveRequest.findMany({ where: { ...where, ...(status !== "ALL" && { status: status as "PENDING" }) }, include: { student: { include: { user: { select: { id: true, name: true, photoType: true } }, batch: { include: { program: true } } } } }, orderBy: { createdAt: "desc" }, take: 100 }),
+    db.leaveRequest.findMany({ where: { ...where, ...(status !== "ALL" && { status: status as "PENDING" }) }, include: { student: { include: { user: { select: { id: true, name: true } }, batch: { include: { program: true } } } } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.leaveRequest.groupBy({ by: ["status"], where, _count: true }),
   ]);
   const c = (s: string) => counts.find((x) => x.status === s)?._count ?? 0;
@@ -101,7 +101,7 @@ export default async function LeavePage(props: PageProps<"/leave">) {
             <thead><tr><Th>Student</Th><Th>Type</Th><Th>Dates</Th><Th>Reason</Th><Th>Status</Th><Th /></tr></thead>
             <tbody>{rows.map((r) => (
               <tr key={r.id}>
-                <Td><div className="flex items-center gap-3"><Avatar name={r.student.user.name} userId={r.student.user.id} hasPhoto={!!r.student.user.photoType} size={32} /><div><p className="font-medium">{r.student.user.name}</p><p className="text-xs text-muted">{r.student.rollNo} · {batchLabel(r.student.batch)}</p></div></div></Td>
+                <Td><div className="flex items-center gap-3"><Avatar name={r.student.user.name} size={32} /><div><p className="font-medium">{r.student.user.name}</p><p className="text-xs text-muted">{r.student.rollNo} · {batchLabel(r.student.batch)}</p></div></div></Td>
                 <Td><Badge tone={r.type === "ON_DUTY" ? "info" : "neutral"}>{TYPE[r.type]}</Badge></Td>
                 <Td className="whitespace-nowrap">{fmtDate(r.fromDate)} – {fmtDate(r.toDate)}<p className="text-xs text-muted">{days(r.fromDate, r.toDate)} day(s)</p></Td>
                 <Td className="max-w-xs text-sm">{r.reason}</Td>

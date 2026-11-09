@@ -33,7 +33,7 @@ test('student registration sends a welcome without a password', async ({ browser
  await p.getByRole('button', { name: 'Admit student', exact: true }).click();
  await expect(p).toHaveURL(/\/students\/[a-z0-9]+\?created=1/);
  const mail = await waitMail(request, 'Your student management account is ready', 'new-student@example.invalid');
- expect(decoded(mail.raw)).toContain('credentials supplied separately'); expect(mail.raw).not.toContain('email2026test');
+ expect(decoded(mail.raw)).toContain('new-student@example.invalid'); expect(decoded(mail.raw)).toContain('/setup-password?token='); expect(mail.raw).not.toContain('email2026test');
  expect(mail.to).toHaveLength(1); await p.context().close();
 });
 

@@ -17,7 +17,7 @@ export const metadata = { title: "Hall ticket" };
 export default async function HallTicketPage(props: PageProps<"/exams/hall-tickets/[studentId]">) {
   const user = await requireUser(["ADMIN", "HOD", "STUDENT"]);
   const { studentId } = await props.params;
-  const s = await db.student.findFirst({ where: { AND: [{ id: studentId }, studentScope(user)] }, include: { user: { select: { id: true, name: true, photoType: true } }, batch: { include: { program: true } } } });
+  const s = await db.student.findFirst({ where: { AND: [{ id: studentId }, studentScope(user)] }, include: { user: { select: { id: true, name: true } }, batch: { include: { program: true } } } });
   if (!s) notFound();
   const term = await currentTerm();
   const st = (await hallTicketStatus([s.id], term?.id)).get(s.id)!;
@@ -35,8 +35,8 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
           <h1 className="mt-4 text-xl font-semibold">Hall ticket withheld</h1>
           <p className="mt-1 text-sm text-muted">{s.user.name} · {s.rollNo}</p>
           <ul className="mx-auto mt-4 max-w-sm space-y-2 text-left text-sm">{st.reasons.map((r) => <li key={r} className="rounded-lg bg-danger-soft px-3 py-2 text-danger">{r}</li>)}</ul>
-          <p className="mt-4 text-xs text-muted">Clear the dues at the accounts section, or apply for condonation under Leave &amp; OD with a medical certificate.</p>
-          <div className="mt-6 flex justify-center gap-2"><LinkButton href="/leave">Leave &amp; OD</LinkButton></div>
+          <p className="mt-4 text-xs text-muted">Contact Administration. HOD or Admin can review attendance condonation and release the hall ticket for this term. Approval is available only within the permitted attendance band.</p>
+          <div className="mt-6 flex justify-center gap-2">{user.role === "STUDENT" ? <LinkButton href="/leave">View Leave &amp; OD</LinkButton> : <LinkButton href={`/exams/hall-tickets?batch=${s.batchId}`}>Review condonation</LinkButton>}</div>
         </div>
       </Sheet>
     );
@@ -50,7 +50,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
       <Sheet>
         <Letterhead title="Hall Ticket" serial={term?.name} />
         <div className="mt-5 flex gap-5">
-          <Avatar name={s.user.name} userId={s.user.id} hasPhoto={!!s.user.photoType} size={96} className="!rounded-xl" />
+          <Avatar name={s.user.name} size={96} className="!rounded-xl" />
           <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
             <dt className="text-muted">Name</dt><dd className="font-semibold">{s.user.name}</dd>
             <dt className="text-muted">Hall ticket no.</dt><dd className="font-mono font-semibold">{s.rollNo}</dd>
@@ -96,7 +96,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
             <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">Valid</span>
           </div>
           <div className="flex items-center gap-3 p-4">
-            <Avatar name={s.user.name} userId={s.user.id} hasPhoto={!!s.user.photoType} size={64} />
+            <Avatar name={s.user.name} size={64} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold">{s.user.name}</p>
               <p className="font-mono text-xs font-semibold text-brand">{s.rollNo}</p>

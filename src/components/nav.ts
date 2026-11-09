@@ -1,6 +1,6 @@
 import type { Role } from "@prisma/client";
 import {
-  Award, Briefcase, Building2, CalendarClock, CalendarDays, CalendarRange, ClipboardCheck,
+  Award, Bell, Briefcase, Building2, CalendarClock, CalendarDays, CalendarRange, ClipboardCheck,
   FileSpreadsheet, FolderOpen, GraduationCap, LayoutDashboard, ListChecks, Medal, MessageSquareHeart,
   Plane, RotateCcw, SearchCheck, Shapes, ShieldCheck, Target, Ticket,
   UserCircle, Users,
@@ -12,6 +12,7 @@ const STAFF: Role[] = ["ADMIN", "HOD", "FACULTY"];
 const ALL: Role[] = ["ADMIN", "HOD", "FACULTY", "STUDENT", "ACCOUNTANT", "PARENT", "OFFICE"];
 
 export const NAV: NavItem[] = [
+  { group: "Overview", href: "/notifications", label: "Notifications", icon: Bell, roles: ALL, hint: "Requests, academic updates and security" },
   { group: "Overview", href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ALL, hint: "Home, KPIs and insights" },
   { group: "Overview", href: "/calendar", label: "Calendar", icon: CalendarRange, roles: ALL, hint: "Holidays, exams and events" },
 
@@ -42,7 +43,7 @@ export const NAV: NavItem[] = [
 
 
   { group: "System", href: "/admin", label: "Administration", icon: ShieldCheck, roles: ["ADMIN"], hint: "Users, branding, audit log" },
-  { group: "System", href: "/profile", label: "My Profile", icon: UserCircle, roles: ALL, hint: "Photo and password" },
+  { group: "System", href: "/profile", label: "My Profile", icon: UserCircle, roles: ALL, hint: "Personal details, verification and password" },
 ];
 
 /** The nav entry whose href is the longest prefix of the current path (so /exams/schedule beats /exams). */

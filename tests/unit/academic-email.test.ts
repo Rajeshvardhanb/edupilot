@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ users: vi.fn(), students: vi.fn(), links: vi.fn(), leave: vi.fn(), results: vi.fn(), material: vi.fn(), offering: vi.fn(), send: vi.fn(), after: vi.fn() }));
+const mock = vi.hoisted(() => ({ users: vi.fn(), students: vi.fn(), links: vi.fn(), leave: vi.fn(), results: vi.fn(), material: vi.fn(), offering: vi.fn(), send: vi.fn(), after: vi.fn(), notices: vi.fn(), setup: vi.fn() }));
+vi.mock("@/lib/account-setup", () => ({ sendAccountSetup: mock.setup }));
 vi.mock("next/server", () => ({ after: mock.after }));
 vi.mock("@/lib/mail", () => ({ sendMail: mock.send, appUrl: (p: string) => 'http://localhost:3100' + p }));
-vi.mock("@/lib/db", () => ({ db: { user: { findMany: mock.users }, student: { findMany: mock.students }, parentLink: { findMany: mock.links }, leaveRequest: { findUniqueOrThrow: mock.leave }, subjectResult: { findMany: mock.results }, material: { findUniqueOrThrow: mock.material }, courseOffering: { findUniqueOrThrow: mock.offering } } }));
+vi.mock("@/lib/db", () => ({ db: { notification: { createMany: mock.notices }, user: { findMany: mock.users }, student: { findMany: mock.students }, parentLink: { findMany: mock.links }, leaveRequest: { findUniqueOrThrow: mock.leave }, subjectResult: { findMany: mock.results }, material: { findUniqueOrThrow: mock.material }, courseOffering: { findUniqueOrThrow: mock.offering } } }));
 import { dispatchAcademicEmail, emailStudents, emailUsers, notifyAcademic } from "@/lib/academic-email";
 beforeEach(() => {
  vi.clearAllMocks(); mock.users.mockResolvedValue([{ id: 'u', email: ' Student@example.org ' }]); mock.students.mockResolvedValue([{ id: 's', userId: 'u' }]); mock.links.mockResolvedValue([]); mock.send.mockResolvedValue('SENT');
@@ -43,9 +44,21 @@ describe('academic notification boundaries', () => {
  it('never generates absence notifications for historical data entry', async () => {
   await dispatchAcademicEmail({ type: 'attendance', id: 'o', date: '2001-01-01' }); expect(mock.send).not.toHaveBeenCalled(); expect(mock.offering).not.toHaveBeenCalled();
  });
+ it('keeps in-app notifications when academic email is disabled and deduplicates per user', async () => {
+  process.env.ACADEMIC_EMAILS_ENABLED = '0';
+  try {
+   await emailUsers(['u'], { key: 'leave:request:APPROVED', category: 'request', subject: 'Leave decision', text: 'Approved', link: { label: 'Review', url: 'http://localhost:3100/leave' } });
+   expect(mock.notices).toHaveBeenCalledWith({ data: [expect.objectContaining({ userId: 'u', category: 'REQUEST', href: '/leave', entityType: 'leave', entityId: 'request' })], skipDuplicates: true });
+   expect(mock.send).not.toHaveBeenCalled();
+  } finally { delete process.env.ACADEMIC_EMAILS_ENABLED; }
+ });
+ it('new accounts use a dedicated password setup invitation', async () => {
+  await dispatchAcademicEmail({ type: 'account', id: 'new' });
+  expect(mock.setup).toHaveBeenCalledWith('new');
+ });
  it('schedules post-response work and contains preparation failures', async () => {
   mock.users.mockRejectedValue(new Error('database unavailable'));
-  notifyAcademic({ type: 'account', id: 'u' }); expect(mock.after).toHaveBeenCalledTimes(1);
+  notifyAcademic({ type: 'security', id: 'u', action: 'Changed', version: '1' }); expect(mock.after).toHaveBeenCalledTimes(1);
   await expect(mock.after.mock.calls[0][0]()).resolves.toBeUndefined();
  });
 });

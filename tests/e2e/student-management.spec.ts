@@ -5,7 +5,7 @@ import { db,fixtures,reseed,session } from "./helpers";
 
 test.beforeAll(() => reseed());
 
-const removed = ["/faculty", "/staff", "/staff/leave", "/staff/payroll", "/staff/achievements", "/fees", "/pay/unused", "/scholarships", "/library", "/hostel", "/transport", "/inventory", "/gate", "/admissions", "/certificates", "/helpdesk", "/id-card", "/students/contacts", "/students/changes", "/students/id-cards", "/notices", "/notifications", "/reports", "/reports/cron", "/reports/export", "/attendance/sync", "/offline", "/manifest.webmanifest"];
+const removed = ["/faculty", "/staff", "/staff/leave", "/staff/payroll", "/staff/achievements", "/fees", "/pay/unused", "/scholarships", "/library", "/hostel", "/transport", "/inventory", "/gate", "/admissions", "/certificates", "/helpdesk", "/id-card", "/students/contacts", "/students/changes", "/students/id-cards", "/notices", "/reports", "/reports/cron", "/reports/export", "/attendance/sync", "/offline", "/manifest.webmanifest"];
 
 test("removed modules have no routes or navigation", async ({ browser }) => {
   test.setTimeout(180_000);
@@ -21,7 +21,7 @@ test("removed modules have no routes or navigation", async ({ browser }) => {
   }
   await page.goto("/dashboard");
   await expect(page.locator('aside a[href="/fees"]')).toHaveCount(0);
-  await expect(page.locator('button[aria-label^="Notifications"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Notifications/ }).first()).toBeVisible();
   await page.context().close();
 });
 
@@ -110,8 +110,8 @@ test("default student owns the profile editor; admins have student CRUD controls
   await student.getByLabel("Phone number",{exact:true}).fill("9876543210");
   await student.getByLabel("Address",{exact:true}).fill("SVIET profile edit test");
   await student.getByRole("button",{name:"Save profile",exact:true}).click();
-  await expect(student.getByText("Your profile has been updated.",{exact:true})).toBeVisible();
-  await student.reload();await expect(student.getByLabel("Address",{exact:true})).toHaveValue("SVIET profile edit test");
+  await expect(student.getByText(/Request and enter a valid email OTP/)).toBeVisible();
+  await student.reload();await expect(student.getByLabel("Address",{exact:true})).not.toHaveValue("SVIET profile edit test");
   await student.goto(`/students/${owner.id}/edit`);await expect(student).toHaveURL(/dashboard\?denied=1/);
   const admin=await session(browser,"admin@edupilot.edu");await admin.goto(`/students?q=${owner.rollNo}`);
   await admin.getByRole("link",{name:`Edit ${owner.user.name}`,exact:true}).filter({visible:true}).first().click();

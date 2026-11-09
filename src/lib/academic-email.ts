@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { db } from "./db";
 import { appUrl, sendMail } from "./mail";
 import type { EmailContent } from "./email-template";
+import { sendAccountSetup } from "./account-setup";
 import { ineligibility } from "./placements";
 import { studentStandings } from "./results";
 import { getRules } from "./rules";
@@ -12,7 +13,7 @@ import { attendanceSummary } from "./attendance";
 export type AcademicEvent =
   | { type: "account"; id: string }
   | { type: "parent-link"; id: string; studentId: string }
-  | { type: "results" | "material" | "submission" | "graded" | "exam" | "supplementary" | "elective" | "leave-request" | "leave-decision" | "revaluation-request" | "revaluation-decision" | "placement-open" | "placement-application" | "placement-status" | "substitution" | "swap-request" | "swap-decision" | "course-allocation" | "timetable" | "invigilation"; id: string }
+  | { type: "results" | "material" | "submission" | "graded" | "exam" | "supplementary" | "elective" | "condonation-decision" | "leave-request" | "leave-decision" | "revaluation-request" | "revaluation-decision" | "placement-open" | "placement-application" | "placement-status" | "substitution" | "swap-request" | "swap-decision" | "course-allocation" | "timetable" | "invigilation"; id: string }
   | { type: "attendance"; id: string; date: string }
   | { type: "student-update"; id: string; studentIds: string[]; message: string }
   | { type: "security"; id: string; action: string; version: string };
@@ -25,6 +26,20 @@ const date = (d: Date) => d.toISOString().slice(0, 10);
 /** One recipient per envelope. Normalize/deduplicate; never expose class email lists. */
 export async function emailUsers(ids: string[], notice: Notice) {
   const users = await db.user.findMany({ where: { id: { in: [...new Set(ids)] }, isActive: true }, select: { id: true, email: true } });
+  // Independent of SMTP: the portal remains the source of truth for every recipient.
+  let href: string | undefined;
+  if (notice.link) {
+    const url = new URL(notice.link.url), base = new URL(appUrl("/"));
+    if (url.origin === base.origin) href = url.pathname + url.search;
+  }
+  if (users.length) await db.notification.createMany({ data: users.map(user => ({
+    id: "notice_" + createHash("sha256").update(`${notice.key}:${user.id}`).digest("hex").slice(0, 40),
+    userId: user.id, title: notice.subject, body: [notice.text, ...(notice.details ?? []).map(d => `${d.label}: ${d.value}`)].join("\n"), href,
+    category: (notice.category ?? "system").toUpperCase(),
+    priority: notice.category === "security" || /needs review/.test(notice.subject) ? "HIGH" : "NORMAL",
+    entityType: notice.key.split(":")[0], entityId: notice.key.split(":")[1],
+  })), skipDuplicates: true });
+  if (process.env.ACADEMIC_EMAILS_ENABLED === "0" && notice.category !== "security") return;
   const recipients = [...new Set(users.map(u => u.email.trim().toLowerCase()))];
   // Sequential delivery keeps Gmail SMTP connections bounded, even for a large class.
   for (const to of recipients) await sendMail({ ...notice, to });
@@ -49,8 +64,13 @@ async function course(offeringId: string) {
 /** Only called after the action has committed; all recipient selection stays server-side. */
 export async function dispatchAcademicEmail(event: AcademicEvent) {
   const key = `${event.type}:${event.id}`;
-  if (event.type === "account" || event.type === "parent-link") {
-    await emailUsers([event.id], { key: event.type === "parent-link" ? `${key}:${event.studentId}` : key, category: "account", subject: event.type === "account" ? "Your student management account is ready" : "A student has been linked to your parent account", text: "Your college portal access has been updated. Sign in using the credentials supplied separately by the college. If you do not know your password, use Forgot password on the sign-in screen. Never share your password.", link: { label: "Sign in to the college portal", url: appUrl("/login") } });
+  if (event.type === "account") {
+    await sendAccountSetup(event.id);
+  } else if (event.type === "condonation-decision") {
+    const r = await db.attendanceCondonation.findUniqueOrThrow({ where: { id: event.id }, include: { term: true } });
+    await emailStudents([r.studentId], { key: `${key}:${r.updatedAt.toISOString()}`, category: "academic", subject: "Your hall ticket eligibility has been reviewed", text: `Attendance condonation for ${r.term.name}: ${r.status.toLowerCase()}. Review your current hall ticket eligibility in the portal. Contact Administration for questions. This approval does not record a fee or payment.`, link: learnerLink("/exams/hall-tickets") }, true);
+  } else if (event.type === "parent-link") {
+    await emailUsers([event.id], { key: event.type === "parent-link" ? `${key}:${event.studentId}` : key, category: "account", subject: "A student has been linked to your parent account", text: "Your college portal access has been updated. Sign in using the credentials supplied separately by the college. If you do not know your password, use Forgot password on the sign-in screen. Never share your password.", link: { label: "Sign in to the college portal", url: appUrl("/login") } });
   } else if (event.type === "security") {
     await emailUsers([event.id], { key: `${key}:${event.action}:${event.version}`, category: "security", subject: "Your account security settings changed", text: `${event.action}\n\nIf you did not expect this change, contact the college administrator promptly. No password is included in this message.`, link: learnerLink("/profile") });
   } else if (event.type === "student-update") {
@@ -59,8 +79,8 @@ export async function dispatchAcademicEmail(event: AcademicEvent) {
     const results = await db.subjectResult.findMany({ where: { offeringId: event.id, offering: { resultsPublished: true } }, select: { id: true, studentId: true, offering: { select: { subject: { select: { name: true } } } } } });
     if (results.length) await emailStudents(results.map(r => r.studentId), { key: `${key}:${results[0].id}`, category: "academic", subject: "Your course results are available", text: `Results for ${results[0].offering.subject.name} have been published. View your grade card securely in the portal. Marks are not included in this email. Parents should select the relevant child.`, link: learnerLink("/results") }, true);
   } else if (event.type === "leave-request" || event.type === "leave-decision") {
-    const r = await db.leaveRequest.findUniqueOrThrow({ where: { id: event.id } });
-    const notice: Notice = { key: `${key}:${r.status}`, category: "request", subject: event.type === "leave-request" ? "A student leave request needs review" : "Your leave request has been reviewed", text: event.type === "leave-request" ? "A student submitted a leave or on-duty request. Open the authorized review screen for the details." : `Your request for ${date(r.fromDate)} to ${date(r.toDate)} is ${r.status.toLowerCase()}. Sign in to read the decision. Personal or medical reasons are not included in this email.`, link: learnerLink("/leave") };
+    const r = await db.leaveRequest.findUniqueOrThrow({ where: { id: event.id }, include: { student: { select: { rollNo: true, user: { select: { name: true } } } } } });
+    const notice: Notice = { key: `${key}:${r.status}`, category: "request", subject: event.type === "leave-request" ? "A student leave request needs review" : "Your leave request has been reviewed", text: event.type === "leave-request" ? `A student submitted a leave or on-duty request${r.student ? `: ${r.student.user.name} (${r.student.rollNo})` : ""}, for ${date(r.fromDate)} to ${date(r.toDate)}. Open the authorized review screen for the details.` : `Your request for ${date(r.fromDate)} to ${date(r.toDate)} is ${r.status.toLowerCase()}. Sign in to read the decision. Personal or medical reasons are not included in this email.`, link: learnerLink("/leave") };
     if (event.type === "leave-request") {
       await reviewers(r.studentId, notice);
       await emailStudents([r.studentId], { ...notice, key: key + ":receipt", subject: "Your leave request was received", text: "Your leave or on-duty request has been submitted. You can track the decision in the portal." });
@@ -136,7 +156,6 @@ export async function dispatchAcademicEmail(event: AcademicEvent) {
 
 /** Next.js tracks this post-response work. It is not a durable background queue. */
 export function notifyAcademic(event: AcademicEvent) {
-  if (process.env.ACADEMIC_EMAILS_ENABLED === "0" && event.type !== "security") return;
   after(async () => {
     try { await dispatchAcademicEmail(event); }
     catch { console.error(`Academic email preparation failed (${event.type}); the saved academic record is unaffected.`); }

@@ -2,7 +2,14 @@
 
 ## 1. Windows deployment and presentation guide
 
-**Project owner / presenter: LANKE SANDHYA — 24MQ5A0509**
+**Project group:**
+
+- **LANKE SANDHYA — 24MQ5A0509**
+- **TURAKA SRILAKSHMI — 23MQ1A05C4**
+- **MADALA REVANTH KUMAR — 24MQ5A0510**
+- **PEDDINTI YOGESH — 23MQ1A05B0**
+
+**Project owner and default student demo: LANKE SANDHYA — 24MQ5A0509**
 
 **Repository branch: `sandhya`.** Select this branch when opening the guide or downloading the student-management project.
 
@@ -366,12 +373,12 @@ For an existing database, take a backup using Section 10, preview with `node scr
 
 Use a normal browser window for one account and an InPrivate/Incognito window for another. Tabs in the same browser profile share a login, so signing in as a second role there also changes the first tab's session. Sign out between additional roles.
 
-Newly registered students use a different initial-password rule: their lowercase roll number, followed by a required password change. The `password123` rule above is for seeded demo accounts.
+Newly registered students receive an email containing their login username and a dedicated password setup link. They request a six-digit email OTP and choose their own password. Use a working inbox when registering them. The `password123` rule above is only for seeded demo accounts. Existing demo users can open My Profile, replace Login email with a working address, enter their current password, request the OTP and save. Their verified new email then becomes their login username. Sensitive profile edits require OTP; biography, skills and links can be saved directly.
 <!-- pagebreak -->
 
 ## 9. Suggested presentation flow — approximately 10 minutes
 
-**Introduction — 1 minute.** Introduce LANKE SANDHYA, the project title and SVIET. Explain that the application connects student records, teaching activity, attendance and results through role-based access.
+**Introduction — 1 minute.** Introduce all four project group members, the project title and SVIET. Explain that the application connects student records, teaching activity, attendance and results through role-based access.
 
 **Student records — 2 minutes.** As admin, show the dashboard, search for Sandhya, and open her profile. Open the registration form and explain its fields. If creating a record, use a unique test roll number/email and save it only once.
 
@@ -503,3 +510,9 @@ Check the role, student, course, term and date. Seeded academic data uses 2026 d
 Send the failing command, full error text, `node --version`, `npm.cmd --version`, and `Get-Service -Name '*mysql*'`. Do not send `.env`, passwords or tokens. Preserve the source and data; do not reset the database or delete the lockfile.
 
 The existing dependency advisory is recorded in the main report. A security-blocked or failed build needs developer review before presentation; do not disable checks or perform unreviewed package upgrades to force it through.
+
+
+
+
+
+npm.cmd run college:update

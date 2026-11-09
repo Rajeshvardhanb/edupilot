@@ -8,6 +8,7 @@ describe("client editable college data", () => {
     const data = collegeDataSchema.parse(original);
     expect(data.faculty.filter(f => f.departmentCode === "CSE")).toHaveLength(40);
     expect(data.students).toHaveLength(21);
+    expect(data.projectTeam.memberRollNos).toEqual(["24MQ5A0509", "23MQ1A05C4", "24MQ5A0510", "23MQ1A05B0"]);
     expect(data.faculty.find(f => f.employeeId === "EMP0001")?.name).toBe("Dr. G. Syam Prasad");
     expect(demoLoginEmails()).toMatchObject({ student: "sandhya.lanke@edupilot.edu", faculty: "faculty@edupilot.edu" });
   });
@@ -26,6 +27,11 @@ describe("client editable college data", () => {
     data.departments[1].hodEmployeeId = null;
     data.demoLogins.studentRollNo = "MISSING";
     expect(() => collegeDataSchema.parse(data)).toThrow(/student reference/);
+    const group = structuredClone(original);
+    group.projectTeam.memberRollNos[1] = "MISSING";
+    expect(() => collegeDataSchema.parse(group)).toThrow(/Project group member/);
+    group.projectTeam.memberRollNos = original.projectTeam.memberRollNos.slice(1);
+    expect(() => collegeDataSchema.parse(group)).toThrow(/Project owner must be/);
   });
   it("rejects unrecognized fields and unsafe privilege/password additions", () => {
     expect(() => collegeDataSchema.parse({ ...original, password: "secret" })).toThrow();

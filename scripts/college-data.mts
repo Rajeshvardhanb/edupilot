@@ -113,6 +113,9 @@ export async function syncCollegeData(db: PrismaClient, input: unknown, options:
     }
     const resetChallenges = async (id: string, oldEmail: string, newEmail: string) => {
       if (oldEmail === newEmail) return;
+      await tx.user.update({ where: { id }, data: { emailVerifiedAt: null } });
+      await tx.emailChallenge.updateMany({ where: { userId: id, usedAt: null }, data: { usedAt: new Date() } });
+      await tx.accountSetupToken.updateMany({ where: { userId: id, usedAt: null }, data: { usedAt: new Date() } });
       await tx.passwordResetToken.deleteMany({ where: { userId: id } });
       await tx.loginCode.deleteMany({ where: { userId: id } });
     };

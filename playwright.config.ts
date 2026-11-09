@@ -28,7 +28,7 @@ export default defineConfig({
     // Creates the test database on first run and brings its tables up to date, then starts the app on it.
     command: PROD
       ? `npx prisma migrate deploy && npx next build${WEBPACK} && ${MAIL_TEST ? "node scripts/test-smtp.mjs node node_modules/next/dist/bin/next" : "npx next"} start -p ${TEST_PORT}`
-      : `npx prisma migrate deploy && npx next dev${WEBPACK} -p ${TEST_PORT}`,
+      : `npx prisma migrate deploy && ${MAIL_TEST ? "node scripts/test-smtp.mjs node node_modules/next/dist/bin/next" : "npx next"} dev${WEBPACK} -p ${TEST_PORT}`,
     url: `http://localhost:${TEST_PORT}/login`,
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: PROD ? 600_000 : 180_000,
@@ -37,10 +37,11 @@ export default defineConfig({
       NEXT_DIST_DIR: ".next-test",
       APP_URL: `http://localhost:${TEST_PORT}`,
       // Test security mail goes to the local outbox, never to a real mailbox.
-      SMTP_HOST: "",
+      SMTP_HOST: MAIL_TEST ? "127.0.0.1" : "",
+      SMTP_PORT: MAIL_TEST ? "2525" : "587",
       SMTP_USER: "",
       SMTP_PASS: "",
-      SMTP_FROM: "",
+      SMTP_FROM: MAIL_TEST ? "SVIET Test <sender@example.invalid>" : "",
     },
   },
 });
