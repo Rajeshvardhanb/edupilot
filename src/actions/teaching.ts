@@ -117,6 +117,7 @@ export async function deleteAssessment(_: ActionState, fd: FormData): Promise<Ac
     await assertOffering(me, a.offeringId);
     await assertEditable(a.offeringId);
   } catch (e) { return { error: (e as Error).message }; }
+  if (a.publishedAt) return { error: "Published assessment marks are locked. Ask Admin to withdraw this assessment first." };
   await db.assessment.delete({ where: { id: a.id } });
   await audit(me.id, "DELETE", "Assessment", a.id, a.name);
   revalidatePath(`/exams/${a.offeringId}`);
@@ -143,6 +144,7 @@ export async function saveMarks(_: ActionState, fd: FormData): Promise<ActionSta
     const [, aid, sid] = m;
     const a = assessments.get(aid);
     if (!a || !enrolled.has(sid)) continue;
+    if (a.publishedAt) { errors.push(`${a.name} is published and locked. Ask Admin to withdraw it before editing.`); continue; }
     const raw = String(v).trim().toUpperCase();
     if (raw === "") continue;
     if (raw === "AB") { upserts.push({ assessmentId: aid, studentId: sid, marks: null, isAbsent: true }); continue; }
@@ -153,15 +155,15 @@ export async function saveMarks(_: ActionState, fd: FormData): Promise<ActionSta
   if (upserts.length === 0 && errors.length === 0) return { error: "No marks were entered. Add an assessment and enter student marks first." };
   if (errors.length) return { error: `Nothing saved. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}` };
 
-  await db.$transaction(
-    upserts.map((u) =>
-      db.mark.upsert({
-        where: { assessmentId_studentId: { assessmentId: u.assessmentId, studentId: u.studentId } },
-        create: u,
-        update: { marks: u.marks, isAbsent: u.isAbsent },
-      }),
-    ),
-  );
+  try {
+    await db.$transaction(async tx => {
+      const current = await tx.assessment.findMany({ where: { id: { in: [...new Set(upserts.map(u => u.assessmentId))] } } });
+      if (current.some(a => a.publishedAt)) throw new Error("An assessment was published while you were editing. Refresh the page; its marks are locked.");
+      const course = await tx.courseOffering.findUniqueOrThrow({ where: { id: offeringId } });
+      if (course.resultsPublished) throw new Error("Final results are published and marks are locked.");
+      for (const u of upserts) await tx.mark.upsert({ where: { assessmentId_studentId: { assessmentId: u.assessmentId, studentId: u.studentId } }, create: u, update: { marks: u.marks, isAbsent: u.isAbsent } });
+    }, { isolationLevel: "Serializable", timeout: 15000 });
+  } catch { return { error: "Marks could not be saved. An assessment may have been published while you were editing. Refresh and retry editable columns." }; }
   await audit(me.id, "SAVE", "Marks", offeringId, `${upserts.length} entries`);
   revalidatePath(`/exams/${offeringId}`);
   return { ok: true, message: `${upserts.length} marks saved.` };

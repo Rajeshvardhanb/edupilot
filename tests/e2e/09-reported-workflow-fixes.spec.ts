@@ -12,15 +12,15 @@ test("marks entry lists enrolled courses and always explains result publication"
  await db.assessment.deleteMany({where:{offeringId:f.offeringId}});
  await admin.goto(`/exams/${f.offeringId}`);
  const grid=admin.getByRole("region",{name:"Marks",exact:true});await expect(grid.getByText("LANKE SANDHYA",{exact:true})).toBeVisible();
- await expect(admin.getByRole("button",{name:"Publish results",exact:true})).toBeDisabled();
+ await expect(admin.getByRole("button",{name:"Publish final results",exact:true})).toBeDisabled();
  await expect(admin.getByText(/Add an assessment above to create marks columns/)).toBeVisible();
  const assessment=admin.locator("form").filter({has:admin.locator('input[name=name]')});
  await assessment.locator('[name=name]').fill("End semester workflow test");await assessment.locator('[name=type]').selectOption("END_SEM");await assessment.locator('[name=maxMarks]').fill("60");await assessment.getByRole("button",{name:"Add",exact:true}).click();
- await expect(grid.locator('input[name^="m_"]').first()).toBeVisible();await expect(admin.getByRole("button",{name:"Publish results",exact:true})).toBeDisabled();
+ await expect(grid.locator('input[name^="m_"]').first()).toBeVisible();await expect(admin.getByRole("button",{name:"Publish final results",exact:true})).toBeDisabled();
  for(const cell of await grid.locator('input[name^="m_"]').all())await cell.fill("50");
- await admin.getByRole("button",{name:"Save marks",exact:true}).click();await expect(admin.getByRole("button",{name:"Publish results",exact:true})).toBeEnabled();
- await admin.getByRole("button",{name:"Publish results",exact:true}).click();await confirm(admin);await expect.poll(async()=>(await db.courseOffering.findUniqueOrThrow({where:{id:f.offeringId}})).resultsPublished).toBe(true);
- const teacher=await session(browser,"faculty@edupilot.edu");await teacher.goto(`/exams/${f.offeringId}`);await expect(teacher.getByRole("button",{name:"Publish results",exact:true})).toHaveCount(0);
+ await admin.getByRole("button",{name:"Save marks",exact:true}).click();await expect(admin.getByRole("button",{name:"Publish final results",exact:true})).toBeEnabled();
+ await admin.getByRole("button",{name:"Publish final results",exact:true}).click();await confirm(admin);await expect.poll(async()=>(await db.courseOffering.findUniqueOrThrow({where:{id:f.offeringId}})).resultsPublished).toBe(true);
+ const teacher=await session(browser,"faculty@edupilot.edu");await teacher.goto(`/exams/${f.offeringId}`);await expect(teacher.getByRole("button",{name:"Publish final results",exact:true})).toHaveCount(0);
  await teacher.context().close();await admin.context().close();
 });
 

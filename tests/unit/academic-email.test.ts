@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ users: vi.fn(), students: vi.fn(), links: vi.fn(), leave: vi.fn(), results: vi.fn(), material: vi.fn(), offering: vi.fn(), send: vi.fn(), after: vi.fn(), notices: vi.fn(), setup: vi.fn() }));
+const mock = vi.hoisted(() => ({ users: vi.fn(), students: vi.fn(), links: vi.fn(), leave: vi.fn(), results: vi.fn(), material: vi.fn(), offering: vi.fn(), send: vi.fn(), after: vi.fn(), notices: vi.fn(), setup: vi.fn(), assessment: vi.fn() }));
 vi.mock("@/lib/account-setup", () => ({ sendAccountSetup: mock.setup }));
 vi.mock("next/server", () => ({ after: mock.after }));
 vi.mock("@/lib/mail", () => ({ sendMail: mock.send, appUrl: (p: string) => 'http://localhost:3100' + p }));
-vi.mock("@/lib/db", () => ({ db: { notification: { createMany: mock.notices }, user: { findMany: mock.users }, student: { findMany: mock.students }, parentLink: { findMany: mock.links }, leaveRequest: { findUniqueOrThrow: mock.leave }, subjectResult: { findMany: mock.results }, material: { findUniqueOrThrow: mock.material }, courseOffering: { findUniqueOrThrow: mock.offering } } }));
+vi.mock("@/lib/db", () => ({ db: { assessment: { findUniqueOrThrow: mock.assessment }, notification: { createMany: mock.notices }, user: { findMany: mock.users }, student: { findMany: mock.students }, parentLink: { findMany: mock.links }, leaveRequest: { findUniqueOrThrow: mock.leave }, subjectResult: { findMany: mock.results }, material: { findUniqueOrThrow: mock.material }, courseOffering: { findUniqueOrThrow: mock.offering } } }));
 import { dispatchAcademicEmail, emailStudents, emailUsers, notifyAcademic } from "@/lib/academic-email";
 beforeEach(() => {
  vi.clearAllMocks(); mock.users.mockResolvedValue([{ id: 'u', email: ' Student@example.org ' }]); mock.students.mockResolvedValue([{ id: 's', userId: 'u' }]); mock.links.mockResolvedValue([]); mock.send.mockResolvedValue('SENT');
@@ -55,6 +55,15 @@ describe('academic notification boundaries', () => {
  it('new accounts use a dedicated password setup invitation', async () => {
   await dispatchAcademicEmail({ type: 'account', id: 'new' });
   expect(mock.setup).toHaveBeenCalledWith('new');
+ });
+ it('releases mid assessment notifications only after publication, without marks in email', async () => {
+  mock.assessment.mockResolvedValue({ id: 'mid', name: 'Mid Term 2', type: 'MID_TERM', publishedAt: null, offering: { batchId: 'b', subject: { name: 'Networks', semester: 5 } } });
+  await dispatchAcademicEmail({ type: 'assessment-results', id: 'mid' });expect(mock.send).not.toHaveBeenCalled();
+  mock.assessment.mockResolvedValue({ id: 'mid', name: 'Mid Term 2', type: 'MID_TERM', publishedAt: new Date('2026-11-09'), offering: { batchId: 'b', subject: { name: 'Networks', semester: 5 } } });
+  await dispatchAcademicEmail({ type: 'assessment-results', id: 'mid' });
+  expect(mock.send.mock.calls[0][0]).toMatchObject({ subject: 'Your assessment marks are published', link: { url: 'http://localhost:3100/results' } });
+  expect(mock.send.mock.calls[0][0].text).toContain('does not finalize semester grades');
+  expect(mock.students.mock.calls[0][0].where).toMatchObject({ batchId: 'b', entrySemester: { lte: 5 } });
  });
  it('schedules post-response work and contains preparation failures', async () => {
   mock.users.mockRejectedValue(new Error('database unavailable'));

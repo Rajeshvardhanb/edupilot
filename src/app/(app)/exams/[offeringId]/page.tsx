@@ -1,3 +1,5 @@
+import { publishAssessmentResults, withdrawAssessmentResults } from "@/actions/assessment-results";
+import { missingAssessmentMarks } from "@/lib/assessment-release";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Lock } from "lucide-react";
@@ -39,20 +41,37 @@ export default async function OfferingExamPage(props: PageProps<"/exams/[offerin
         subtitle={<>{offering.subject.code} · {batchLabel(offering.batch)} · {term.name} · CIE {offering.subject.internalMax} + SEE {offering.subject.externalMax} {locked && <Badge tone="success"><Lock className="mr-1 size-3" />Results published</Badge>}</>}
         actions={
           <>
-            {!locked && (user.role === "ADMIN" || user.role === "HOD") && <ActionButton disabled={!ready} action={publishResults} fields={{ offeringId }} variant="primary" confirm="Publish results? Marks will be locked and SGPA/CGPA updated.">Publish results</ActionButton>}
+            {!locked && (user.role === "ADMIN" || user.role === "HOD") && <ActionButton disabled={!ready} action={publishResults} fields={{ offeringId }} variant="primary" confirm="Publish final course results? All marks will be locked and SGPA/CGPA updated.">Publish final results</ActionButton>}
             {locked && user.role === "ADMIN" && <ActionButton action={unpublishResults} fields={{ offeringId }} variant="danger" confirm="Withdraw published results?">Unpublish</ActionButton>}
           </>
         }
       />
       <div className="mb-6 rounded-xl border border-line bg-surface-2 p-4 text-sm space-y-2">
-        <p className="font-semibold">1. Set assessments → 2. Enter student marks → 3. Publish results</p>
-        {locked ? <p>Results are published and marks are locked. An Admin can unpublish them for corrections.</p>
-          : eligible.length === 0 ? <p>No enrolled students are available for this course. Select the correct batch from <Link href="/exams" className="text-brand underline">Marks entry</Link>.</p>
-          : !hasEnd ? <p>Add an <strong>End semester exam</strong> in the assessment form below. The Publish results button becomes available after every student has all required marks.</p>
-          : incomplete > 0 ? <p>{incomplete} student{incomplete === 1 ? " has" : "s have"} missing marks. Enter a mark or AB for every assessment and save before publishing.</p>
-          : <p>All required marks are saved. HOD or Admin can use <strong>Publish results</strong> above to release results and notify students.</p>}
-        {user.role === "FACULTY" && <p className="text-muted">Faculty can enter and save marks. HOD or Admin reviews and publishes the results.</p>}
+        <p className="font-semibold">Publish mid exams during the semester</p>
+        <p>Enter and save marks, then use <strong>Publish marks</strong> on the Mid Term 1, Mid Term 2 or other assessment card below. Each assessment can be released independently. No end-semester exam is needed for this.</p>
+        <p className="text-muted">Published assessment columns are locked. Admin can withdraw an individual release for corrections. Faculty enters marks; HOD/Admin publishes.</p>
+        <p className="font-semibold pt-2">Final course results and SGPA/CGPA</p>
+        {locked ? <p>Final results are published and all marks are locked. Admin can unpublish final results for corrections.</p>
+          : eligible.length === 0 ? <p>No enrolled students. Select the correct batch from <Link href="/exams" className="text-brand underline">Marks entry</Link>.</p>
+          : !hasEnd ? <p><strong>Publish final results</strong> requires an End semester exam and all required marks. You can publish mid/internal marks using the assessment buttons now.</p>
+          : incomplete > 0 ? <p>{incomplete} students have missing marks for final results. Save all required marks or AB before final publication.</p>
+          : <p>All required marks are ready for final publication. Publishing a mid exam or final course result does not close the academic term.</p>}
       </div>
+      <Card title="Publish mid/internal marks" className="mb-6">
+        <p className="mb-4 text-sm text-muted">Release each assessment separately when its marks are saved. You do not need to wait for final exams.</p>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {offering.assessments.filter(a => a.type !== "END_SEM").map(a => {
+            const missing = missingAssessmentMarks(eligible.map(r => r.student.id), a.marks, a.maxMarks);
+            return <div key={a.id} role="group" aria-label={`${a.name} result release`} className="rounded-xl border border-line bg-surface-2 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{a.name}</h3><Badge tone={a.publishedAt ? "success" : "neutral"}>{a.publishedAt ? "Published" : locked ? "In final grade card" : "Draft"}</Badge></div>
+              <p className="text-xs text-muted">Out of {a.maxMarks}{a.publishedAt ? ` · Published ${fmtDate(a.publishedAt)}` : !locked ? ` · ${missing} students missing valid marks` : ""}</p>
+              {!locked && !a.publishedAt && (user.role === "ADMIN" || user.role === "HOD") && <ActionButton action={publishAssessmentResults} fields={{ assessmentId: a.id }} disabled={eligible.length === 0 || missing > 0} confirm={`Publish ${a.name} marks to students and linked parents? Other assessments and semester status stay unchanged.`}>Publish marks</ActionButton>}
+              {!locked && a.publishedAt && user.role === "ADMIN" && <ActionButton action={withdrawAssessmentResults} fields={{ assessmentId: a.id }} variant="danger" confirm={`Withdraw ${a.name} marks for review?`}>Withdraw marks</ActionButton>}
+            </div>;
+          })}
+        </div>
+        {offering.assessments.every(a => a.type === "END_SEM") && <p className="text-sm text-muted">Add a Mid term assessment in the form below to enter and release mid exam marks.</p>}
+      </Card>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Students" value={eligible.length} />
         <StatCard label={hasEnd ? "Pass percentage" : "Projected pass % (internals only)"} value={`${pct(passed, eligible.length)}%`} tone={pct(passed, eligible.length) >= 75 ? "success" : "warning"} />
@@ -72,7 +91,7 @@ export default async function OfferingExamPage(props: PageProps<"/exams/[offerin
                   <Td className="text-right">{a.maxMarks}</Td>
                   <Td>{fmtDate(a.date)}</Td>
                   <Td className="text-right">{a.marks.length}/{eligible.length}</Td>
-                  <Td className="text-right">{!locked && <ActionButton action={deleteAssessment} fields={{ id: a.id }} variant="ghost" confirm={`Delete ${a.name} and all its marks?`}>Delete</ActionButton>}</Td>
+                  <Td className="text-right">{!locked && !a.publishedAt && <ActionButton action={deleteAssessment} fields={{ id: a.id }} variant="ghost" confirm={`Delete ${a.name} and all its marks?`}>Delete</ActionButton>}</Td>
                 </tr>
               ))}
             </tbody>
@@ -101,7 +120,7 @@ export default async function OfferingExamPage(props: PageProps<"/exams/[offerin
         {eligible.length === 0 ? <EmptyState title="No students enrolled">Choose a course for the correct batch. Inactive, deleted and hidden sample students are not included.</EmptyState> : <>
           {offering.assessments.length === 0 && <p className="mb-4 text-sm text-muted">Your enrolled students are listed below. Add an assessment above to create marks columns.</p>}
           <MarksGrid key={offering.assessments.map(a => a.id).join(":")} offeringId={offeringId} locked={locked}
-            assessments={offering.assessments.map(a => ({ id: a.id, name: a.name, maxMarks: a.maxMarks }))}
+            assessments={offering.assessments.map(a => ({ id: a.id, name: a.name, maxMarks: a.maxMarks, published: !!a.publishedAt }))}
             students={eligible.map(r => ({ id: r.student.id, rollNo: r.student.rollNo, name: r.student.user.name,
               marks: Object.fromEntries([...r.marks].map(([aid, m]) => [aid, m.isAbsent ? "AB" : m.marks == null ? "" : String(m.marks)])) }))} />
         </>}

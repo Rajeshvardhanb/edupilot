@@ -459,6 +459,7 @@ model Assessment {
   id         String         @id @default(cuid())
   offeringId String
   offering   CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  publishedAt DateTime?
   name       String // "Mid Term 1", "Assignment 2", "End Semester"
   type       AssessmentType
   maxMarks   Float

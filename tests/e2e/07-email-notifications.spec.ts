@@ -79,10 +79,10 @@ test('publication notifies linked learners without emailing marks', async ({ bro
  const p = await session(browser, 'admin@edupilot.edu'); await p.goto(`/exams/${offering.id}`);
  await p.getByRole('button', { name: 'Unpublish', exact: true }).click(); await confirm(p);
  await waitMail(request, 'Your academic record has been updated', 'sandhya.lanke@edupilot.edu');
- await p.getByRole('button', { name: 'Publish results', exact: true }).click(); await confirm(p);
+ await p.getByRole('button', { name: 'Publish final results', exact: true }).click(); await confirm(p);
  await waitMail(request, 'Your course results are available', 'sandhya.lanke@edupilot.edu'); await waitMail(request, 'Your course results are available', 'parent@edupilot.edu');
  const row = await db.emailLog.findFirstOrThrow({ where: { subject: 'Your course results are available', to: 'sandhya.lanke@edupilot.edu' } }); expect(row.body).toContain('Marks are not included');
- const count = await db.emailLog.count({ where: { subject: 'Your course results are available' } }); await p.reload(); await expect(p.getByRole('button', { name: 'Publish results', exact: true })).toHaveCount(0); expect(await db.emailLog.count({ where: { subject: 'Your course results are available' } })).toBe(count);
+ const count = await db.emailLog.count({ where: { subject: 'Your course results are available' } }); await p.reload(); await expect(p.getByRole('button', { name: 'Publish final results', exact: true })).toHaveCount(0); expect(await db.emailLog.count({ where: { subject: 'Your course results are available' } })).toBe(count);
  await p.context().close();
 });
 

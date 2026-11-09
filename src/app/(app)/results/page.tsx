@@ -1,3 +1,4 @@
+import { PublishedAssessmentMarks } from "@/components/published-assessment-marks";
 import { banner } from "@/lib/images";
 import { getT } from "@/lib/i18n-server";
 import { learnerId } from "@/lib/learner";
@@ -8,7 +9,7 @@ import { db } from "@/lib/db";
 import { gpa } from "@/lib/grading";
 import { studentStandings } from "@/lib/results";
 import { batchOptions } from "@/lib/options";
-import { batchLabel, pct } from "@/lib/format";
+import { batchLabel, pct, fmtDate } from "@/lib/format";
 import { Badge, Td, LinkButton } from "@/components/ui";
 import { Card, EmptyState, PageHeader, StatCard, Th, Table } from "@/components/ui-server";
 import { Filters } from "@/components/filters";
@@ -31,6 +32,7 @@ export default async function ResultsPage(props: PageProps<"/results">) {
           <PrintButton label="Print grade card" />
         </Hero>
         <div className="mb-6 hidden print:block"><Letterhead title="Grade card" serial={s.rollNo} /><p className="mt-3 text-sm"><b>{s.user.name}</b> · {s.batch.program.name}</p></div>
+        <PublishedAssessmentMarks student={s} />
         <AcademicRecord studentId={s.id} />
       </>
     );
@@ -40,8 +42,8 @@ export default async function ResultsPage(props: PageProps<"/results">) {
 
 async function BatchResults({ user, searchParams: sp }: { user: CurrentUser; searchParams: Record<string, string | string[] | undefined> }) {
   const batches = await batchOptions(user.role === "HOD" ? user : undefined);
-  const batchId = (typeof sp.batch === "string" && sp.batch) || batches[0]?.id;
-  const terms = await db.term.findMany({ where: { offerings: { some: { batchId, resultsPublished: true } } }, orderBy: { startDate: "desc" } });
+  const batchId = (typeof sp.batch === "string" && batches.some(b => b.id === sp.batch) && sp.batch) || batches[0]?.id || "-";
+  const terms = await db.term.findMany({ where: { offerings: { some: { batchId, OR: [{ resultsPublished: true }, { assessments: { some: { publishedAt: { not: null }, type: { not: "END_SEM" } } } }] } } }, orderBy: { startDate: "desc" } });
   const termId = (typeof sp.term === "string" && terms.some((t) => t.id === sp.term) && sp.term) || terms[0]?.id;
   const batch = await db.batch.findUnique({ where: { id: batchId ?? "-" }, include: { program: true, students: { include: { user: true }, orderBy: { rollNo: "asc" } } } });
   const offerings = await db.courseOffering.findMany({
@@ -49,6 +51,7 @@ async function BatchResults({ user, searchParams: sp }: { user: CurrentUser; sea
     include: { subject: true, results: true },
     orderBy: { subject: { code: "asc" } },
   });
+  const assessments = await db.assessment.findMany({ where: { publishedAt: { not: null }, type: { not: "END_SEM" }, offering: { batchId, termId: termId ?? "-" } }, include: { offering: { include: { subject: true } }, _count: { select: { marks: true } } }, orderBy: { publishedAt: "desc" } });
   const students = (batch?.students ?? []).filter((s) => offerings.some((o) => o.results.some((r) => r.studentId === s.id)));
   const standings = await studentStandings(students.map((s) => s.id));
   const rows = students.map((s) => {
@@ -68,7 +71,11 @@ async function BatchResults({ user, searchParams: sp }: { user: CurrentUser; sea
         <select name="term" aria-label="Term" defaultValue={termId} className="input w-auto">{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
       </Filters>
       <SavedFilters storageKey="edupilot-filters-results" />
-      {!offerings.length ? <EmptyState title="No published results for this batch yet" action={<LinkButton variant="secondary" href="/exams">Go to marks entry</LinkButton>}>Results appear here when a course&apos;s marks are published.</EmptyState> : (
+      <Card title="Published mid/internal assessments" className="mb-6">
+        <p className="mb-3 text-sm text-muted">Assessment marks are released independently during the semester. Final grades and SGPA/CGPA use final course results only.</p>
+        {assessments.length === 0 ? <p className="text-sm text-muted">No mid/internal marks published for this batch and term yet.</p> : <Table><thead><tr><Th>Course</Th><Th>Assessment</Th><Th>Published</Th><Th>Marks</Th><Th /></tr></thead><tbody>{assessments.map(a => <tr key={a.id}><Td>{a.offering.subject.name}</Td><Td>{a.name}</Td><Td>{fmtDate(a.publishedAt)}</Td><Td>{a._count.marks}</Td><Td><Link className="text-brand" href={`/exams/${a.offeringId}`}>Review marks →</Link></Td></tr>)}</tbody></Table>}
+      </Card>
+      {!offerings.length ? <EmptyState title="No final course results for this batch yet" action={<LinkButton variant="secondary" href="/exams">Go to marks entry</LinkButton>}>Final grade cards appear after final course publication. Released mid/internal marks are shown separately above.</EmptyState> : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard label="Students appeared" value={rows.length} />

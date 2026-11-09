@@ -13,7 +13,7 @@ import { attendanceSummary } from "./attendance";
 export type AcademicEvent =
   | { type: "account"; id: string }
   | { type: "parent-link"; id: string; studentId: string }
-  | { type: "results" | "material" | "submission" | "graded" | "exam" | "supplementary" | "elective" | "condonation-decision" | "leave-request" | "leave-decision" | "revaluation-request" | "revaluation-decision" | "placement-open" | "placement-application" | "placement-status" | "substitution" | "swap-request" | "swap-decision" | "course-allocation" | "timetable" | "invigilation"; id: string }
+  | { type: "assessment-results" | "results" | "material" | "submission" | "graded" | "exam" | "supplementary" | "elective" | "condonation-decision" | "leave-request" | "leave-decision" | "revaluation-request" | "revaluation-decision" | "placement-open" | "placement-application" | "placement-status" | "substitution" | "swap-request" | "swap-decision" | "course-allocation" | "timetable" | "invigilation"; id: string }
   | { type: "attendance"; id: string; date: string }
   | { type: "student-update"; id: string; studentIds: string[]; message: string }
   | { type: "security"; id: string; action: string; version: string };
@@ -75,6 +75,11 @@ export async function dispatchAcademicEmail(event: AcademicEvent) {
     await emailUsers([event.id], { key: `${key}:${event.action}:${event.version}`, category: "security", subject: "Your account security settings changed", text: `${event.action}\n\nIf you did not expect this change, contact the college administrator promptly. No password is included in this message.`, link: learnerLink("/profile") });
   } else if (event.type === "student-update") {
     await emailStudents(event.studentIds, { key: `${key}:${version(event.message)}`, category: "academic", subject: "Your academic record has been updated", text: event.message + "\n\nSign in to review the current record. Parents with multiple linked children should select the relevant child.", link: learnerLink("/dashboard") }, true);
+  } else if (event.type === "assessment-results") {
+    const a = await db.assessment.findUniqueOrThrow({ where: { id: event.id }, include: { offering: { include: { subject: true } } } });
+    if (!a.publishedAt || a.type === "END_SEM") return;
+    const students = await db.student.findMany({ where: { batchId: a.offering.batchId, status: { in: ["ACTIVE", "DETAINED"] }, entrySemester: { lte: a.offering.subject.semester } }, select: { id: true } });
+    await emailStudents(students.map(s => s.id), { key: `${key}:${a.publishedAt.toISOString()}`, category: "academic", subject: "Your assessment marks are published", text: `${a.name} — ${a.offering.subject.name}\n\nYour mid/internal assessment marks are available under Results. This release does not finalize semester grades or change SGPA/CGPA. Sign in to view your marks securely.`, link: learnerLink("/results") }, true);
   } else if (event.type === "results") {
     const results = await db.subjectResult.findMany({ where: { offeringId: event.id, offering: { resultsPublished: true } }, select: { id: true, studentId: true, offering: { select: { subject: { select: { name: true } } } } } });
     if (results.length) await emailStudents(results.map(r => r.studentId), { key: `${key}:${results[0].id}`, category: "academic", subject: "Your course results are available", text: `Results for ${results[0].offering.subject.name} have been published. View your grade card securely in the portal. Marks are not included in this email. Parents should select the relevant child.`, link: learnerLink("/results") }, true);

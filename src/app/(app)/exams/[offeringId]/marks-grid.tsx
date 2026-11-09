@@ -7,7 +7,7 @@ import { saveMarks } from "@/actions/teaching";
 
 export function MarksGrid({ offeringId, assessments, students, locked }: {
   offeringId: string;
-  assessments: { id: string; name: string; maxMarks: number }[];
+  assessments: { id: string; name: string; maxMarks: number; published?: boolean }[];
   students: { id: string; rollNo: string; name: string; marks: Record<string, string> }[];
   locked: boolean;
 }) {
@@ -69,7 +69,7 @@ export function MarksGrid({ offeringId, assessments, students, locked }: {
               <th scope="col" className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium text-muted">Student</th>
               {assessments.map((a) => (
                 <th key={a.id} scope="col" className="px-2 py-2.5 text-center">
-                  <span className="block text-xs font-semibold text-fg">{a.name}</span>
+                  <span className="block text-xs font-semibold text-fg">{a.name}</span>{a.published && <span className="block text-[10px] text-success">Published · locked</span>}
                   <span className="mt-0.5 inline-block rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-medium text-muted ring-1 ring-line ring-inset">out of {a.maxMarks}</span>
                 </th>
               ))}
@@ -92,7 +92,7 @@ export function MarksGrid({ offeringId, assessments, students, locked }: {
                     return (
                       <td key={a.id} className="px-2 py-1.5 text-center">
                         <input
-                          name={`m_${a.id}_${s.id}`} defaultValue={s.marks[a.id] ?? ""} disabled={locked} data-cell={`${r}-${c}`}
+                          name={`m_${a.id}_${s.id}`} defaultValue={s.marks[a.id] ?? ""} disabled={locked || a.published} data-cell={`${r}-${c}`}
                           onKeyDown={(e) => onKey(e, r, c)} onPaste={(e) => onPaste(e, r, c)} onInput={() => { setDirty(true); sync(); }}
                           inputMode="decimal" autoComplete="off" aria-label={`${s.name} ${a.name}`} aria-invalid={bad(r, c) || undefined}
                           className={`h-9 w-[4.5rem] rounded-lg border bg-surface text-center font-medium tabular-nums outline-none transition focus:ring-4 disabled:bg-surface-2 disabled:opacity-70 ${bad(r, c) ? "border-danger text-danger focus:ring-danger/15" : v === "AB" ? "border-warning/50 bg-warning-soft text-warning focus:ring-warning/15" : "border-line focus:border-brand focus:ring-brand/12"}`}
@@ -123,7 +123,7 @@ export function MarksGrid({ offeringId, assessments, students, locked }: {
           {errors > 0 && <span className="ml-2 font-medium text-danger">● {errors} cell{errors === 1 ? " is" : "s are"} over the maximum or not a number</span>}
           {dirty && errors === 0 && <span className="ml-2 font-medium text-warning">● Unsaved changes</span>}
         </p>
-        {!locked && assessments.length > 0 && students.length > 0 && <SubmitButton>Save marks</SubmitButton>}
+        {!locked && assessments.some(a => !a.published) && students.length > 0 && <SubmitButton>Save marks</SubmitButton>}
       </div>
     </ActionForm>
   );
