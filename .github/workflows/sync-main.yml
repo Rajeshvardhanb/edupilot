@@ -1,0 +1,43 @@
+name: Sync sandhya to main
+
+on:
+  push:
+    branches: [sandhya]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-sandhya-to-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out sandhya
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: sandhya
+          fetch-depth: 0
+
+      - name: Advance main to the latest sandhya commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin \
+            +refs/heads/sandhya:refs/remotes/origin/sandhya \
+            +refs/heads/main:refs/remotes/origin/main
+
+          if ! git merge-base --is-ancestor origin/main origin/sandhya; then
+            echo "::error::main has commits outside sandhya. Reconcile them into sandhya before retrying; no history was overwritten."
+            exit 1
+          fi
+
+          git push origin refs/remotes/origin/sandhya:refs/heads/main
+          expected=$(git rev-parse origin/sandhya)
+          actual=$(git ls-remote origin refs/heads/main | cut -f1)
+          test "$actual" = "$expected"
+          echo "main now points to sandhya commit $expected." >> "$GITHUB_STEP_SUMMARY"
