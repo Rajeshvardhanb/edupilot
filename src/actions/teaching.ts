@@ -150,6 +150,7 @@ export async function saveMarks(_: ActionState, fd: FormData): Promise<ActionSta
     if (!Number.isFinite(n) || n < 0 || n > a.maxMarks) { errors.push(`${a.name}: "${raw}" is not between 0 and ${a.maxMarks}`); continue; }
     upserts.push({ assessmentId: aid, studentId: sid, marks: n, isAbsent: false });
   }
+  if (upserts.length === 0 && errors.length === 0) return { error: "No marks were entered. Add an assessment and enter student marks first." };
   if (errors.length) return { error: `Nothing saved. ${errors.slice(0, 3).join("; ")}${errors.length > 3 ? ` (+${errors.length - 3} more)` : ""}` };
 
   await db.$transaction(
@@ -175,6 +176,7 @@ export async function publishResults(_: ActionState, fd: FormData): Promise<Acti
   // Lateral entrants did not take earlier-semester courses; match the preview's enrollment rule.
   const rows = allRows.filter(({ student }) => student.entrySemester <= offering.subject.semester);
   if (offering.resultsPublished) return { ok: true, message: "These results are already published." };
+  if (!rows.length) return { error: "No enrolled students are available for this course. Select the correct batch." };
   if (!offering.assessments.some((a) => a.type === "END_SEM")) return { error: "Add the end-semester exam and its marks before publishing." };
   const incomplete = rows.filter((r) => !r.result.complete).length;
   if (incomplete) return { error: `${incomplete} students have missing marks. Enter marks (or AB) for everyone first.` };

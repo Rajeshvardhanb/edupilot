@@ -77,7 +77,7 @@ export function StudentTable({ rows, canEdit, canDelete = false, batches, sortHr
                 <td className="border-b border-line px-4 py-3"><div className="flex items-center gap-2 whitespace-nowrap">
                   <Link href={`/students/${s.id}`} className="text-xs font-semibold text-brand" aria-label={`View ${s.name}`}>View</Link>
                   {canEdit && <Link href={`/students/${s.id}/edit`} className="text-xs font-semibold text-brand" aria-label={`Edit ${s.name}`}>Edit</Link>}
-                  {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? Their login will be disabled. Academic records are retained.`}>Delete</ActionButton>}
+                  {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? This permanently removes their login and all related records, including marks and attendance. This cannot be undone.`}>Delete</ActionButton>}
                   <button onClick={() => setOpen(s.id)} aria-label={`Quick view ${s.name}`} title="Quick view" className="grid size-8 place-items-center rounded-lg border border-line text-muted hover:border-brand/30 hover:text-brand"><Eye className="size-4" /></button>
                 </div></td>
                 <td data-label="Batch" className="border-b border-line px-4 py-3">{s.batch}</td>
@@ -106,7 +106,7 @@ export function StudentTable({ rows, canEdit, canDelete = false, batches, sortHr
             {canEdit && <div className="flex w-full items-center gap-4 pl-[50px]">
               <Link href={`/students/${s.id}`} className="text-xs font-semibold text-brand">View</Link>
               <Link href={`/students/${s.id}/edit`} className="text-xs font-semibold text-brand" aria-label={`Edit ${s.name}`}>Edit</Link>
-              {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? Their login will be disabled. Academic records are retained.`}>Delete</ActionButton>}
+              {canDelete && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.name}? This permanently removes their login and all related records, including marks and attendance. This cannot be undone.`}>Delete</ActionButton>}
             </div>}
           </li>
         ))}

@@ -2,6 +2,7 @@
 import { notifyAcademic } from "@/lib/academic-email";
 
 import bcrypt from "bcryptjs";
+import { createStudentAccount, permanentlyDeleteStudent } from "@/lib/student-deletion";
 import { newToken } from "@/lib/security";
 import { z } from "zod";
 import { redirect } from "next/navigation";
@@ -58,14 +59,11 @@ export async function createStudent(_: ActionState, formData: FormData): Promise
   const entrySemester = data.admissionType === "LATERAL" ? 3 : 1;
   let id: string;
   try {
-    const user = await db.user.create({
-      data: {
+    const user = await createStudentAccount({
         name, email, phone, role: "STUDENT",
         passwordHash: await bcrypt.hash(newToken(), 10), mustChangePassword: true,
         student: { create: { ...data, entrySemester } },
-      },
-      include: { student: true },
-    });
+    }, data.rollNo, me.id);
     id = user.student!.id;
   } catch (e) {
     return uniqueError(e) ?? { error: "Could not save the student." };
@@ -131,12 +129,10 @@ export async function importStudents(_: ActionState, formData: FormData): Promis
     }
     const { name, email, phone, ...data } = parsed.data;
     try {
-      const imported = await db.user.create({
-        data: {
+      const imported = await createStudentAccount({
           name, email, phone, role: "STUDENT", passwordHash: await bcrypt.hash(newToken(), 10), mustChangePassword: true,
           student: { create: { ...data, entrySemester: data.admissionType === "LATERAL" ? 3 : 1 } },
-        },
-      });
+      }, data.rollNo, me.id);
       notifyAcademic({ type: "account", id: imported.id });
       created++;
     } catch (e) {
@@ -193,17 +189,20 @@ export async function updateStudentContact(_: ActionState, formData: FormData): 
 }
 
 
-/** Remove a student from the application while retaining academic and audit history. */
+/** Permanently deletes the login and student; dependent records cascade in the same transaction. */
 export async function deleteStudent(_: ActionState, formData: FormData): Promise<ActionState> {
   const me = await requireUser(["ADMIN"]);
   const id = String(formData.get("id") ?? "");
-  const student = await db.student.findUnique({ where: { id }, include: { user: { select: { name: true } } } });
-  if (!student) return { error: "Student not found." };
-  await db.$transaction(async tx => {
-    await tx.student.update({ where: { id }, data: { archivedAt: new Date() } });
-    await tx.user.update({ where: { id: student.userId }, data: { isActive: false } });
-    await tx.auditLog.create({ data: { userId: me.id, action: "DELETE", entity: "Student", entityId: id, details: `Archived ${student.rollNo}; academic history retained.` } });
-  });
+  try {
+    const result = await db.$transaction(async tx => {
+      const student = await tx.student.findUnique({ where: { id }, select: { id: true, userId: true, rollNo: true } });
+      if (!student) return { error: "Student not found." };
+      await permanentlyDeleteStudent(tx, id, student.userId);
+      await tx.auditLog.create({ data: { userId: me.id, action: "DELETE", entity: "Student", entityId: id, details: `Permanently deleted ${student.rollNo}, student login and related records. Email and roll number are available for registration.` } });
+      return { ok: true };
+    }, { timeout: 15000 });
+    if (result.error) return result;
+  } catch { return { error: "Could not delete this student because a linked record still requires them. No changes were saved. Contact the administrator." }; }
   revalidatePath("/", "layout");
   redirect("/students?deleted=1");
 }

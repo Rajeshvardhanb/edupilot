@@ -128,8 +128,8 @@ test("default student owns the profile editor; admins have student CRUD controls
   await admin.getByRole("button",{name:"Delete",exact:true}).filter({visible:true}).first().click();
   await admin.getByRole("alertdialog").getByRole("button").last().click();await expect(admin).toHaveURL(/students\?deleted=1/);
   await admin.goto("/students?q=CRUD2026&status=ALL");await expect(admin.getByText("0 students match",{exact:true})).toBeVisible();
-  const archived=await db.student.findUniqueOrThrow({where:{id:registered.student!.id},include:{user:true}});
-  expect(archived.archivedAt).not.toBeNull();expect(archived.user.isActive).toBe(false);expect(await db.student.count()).toBe(before);
+  expect(await db.student.findUnique({where:{id:registered.student!.id}})).toBeNull();
+  expect(await db.user.findUnique({where:{id:registered.id}})).toBeNull();expect(await db.student.count()).toBe(before-1);
   await admin.context().close();await student.context().close();
 });
 

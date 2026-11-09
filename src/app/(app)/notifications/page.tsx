@@ -1,3 +1,4 @@
+import { notificationTarget } from "@/lib/notification-target";
 import Link from "next/link";
 import { markNotificationRead } from "@/actions/notifications";
 import { ActionButton } from "@/components/forms";
@@ -23,12 +24,12 @@ export default async function NotificationsPage(props: PageProps<"/notifications
       <select name="category" aria-label="Notification category" defaultValue={category ?? ""} className="input w-auto"><option value="">All categories</option>{["ACCOUNT", "SECURITY", "ACADEMIC", "REQUEST", "LEARNING", "PLACEMENT", "SYSTEM"].map(c => <option key={c}>{c}</option>)}</select>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="unread" value="1" defaultChecked={unread} />Unread only</label><button className={buttonClass("secondary")}>Filter</button>
     </form>
-    {!items.length ? <EmptyState title="No notifications">Updates will appear here when an academic activity or request concerns you.</EmptyState> : <div className="space-y-3">{items.map(n => <Card key={n.id}>
+    {!items.length ? <EmptyState title="No notifications">Updates will appear here when an academic activity or request concerns you.</EmptyState> : <div className="space-y-3">{items.map(n => { const target = notificationTarget(n.href, user.role); return <Card key={n.id}>
       <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1">
         <div className="mb-2 flex flex-wrap gap-2"><Badge tone={n.readAt ? "neutral" : "brand"}>{n.readAt ? "Read" : "Unread"}</Badge><Badge tone={n.priority === "HIGH" ? "warning" : "info"}>{n.category}{n.priority === "HIGH" ? " · Important" : ""}</Badge></div>
         <h2 className="font-semibold">{n.title}</h2><p className="mt-2 whitespace-pre-line text-sm text-muted">{n.body}</p><p className="mt-3 text-xs text-muted">{n.createdAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</p>
-      </div><div className="flex gap-2">{n.href?.startsWith("/") && !n.href.startsWith("//") && <Link className={buttonClass("secondary")} href={n.href}>View details</Link>}{!n.readAt && <ActionButton action={markNotificationRead} fields={{ id: n.id }} variant="secondary">Mark as read</ActionButton>}</div></div>
-    </Card>)}</div>}
+      </div><div className="flex gap-2">{target ? <Link className={buttonClass("secondary")} href={target}>View details</Link> : <span className="max-w-48 text-xs text-muted">This older update has no available screen.</span>}{!n.readAt && <ActionButton action={markNotificationRead} fields={{ id: n.id }} variant="secondary">Mark as read</ActionButton>}</div></div>
+    </Card>; })}</div>}
     <div className="mt-5 flex items-center gap-4">{page > 1 && <Link href={query(page - 1)}>← Previous</Link>}<span className="text-sm text-muted">Page {page} · {total} updates</span>{page * 20 < total && <Link href={query(page + 1)}>Next →</Link>}</div>
   </>;
 }

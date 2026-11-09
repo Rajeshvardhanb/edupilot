@@ -233,7 +233,7 @@ The supplied student names/roll numbers are real project inputs; marks, attendan
 
 Students can update their personal and contact details under **My profile → Edit my details**. Changing a login email requires the current password. Roll numbers, batches and academic status are managed by the administrator.
 
-Administrators use **Students → Add student**, **View**, **Edit**, and **Delete**. Delete asks for confirmation, disables the student's login and archives the record; marks, attendance, results and audit history remain stored.
+Administrators use **Students → Add student**, **View**, **Edit**, and **Delete**. Delete asks for explicit confirmation and permanently removes the student login and related records, including marks and attendance. The email and roll number can then be registered again. Shared parent accounts and the administrator's deletion audit entry remain. Use Edit → status changes when you want to keep a student's history instead of permanently deleting it.
 
 ### Optional college logo
 
@@ -384,7 +384,7 @@ Newly registered students receive an email containing their login username and a
 
 **Academic setup — 1 minute.** Show the relationship between programme, batch, subject, term and course assignment. Basic teacher accounts support academic work; detailed HR management is outside this branch's scope.
 
-**Attendance and marks — 2 minutes.** As faculty, open an assigned course. Show an existing attendance sheet and its report. Demonstrate a rehearsed attendance or marks save if required. Show published results from an earlier term rather than trying to publish a class with incomplete assessments.
+**Attendance and marks — 2 minutes.** As faculty, open an assigned course. Show an existing attendance sheet and its report. Demonstrate a rehearsed attendance or marks save if required. Under Marks entry, choose the correct batch and open Enter marks. The student roster remains visible before assessments exist. Add an End semester exam and save every required mark (or AB); HOD/Admin can then use Publish results. The button stays visible but disabled with instructions while data is incomplete.
 
 **Student and parent views — 1 minute.** Sign in using the appropriate student account and show personal attendance, results and timetable. Explain that the parent sees only the linked child. Use `sandhya.lanke@edupilot.edu` and the linked `parent@edupilot.edu` account when demonstrating their student–parent relationship.
 

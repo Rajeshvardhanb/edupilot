@@ -74,7 +74,7 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
           <div className="flex flex-wrap gap-2">
             {isOffice(user) && <LinkButton variant="secondary" href={`/students/${s.id}/edit`}><Pencil className="size-4" /> Edit student</LinkButton>}
             {isOffice(user) && s.user.mustChangePassword && <ActionButton action={resendAccountSetup} fields={{ studentId: s.id }} variant="secondary">Resend password setup</ActionButton>}
-            {user.role === "ADMIN" && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.user.name}? Their login will be disabled. Academic records are retained.`}>Delete student</ActionButton>}
+            {user.role === "ADMIN" && <ActionButton action={deleteStudent} fields={{ id: s.id }} variant="danger" confirm={`Delete ${s.user.name}? This permanently removes their login and all related records, including marks and attendance. This cannot be undone.`}>Delete student</ActionButton>}
             {user.role === "STUDENT" && user.studentId === s.id && <LinkButton href="/profile#edit-profile">Edit my profile</LinkButton>}
           </div>
         </div>

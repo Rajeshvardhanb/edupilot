@@ -136,9 +136,9 @@ export function SubmitButton({ children, variant = "primary", size = "md", class
  * One-click action button (delete, toggle, approve…). Results surface as toasts.
  * `confirm` asks first; `undoable` instead runs after a 5-second window with an Undo toast.
  */
-export function ActionButton({ action, fields, children, variant = "secondary", confirm, undoable, size = "sm", className }: {
+export function ActionButton({ action, fields, children, variant = "secondary", confirm, undoable, size = "sm", className, disabled = false }: {
   action: Action; fields: Record<string, string>; children: ReactNode; variant?: "primary" | "secondary" | "danger" | "ghost";
-  confirm?: string; undoable?: string; size?: "sm" | "md"; className?: string;
+  confirm?: string; undoable?: string; size?: "sm" | "md"; className?: string; disabled?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [queued, setQueued] = useState(false);
@@ -168,7 +168,7 @@ export function ActionButton({ action, fields, children, variant = "secondary", 
   }
 
   return (
-    <button type="button" disabled={pending || queued} onClick={onClick} className={cn(buttonClass(variant, size), className)}>
+    <button type="button" disabled={disabled || pending || queued} onClick={onClick} className={cn(buttonClass(variant, size), className)}>
       {(pending || queued) && <Loader2 className="size-3.5 animate-spin" />}
       {children}
     </button>

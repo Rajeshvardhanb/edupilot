@@ -123,7 +123,7 @@ export function MarksGrid({ offeringId, assessments, students, locked }: {
           {errors > 0 && <span className="ml-2 font-medium text-danger">● {errors} cell{errors === 1 ? " is" : "s are"} over the maximum or not a number</span>}
           {dirty && errors === 0 && <span className="ml-2 font-medium text-warning">● Unsaved changes</span>}
         </p>
-        {!locked && <SubmitButton>Save marks</SubmitButton>}
+        {!locked && assessments.length > 0 && students.length > 0 && <SubmitButton>Save marks</SubmitButton>}
       </div>
     </ActionForm>
   );
