@@ -189,6 +189,35 @@ This matches the original 21 demo student records to the supplied names and roll
 
 <!-- pagebreak -->
 
+### Update college, faculty and student details from one file
+
+Edit **`college-data.json` in the project root**. It contains the college branding, department/HOD assignments, all 40 teaching faculty from the [official CSE directory](https://www.sviet.edu.in/cse-department/faculty-of-cse/), the 21 supplied students, staff demo accounts and demo login selections. Its opening `instructions` explain the fields. CSE faculty application usernames/employee IDs are demo identifiers, not official contact details. Other departments and academic sample records remain illustrative.
+
+Keep `employeeId`, department `code`, account `key` and student `rollNo` unchanged when editing details. To change a staff account username, put its current login in `matchEmail` and the desired login in `email`; refresh `matchEmail` to the current login before a later username change. Department `hodEmployeeId: null` preserves its current head; choose an employee ID from that department to assign a new head. Optional phone/address/guardian fields are preserved when omitted and cleared when set to `null`. Register a new student through the app before adding their roll number to this file. Removing a JSON entry does not delete a database record.
+
+For an **existing database**, back up with Section 10, stop the application, then validate and preview:
+
+```powershell
+npm.cmd run college:validate
+npm.cmd run college:preview
+```
+
+The preview reads `.env`'s `DATABASE_URL` and makes no changes. Check the counts and IDs it lists. If it will create new faculty accounts, set their initial password in this PowerShell session, then apply:
+
+```powershell
+$env:COLLEGE_IMPORT_PASSWORD = 'ChooseANewFacultyPassword'
+npm.cmd run college:import
+Remove-Item Env:COLLEGE_IMPORT_PASSWORD
+npm.cmd run build
+npm.cmd run start -- --hostname 127.0.0.1
+```
+
+Use a password of at least 10 characters and no more than 72 UTF-8 bytes. This password applies only to newly created faculty accounts; existing passwords and active/inactive states stay unchanged. For a demonstration using the guide's default credentials, use `password123`. The importer saves the previous edited fields under `backups/college-data-.../before.json`, applies changes in one transaction and leaves student IDs, marks, attendance and results intact. Keep the full SQL backup as well. No email is sent by the importer.
+
+New installations load this file automatically through the **first-setup-only** seed command. **Do not reseed an existing database to update details**. Rebuild and restart after editing the file so the bundled branding defaults and demo buttons match the imported database. SMTP and other infrastructure secrets remain in `.env`.
+
+<!-- pagebreak -->
+
 ## 6. Check that the first installation worked
 
 Sign in with `admin@edupilot.edu` and password `password123`.
@@ -258,9 +287,9 @@ Press **Ctrl+C** in the app terminal. If asked to terminate the batch job, answe
 
 ## 8. Demo login details
 
-**All 57 currently available application accounts are listed below:** 1 administrator, 5 HODs, 27 faculty, 1 office, 1 accountant, 1 parent and 21 students. Their active status and `password123` password were verified against AWS on **9 November 2026**. Two-step sign-in is currently off for the listed staff accounts. This check did not reset passwords or change accounts.
+**Historical AWS account check, before the CSE faculty import:** the 57 application accounts below were present at that check: 1 administrator, 5 HODs, 27 faculty, 1 office, 1 accountant, 1 parent and 21 students. Their active status and `password123` password were verified against AWS on **9 November 2026**. Two-step sign-in is currently off for the listed staff accounts. This check did not reset passwords or change accounts.
 
-Freshly seeded demo accounts use the same password. Any later password change replaces the listed default. The 403 hidden sample students are excluded from this login list.
+The updated seed includes all 40 CSE faculty, adding 32 accounts to the older roster. New CSE logins are `cse.fac9@edupilot.edu` through `cse.fac40@edupilot.edu`; all usernames are editable in `college-data.json`. Freshly seeded demo accounts use `password123`; imported new accounts use the password supplied through `COLLEGE_IMPORT_PASSWORD`. Existing passwords are preserved, and any later password change replaces the listed default. The 403 hidden sample students are excluded from this login list.
 
 ### All administrator, HOD, faculty, office, accountant and parent accounts
 

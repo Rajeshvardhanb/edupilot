@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 1,
+  "instructions": [
+    "Edit names and details here. Keep employeeId, department code, account key and student rollNo stable: they identify existing records. For staff account username changes, matchEmail must be the current database login and email is the desired new login; refresh matchEmail to the current login before a later username change.",
+    "Run npm run college:validate, then npm run college:preview. Apply with npm run college:import. The preview never changes the database.",
+    "Before creating new faculty accounts, set COLLEGE_IMPORT_PASSWORD in your terminal. Existing passwords and account activation states are preserved. Never put SMTP, database, AWS credentials or private passwords in this file.",
+    "The import updates listed records only; removing an entry does not delete or archive a database record. Register new students through Student Registration first, then add their roll numbers here.",
+    "For branding and demo login changes, rebuild and restart after importing. This file is bundled at build time, not served publicly as a downloadable file.",
+    "Student names/roll numbers were supplied by the client. Their edupilot.edu usernames are demo login IDs, not provisioned email inboxes. Academic/contact seed data and non-CSE departments remain illustrative.",
+    "CSE faculty names, qualifications and designations follow the linked official directory checked on 2026-11-09. All edupilot.edu faculty logins and employee IDs are application identifiers, not official college contact details.",
+    "The directory lists Dr. G. Syam Prasad as CSE HOD. Gupta is Assistant Professor there but Professor of CSE on the governing-body page; confirm his designation with the college.",
+    "The principal has a separate administrator demo account and a faculty demo account so both application roles can be presented."
+  ],
+  "sources": {
+    "cseFaculty": "https://www.sviet.edu.in/cse-department/faculty-of-cse/",
+    "governingBody": "https://www.sviet.edu.in/home/about-sviet/governing-body/",
+    "checkedOn": "2026-11-09"
+  },
+  "college": {
+    "name": "Sri Vasavi Institute of Engineering & Technology",
+    "shortName": "SVIET",
+    "tagline": "Student Management System",
+    "affiliation": "Autonomous · Approved by AICTE, New Delhi · Affiliated to JNTUK, Kakinada · Accredited by NAAC",
+    "address": "Nandamuru, Pedana, Krishna District, Andhra Pradesh",
+    "phone": "0866-2469230",
+    "email": "info@sviet.edu.in",
+    "principalName": "Dr. B. Raja Srinivasa Reddy",
+    "brandColor": "#0b4aa2"
+  },
+  "departments": [
+    {
+      "code": "CSE",
+      "name": "Computer Science & Engineering",
+      "hodEmployeeId": "EMP0001"
+    },
+    {
+      "code": "ECE",
+      "name": "Electronics & Communication Engineering",
+      "hodEmployeeId": null
+    },
+    {
+      "code": "EEE",
+      "name": "Electrical & Electronics Engineering",
+      "hodEmployeeId": null
+    },
+    {
+      "code": "ME",
+      "name": "Mechanical Engineering",
+      "hodEmployeeId": null
+    },
+    {
+      "code": "CE",
+      "name": "Civil Engineering",
+      "hodEmployeeId": null
+    }
+  ],
+  "accounts": [
+    {
+      "key": "admin",
+      "matchEmail": "admin@edupilot.edu",
+      "email": "admin@edupilot.edu",
+      "name": "Dr. B. Raja Srinivasa Reddy",
+      "role": "ADMIN"
+    },
+    {
+      "key": "accounts",
+      "matchEmail": "accounts@edupilot.edu",
+      "email": "accounts@edupilot.edu",
+      "name": "Srinivas Murthy",
+      "role": "ACCOUNTANT"
+    },
+    {
+      "key": "office",
+      "matchEmail": "office@edupilot.edu",
+      "email": "office@edupilot.edu",
+      "name": "Lakshmi Prasad",
+      "role": "OFFICE"
+    },
+    {
+      "key": "parent",
+      "matchEmail": "parent@edupilot.edu",
+      "email": "parent@edupilot.edu",
+      "name": "Parent of Lanke Sandhya",
+      "role": "PARENT"
+    }
+  ],
+  "demoLogins": {
+    "adminAccountKey": "admin",
+    "accountsAccountKey": "accounts",
+    "officeAccountKey": "office",
+    "parentAccountKey": "parent",
+    "hodEmployeeId": "EMP0001",
+    "facultyEmployeeId": "EMP0003",
+    "studentRollNo": "24MQ5A0509"
+  },
+  "faculty": [
+    {
+      "employeeId": "EMP0001",
+      "name": "Dr. G. Syam Prasad",
+      "email": "hod.cse@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Professor & HOD"
+    },
+    {
+      "employeeId": "EMP0002",
+      "name": "Dr. B.R.S. Reddy",
+      "email": "cse.fac2@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Professor & Principal"
+    },
+    {
+      "employeeId": "EMP0003",
+      "name": "Dr. G. Samba Siva Rao",
+      "email": "faculty@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Professor"
+    },
+    {
+      "employeeId": "EMP0004",
+      "name": "Dr. Nancharaiah Murari",
+      "email": "cse.fac4@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Professor"
+    },
+    {
+      "employeeId": "EMP0005",
+      "name": "Dr. P. Samba Siva Rao",
+      "email": "cse.fac5@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Associate Professor"
+    },
+    {
+      "employeeId": "EMP0006",
+      "name": "Dr. Tirupati Rao Gullipalli",
+      "email": "cse.fac6@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech, Ph.D",
+      "designation": "Associate Professor"
+    },
+    {
+      "employeeId": "EMP0007",
+      "name": "S.V.C. Gupta",
+      "email": "cse.fac7@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "EMP0008",
+      "name": "N. Anil Kumar",
+      "email": "cse.fac8@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-009",
+      "name": "Sheik Ahmed Mohiddin",
+      "email": "cse.fac9@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-010",
+      "name": "MD Ahmed",
+      "email": "cse.fac10@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-011",
+      "name": "V. Vinay Kumar",
+      "email": "cse.fac11@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-012",
+      "name": "B. Indra Devi",
+      "email": "cse.fac12@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-013",
+      "name": "V. Ganesh Dutt",
+      "email": "cse.fac13@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-014",
+      "name": "V.M.R. Krishna Rao",
+      "email": "cse.fac14@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-015",
+      "name": "P. Ashok Kumar",
+      "email": "cse.fac15@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-016",
+      "name": "A. Annapurna",
+      "email": "cse.fac16@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-017",
+      "name": "M. Madhusudhana Rao",
+      "email": "cse.fac17@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-018",
+      "name": "K. Venkateswara Rao",
+      "email": "cse.fac18@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-019",
+      "name": "M. Naresh Babu",
+      "email": "cse.fac19@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-020",
+      "name": "D. Aruna",
+      "email": "cse.fac20@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-021",
+      "name": "MD. Shamsheer",
+      "email": "cse.fac21@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-022",
+      "name": "Md. Ameer Raza",
+      "email": "cse.fac22@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-023",
+      "name": "R. Venkateswara Rao",
+      "email": "cse.fac23@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-024",
+      "name": "V.N.K. Veni Kanikcharla",
+      "email": "cse.fac24@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-025",
+      "name": "G. Nancharaiah",
+      "email": "cse.fac25@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-026",
+      "name": "T. Veena",
+      "email": "cse.fac26@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-027",
+      "name": "M. Naga Vamsi",
+      "email": "cse.fac27@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-028",
+      "name": "Ch. Swathi",
+      "email": "cse.fac28@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-029",
+      "name": "P. Sirisha",
+      "email": "cse.fac29@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-030",
+      "name": "K. Bindu Priya",
+      "email": "cse.fac30@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-031",
+      "name": "M. Pravallika",
+      "email": "cse.fac31@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-032",
+      "name": "N. Jagadeesh",
+      "email": "cse.fac32@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-033",
+      "name": "R. Padmaja",
+      "email": "cse.fac33@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-034",
+      "name": "Chabattina Mounika",
+      "email": "cse.fac34@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-035",
+      "name": "K.S.H. Prasanna Kumar",
+      "email": "cse.fac35@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-036",
+      "name": "R. Ajay Kumar Varma",
+      "email": "cse.fac36@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-037",
+      "name": "Sajida Sultana",
+      "email": "cse.fac37@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-038",
+      "name": "K. Nagamani",
+      "email": "cse.fac38@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-039",
+      "name": "K. Murali Mohan",
+      "email": "cse.fac39@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    },
+    {
+      "employeeId": "SVIET-CSE-040",
+      "name": "P.V. Chinta Rao",
+      "email": "cse.fac40@edupilot.edu",
+      "departmentCode": "CSE",
+      "qualification": "M.Tech",
+      "designation": "Assistant Professor"
+    }
+  ],
+  "students": [
+    {
+      "rollNo": "23MQ1A05B5",
+      "name": "P. BHARGAV NAGA SAI SAMPATH",
+      "email": "bhargav.p@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0570",
+      "name": "BORRA ABHINAYA",
+      "email": "abhinaya.borra@edupilot.edu"
+    },
+    {
+      "rollNo": "24MQ5A0508",
+      "name": "KUNAPAREDDY SYAMKUMAR",
+      "email": "syamkumar.kunapareddy@edupilot.edu"
+    },
+    {
+      "rollNo": "24MQ5A0511",
+      "name": "N. SIVA KANAKA NAGA SANDHYA",
+      "email": "siva.n@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0594",
+      "name": "KUNAPAREDDY PREMITH",
+      "email": "premith.kunapareddy@edupilot.edu"
+    },
+    {
+      "rollNo": "24MQ5A0509",
+      "name": "LANKE SANDHYA",
+      "email": "sandhya.lanke@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05C4",
+      "name": "TURAKA SRILAKSHMI",
+      "email": "srilakshmi.turaka@edupilot.edu"
+    },
+    {
+      "rollNo": "24MQ5A0510",
+      "name": "MADALA REVANTH KUMAR",
+      "email": "revanth.madala@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05B0",
+      "name": "PEDDINTI YOGESH",
+      "email": "yogesh.peddinti@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05A7",
+      "name": "NARAGAM KAVYA",
+      "email": "kavya.naragam@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0578",
+      "name": "GOLLA SRIVIDYA",
+      "email": "srividya.golla@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0579",
+      "name": "G.LAKSHMANA SIVA SAI",
+      "email": "lakshmana.g@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0569",
+      "name": "BOORADA SHANMUKHA",
+      "email": "shanmukha.boorada@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05A9",
+      "name": "PARIMKAYALA AMRUTHA",
+      "email": "amrutha.parimkayala@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05A0",
+      "name": "MATHI VARSHITHA DURGA BHAVANI",
+      "email": "varshitha.mathi@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05C8",
+      "name": "YARLAGADDA JYOSHNA DEVI",
+      "email": "jyoshna.yarlagadda@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05A5",
+      "name": "MURARI GANESH VENKATA RATNAM",
+      "email": "ganesh.murari@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0582",
+      "name": "KAGITA DURGA BHAVANI",
+      "email": "durga.kagita@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05B3",
+      "name": "PINNENTI JHANSI",
+      "email": "jhansi.pinnenti@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A05C0",
+      "name": "DANDAY SHARON PRADEEPA",
+      "email": "sharon.danday@edupilot.edu"
+    },
+    {
+      "rollNo": "23MQ1A0568",
+      "name": "BEZAWADA JAGADEESH",
+      "email": "jagadeesh.bezawada@edupilot.edu"
+    }
+  ]
+}

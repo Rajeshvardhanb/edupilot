@@ -31,7 +31,7 @@ async function main() {
   const require = createRequire(resolve("package.json"));
   const { PrismaClient } = require("@prisma/client");
   const db = new PrismaClient();
-  const identities = JSON.parse(readFileSync(new URL("../prisma/sviet-students.json", import.meta.url), "utf8"));
+  const identities = JSON.parse(readFileSync(new URL("../college-data.json", import.meta.url), "utf8")).students;
   const rolls = identities.flatMap((s, i) => [s.rollNo, `24BTCSE${String(i + 1).padStart(3, "0")}`]);
   const apply = process.argv.includes("--apply");
   try {

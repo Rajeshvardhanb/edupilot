@@ -7,16 +7,16 @@ import { ActionForm, SubmitButton } from "@/components/forms";
 import { login } from "@/actions/auth";
 
 const DEMO = [
-  { role: "Admin", email: "admin@edupilot.edu", icon: ShieldCheck, chip: "chip-brand" },
-  { role: "HOD", email: "hod.cse@edupilot.edu", icon: Users, chip: "chip-violet" },
-  { role: "Faculty", email: "faculty@edupilot.edu", icon: BookOpen, chip: "chip-pink" },
-  { role: "Accounts", email: "accounts@edupilot.edu", icon: Wallet, chip: "chip-success" },
-  { role: "Office", email: "office@edupilot.edu", icon: ClipboardList, chip: "chip-warning" },
-  { role: "Student", email: "sandhya.lanke@edupilot.edu", icon: GraduationCap, chip: "chip-info" },
-  { role: "Parent", email: "parent@edupilot.edu", icon: HeartHandshake, chip: "chip-danger" },
-];
+  { role: "Admin", key: "admin", icon: ShieldCheck, chip: "chip-brand" },
+  { role: "HOD", key: "hod", icon: Users, chip: "chip-violet" },
+  { role: "Faculty", key: "faculty", icon: BookOpen, chip: "chip-pink" },
+  { role: "Accounts", key: "accounts", icon: Wallet, chip: "chip-success" },
+  { role: "Office", key: "office", icon: ClipboardList, chip: "chip-warning" },
+  { role: "Student", key: "student", icon: GraduationCap, chip: "chip-info" },
+  { role: "Parent", key: "parent", icon: HeartHandshake, chip: "chip-danger" },
+] as const;
 
-export function LoginForm({ searchParams, showDemo }: { searchParams: Promise<Record<string, string | string[] | undefined>>; showDemo: boolean }) {
+export function LoginForm({ searchParams, showDemo, demoEmails }: { searchParams: Promise<Record<string, string | string[] | undefined>>; showDemo: boolean; demoEmails?: Record<(typeof DEMO)[number]["key"], string> }) {
   const { next, expired, reset } = use(searchParams);
   const [show, setShow] = useState(false);
   const email = useRef<HTMLInputElement>(null);
@@ -46,14 +46,14 @@ export function LoginForm({ searchParams, showDemo }: { searchParams: Promise<Re
         </div>
         <SubmitButton className="group h-11 w-full text-[15px]">Sign in <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></SubmitButton>
       </ActionForm>
-      {showDemo && (
+      {showDemo && demoEmails && (
         <div className="mt-7">
           <div className="mb-3 flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-line" />Explore the demo as<span className="h-px flex-1 bg-line" /></div>
           <div className="flex flex-wrap justify-center gap-2">
-            {DEMO.map(({ role, email: e, icon: Icon, chip }) => (
+            {DEMO.map(({ role, key, icon: Icon, chip }) => (
               <button
-                key={e} type="button" title={e}
-                onClick={() => { if (email.current && password.current) { email.current.value = e; password.current.value = "password123"; password.current.form?.requestSubmit(); } }}
+                key={key} type="button" title={demoEmails[key]}
+                onClick={() => { if (email.current && password.current) { email.current.value = demoEmails[key]; password.current.value = "password123"; password.current.form?.requestSubmit(); } }}
                 className={`flex w-[calc(25%-6px)] flex-col items-center gap-1.5 rounded-xl border border-line bg-gradient-to-b from-white to-[#f8f8fd] px-1 py-3 text-xs font-semibold text-fg transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-card`}
               >
                 <span className={`chip size-8 ${chip}`}><Icon className="size-4" /></span>{role}

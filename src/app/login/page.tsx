@@ -4,6 +4,7 @@ import { Lock, ShieldCheck, History, UserRound } from "lucide-react";
 import { LoginForm } from "./login-form";
 import { getInstitution } from "@/lib/institution";
 import { CampusPanel } from "@/components/campus-panel";
+import { demoLoginEmails } from "@/lib/college-data";
 
 export const metadata = { title: "Sign in" };
 // Shows the college name and logo from the database, so it is rendered per request, not at build time.
@@ -25,7 +26,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           <h2 className="text-center text-[1.75rem] leading-tight font-bold tracking-tight">Welcome back!</h2>
           <p className="mt-1.5 mb-7 text-center text-sm text-muted">Sign in to your {inst.shortName} account.</p>
           <Suspense>
-            <LoginForm searchParams={props.searchParams} showDemo={showDemo} />
+            <LoginForm searchParams={props.searchParams} showDemo={showDemo} demoEmails={showDemo ? demoLoginEmails() : undefined} />
           </Suspense>
           <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted">
             <li className="flex items-center gap-1.5"><Lock className="size-3.5" /> Encrypted sessions</li>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import identities from "../../prisma/sviet-students.json";
+import collegeData from "../../college-data.json";
+const identities = collegeData.students;
 import { emailPlan } from "../../scripts/sync-student-emails.mjs";
 const records=()=>identities.map((s,i)=>({id:`s${i}`,userId:`u${i}`,rollNo:s.rollNo,user:{role:"STUDENT",name:s.name,email:s.rollNo==="24MQ5A0509"?"student@edupilot.edu":`${s.rollNo.toLowerCase()}@student.edupilot.edu`}}));
 describe("firstname.lastname student login migration",()=>{

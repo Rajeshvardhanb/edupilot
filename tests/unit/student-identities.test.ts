@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import identities from "../../prisma/sviet-students.json";
+import collegeData from "../../college-data.json";
+const identities = collegeData.students;
 import { identityPlan } from "../../scripts/sync-student-identities.mjs";
 
 const legacy = () => identities.map((_, index) => {

@@ -26,7 +26,7 @@ export function emailPlan(identities, records) {
 async function main(){
  try{loadEnvFile('.env');}catch{}
  const {PrismaClient}=createRequire(resolve('package.json'))('@prisma/client');const db=new PrismaClient();
- const identities=JSON.parse(readFileSync(new URL('../prisma/sviet-students.json',import.meta.url),'utf8'));
+ const identities=JSON.parse(readFileSync(new URL('../college-data.json',import.meta.url),'utf8')).students;
  try{
   const result=await db.$transaction(async tx=>{
    const rows=await tx.student.findMany({where:{rollNo:{in:identities.map(s=>s.rollNo)}},include:{user:{select:{name:true,email:true,role:true,passwordHash:true,isActive:true}}}});

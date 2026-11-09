@@ -4,6 +4,9 @@ import { randomUUID } from "node:crypto";
 import { SVIET_COLLEGE } from "../src/lib/college";
 import { computeResult } from "../src/lib/grading";
 import { SVIET_STUDENTS } from "./sviet-students";
+import { COLLEGE_DATA, demoLoginEmails } from "../src/lib/college-data";
+
+const DEMO_EMAILS = demoLoginEmails();
 
 const db = new PrismaClient();
 
@@ -19,13 +22,7 @@ const FIRST_F = ["Ananya", "Diya", "Priya", "Sneha", "Kavya", "Lakshmi", "Divya"
 const LAST = ["Reddy", "Sharma", "Rao", "Kumar", "Naidu", "Patel", "Iyer", "Gupta", "Verma", "Chowdary", "Nair", "Joshi", "Singh", "Varma", "Pillai", "Desai", "Kulkarni", "Mishra", "Yadav", "Shetty"];
 const CITIES = ["Hyderabad", "Vijayawada", "Warangal", "Guntur", "Visakhapatnam", "Nellore", "Karimnagar", "Tirupati", "Kurnool", "Khammam"];
 
-const DEPTS = [
-  { code: "CSE", name: "Computer Science & Engineering" },
-  { code: "ECE", name: "Electronics & Communication Engineering" },
-  { code: "EEE", name: "Electrical & Electronics Engineering" },
-  { code: "ME", name: "Mechanical Engineering" },
-  { code: "CE", name: "Civil Engineering" },
-];
+const DEPTS = COLLEGE_DATA.departments.map(({ code, name }) => ({ code, name }));
 
 const PROGRAMS: { code: string; name: string; dept: string; level: ProgramLevel; years: number; intake: number }[] = [
   { code: "BTCSE", name: "B.Tech — Computer Science & Engineering", dept: "CSE", level: "UG", years: 4, intake: 120 },
@@ -112,6 +109,11 @@ const TERMS = [
 const semesterIn = (admissionYear: number, t: (typeof TERMS)[number]) => (t.year - admissionYear) * 2 + (t.odd ? 1 : 2);
 
 async function main() {
+  // Validate seed assumptions before its first destructive operation.
+  for (const program of PROGRAMS) {
+    if (!DEPTS.some(d => d.code === program.dept)) throw new Error(`Missing seed department ${program.dept}. Keep program department codes stable.`);
+  }
+  if (SVIET_STUDENTS.length > 28) throw new Error("The first-setup demo class supports 28 identities. Use Student Registration for additional students.");
   console.log("Resetting database…");
   // Refunds point at the receipt they reverse, so they go before the receipts themselves.
   await db.payment.deleteMany({ where: { refundOfId: { not: null } } });
@@ -140,36 +142,40 @@ async function main() {
   const hash = await bcrypt.hash("password123", 10);
 
   // ── Staff ──
-  await db.user.create({ data: { email: "admin@edupilot.edu", name: SVIET_COLLEGE.principalName, role: "ADMIN", passwordHash: hash, phone: SVIET_COLLEGE.phone } });
-  await db.user.create({ data: { email: "accounts@edupilot.edu", name: "Srinivas Murthy", role: "ACCOUNTANT", passwordHash: hash, phone: "9000000002" } });
-  await db.user.create({ data: { email: "office@edupilot.edu", name: "Lakshmi Prasad", role: "OFFICE", passwordHash: hash, phone: "9000000003" } });
+  for (const account of COLLEGE_DATA.accounts.filter(a => a.role !== "PARENT")) {
+    await db.user.create({ data: { email: account.email, name: account.name, role: account.role, passwordHash: hash, phone: account.phone !== undefined ? account.phone : (account.role === "ADMIN" ? SVIET_COLLEGE.phone : null) } });
+  }
 
   const depts = new Map<string, string>();
   for (const d of DEPTS) depts.set(d.code, (await db.department.create({ data: d })).id);
 
   const facultyByDept = new Map<string, string[]>();
   const DESIGNATIONS = ["Professor", "Associate Professor", "Assistant Professor", "Assistant Professor", "Assistant Professor", "Lecturer"];
-  let emp = 1;
+  // EMP0001–EMP0008 keep their original CSE academic links. Other departments start at EMP0009.
+  let emp = 9;
   for (const d of DEPTS) {
     const ids: string[] = [];
-    const count = d.code === "CSE" ? 8 : 6;
+    const suppliedFaculty = COLLEGE_DATA.faculty.filter(f => f.departmentCode === d.code);
+    const count = suppliedFaculty.length || 6;
     for (let i = 0; i < count; i++) {
       const female = rand() < 0.4;
-      const name = `${i === 0 ? "Dr. " : ""}${pick(female ? FIRST_F : FIRST_M)} ${pick(LAST)}`;
-      const isHod = i === 0;
-      const email =
+      const supplied = suppliedFaculty[i];
+      const name = supplied?.name ?? `${i === 0 ? "Dr. " : ""}${pick(female ? FIRST_F : FIRST_M)} ${pick(LAST)}`;
+      const configuredHead = COLLEGE_DATA.departments.find(dep => dep.code === d.code)?.hodEmployeeId;
+      const isHod = supplied ? supplied.employeeId === configuredHead : i === 0;
+      const email = supplied?.email ?? (
         d.code === "CSE" && isHod ? "hod.cse@edupilot.edu" :
         d.code === "CSE" && i === 2 ? "faculty@edupilot.edu" :
-        `${d.code.toLowerCase()}.fac${i + 1}@edupilot.edu`;
+        `${d.code.toLowerCase()}.fac${i + 1}@edupilot.edu`);
       const user = await db.user.create({
         data: {
-          email, name, role: isHod ? "HOD" : "FACULTY", passwordHash: hash, phone: `98${String(emp).padStart(8, "0")}`,
+          email, name, role: isHod ? "HOD" : "FACULTY", passwordHash: hash, phone: supplied ? supplied.phone ?? null : `98${String(emp).padStart(8, "0")}`,
           faculty: {
             create: {
-              employeeId: `EMP${String(emp++).padStart(4, "0")}`, departmentId: depts.get(d.code)!,
-              designation: isHod ? "Professor" : DESIGNATIONS[i % DESIGNATIONS.length],
-              qualification: isHod ? "Ph.D" : pick(["M.Tech", "M.Tech", "M.E", "Ph.D"]),
-              specialization: d.name.split(" ")[0], joiningDate: day(`${2008 + Math.floor(rand() * 16)}-06-15`),
+              employeeId: supplied?.employeeId ?? `EMP${String(emp++).padStart(4, "0")}`, departmentId: depts.get(d.code)!,
+              designation: supplied?.designation ?? (isHod ? "Professor" : DESIGNATIONS[i % DESIGNATIONS.length]),
+              qualification: supplied?.qualification ?? (isHod ? "Ph.D" : pick(["M.Tech", "M.Tech", "M.E", "Ph.D"])),
+              specialization: supplied ? null : d.name.split(" ")[0], joiningDate: supplied ? null : day(`${2008 + Math.floor(rand() * 16)}-06-15`),
             },
           },
         },
@@ -244,13 +250,13 @@ async function main() {
       usedNames.add(`${first} ${last}`);
       const seq = isLateral ? 300 + i - regular + 1 : (section === "B" ? 100 : 0) + i + 1;
       const rollNo = supplied?.rollNo ?? `${String(isLateral ? year + 1 : year).slice(2)}${code}${String(seq).padStart(3, "0")}`;
-      const demo: boolean = !studentDemoAssigned && supplied?.rollNo === "24MQ5A0509";
+      const demo: boolean = !studentDemoAssigned && supplied?.rollNo === COLLEGE_DATA.demoLogins.studentRollNo;
       studentDemoAssigned ||= demo;
       const ability = demo ? 0.82 : Math.min(0.97, Math.max(0.4, between(0.52, 0.95) + (rand() < 0.08 ? -0.15 : 0)));
       const user = await db.user.create({
         data: {
           email: supplied?.email ?? `${rollNo.toLowerCase()}@student.edupilot.edu`,
-          name: supplied?.name ?? `${first} ${last}`, role: "STUDENT", passwordHash: hash, phone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
+          name: supplied?.name ?? `${first} ${last}`, role: "STUDENT", passwordHash: hash, phone: supplied?.phone !== undefined ? supplied.phone : `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
           student: {
             create: {
               rollNo, batchId: batch.id,
@@ -259,8 +265,8 @@ async function main() {
               entrySemester: isLateral ? 3 : 1,
               dob: day(`${year - (p.level === "DIPLOMA" ? 16 : p.level === "PG" ? 22 : 18)}-${String(1 + Math.floor(rand() * 12)).padStart(2, "0")}-${String(1 + Math.floor(rand() * 28)).padStart(2, "0")}`),
               gender: female ? "FEMALE" : "MALE", category: pick(["GENERAL", "GENERAL", "OBC", "OBC", "SC", "ST", "EWS"] as const),
-              bloodGroup: pick(["A+", "B+", "O+", "AB+", "O-", "B-"]), address: `${Math.floor(between(1, 99))}-${Math.floor(between(1, 500))}, ${pick(CITIES)}`,
-              guardianName: `${pick(FIRST_M)} ${last}`, guardianPhone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
+              bloodGroup: pick(["A+", "B+", "O+", "AB+", "O-", "B-"]), address: supplied?.address !== undefined ? supplied.address : `${Math.floor(between(1, 99))}-${Math.floor(between(1, 500))}, ${pick(CITIES)}`,
+              guardianName: supplied?.guardianName !== undefined ? supplied.guardianName : `${pick(FIRST_M)} ${last}`, guardianPhone: supplied?.guardianPhone !== undefined ? supplied.guardianPhone : `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`, guardianEmail: supplied?.guardianEmail,
               previousSchool: isLateral ? "Govt. Polytechnic, " + pick(CITIES) : p.level === "PG" ? "B.Tech, " + pick(CITIES) + " Engg. College" : pick(["Narayana", "Sri Chaitanya", "Govt. Junior College", "ZPHS"]) + ", " + pick(CITIES),
               previousScore: Math.round(between(60, 97) * 10) / 10,
               status: graduated ? "GRADUATED" : !demo && rand() < 0.02 ? "DETAINED" : "ACTIVE",
@@ -284,7 +290,7 @@ async function main() {
     facultyLoad.set(f, (facultyLoad.get(f) ?? 0) + 1);
     return f;
   };
-  const demoFaculty = (await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" }, include: { faculty: true } })).faculty!.id;
+  const demoFaculty = (await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.faculty }, include: { faculty: true } })).faculty!.id;
 
   const marksRows: Prisma.MarkCreateManyInput[] = [];
   const resultRows: Prisma.SubjectResultCreateManyInput[] = [];
@@ -416,9 +422,9 @@ async function main() {
   await seedModules();
 
   // ── Recent activity so the audit log and dashboards have history ──
-  const admin = await db.user.findUniqueOrThrow({ where: { email: "admin@edupilot.edu" } });
-  const hodUser = await db.user.findUniqueOrThrow({ where: { email: "hod.cse@edupilot.edu" } });
-  const facUser = await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" } });
+  const admin = await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.admin } });
+  const hodUser = await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.hod } });
+  const facUser = await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.faculty } });
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3600e3);
   await db.auditLog.createMany({
     data: [
@@ -436,8 +442,8 @@ async function main() {
 async function seedModules() {
   const hash = await bcrypt.hash("password123", 10);
   const term = await db.term.findFirstOrThrow({ where: { isCurrent: true } });
-  const demo = await db.student.findFirstOrThrow({ where: { rollNo: "24MQ5A0509" }, include: { batch: true } });
-  const facultyUser = await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" }, include: { faculty: true } });
+  const demo = await db.student.findFirstOrThrow({ where: { rollNo: COLLEGE_DATA.demoLogins.studentRollNo }, include: { batch: true } });
+  const facultyUser = await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.faculty }, include: { faculty: true } });
   const classmates = await db.student.findMany({ where: { batchId: demo.batchId }, orderBy: { rollNo: "asc" } });
 
   await db.institution.upsert({
@@ -515,7 +521,8 @@ async function seedModules() {
   for (const e of electives) await db.electiveOption.create({ data: { termId: term.id, subjectId: e.id, seatLimit: 40 } });
 
   // Parent login for the demo student
-  await db.user.create({ data: { email: "parent@edupilot.edu", name: demo.guardianName ?? "Parent", role: "PARENT", passwordHash: hash, phone: demo.guardianPhone, children: { create: { studentId: demo.id } } } });
+  const parentAccount = COLLEGE_DATA.accounts.find(a => a.key === COLLEGE_DATA.demoLogins.parentAccountKey)!;
+  await db.user.create({ data: { email: DEMO_EMAILS.parent, name: parentAccount.name, role: "PARENT", passwordHash: hash, phone: parentAccount.phone !== undefined ? parentAccount.phone : demo.guardianPhone, children: { create: { studentId: demo.id } } } });
 
   // Placement: interview rounds on every drive, résumé for the demo student
   for (const d of await db.placementDrive.findMany()) {
@@ -552,9 +559,9 @@ async function seedModules() {
 
   // A second child for the demo parent.
   const sibling = await db.student.findFirstOrThrow({ where: { batch: { program: { code: "DCSE" }, admissionYear: 2025 } }, orderBy: { rollNo: "asc" } });
-  const parentUser = await db.user.findUniqueOrThrow({ where: { email: "parent@edupilot.edu" } });
+  const parentUser = await db.user.findUniqueOrThrow({ where: { email: DEMO_EMAILS.parent } });
   await db.parentLink.create({ data: { userId: parentUser.id, studentId: sibling.id } });
-  await db.student.update({ where: { id: demo.id }, data: { guardianEmail: "parent@edupilot.edu" } });
+  await db.student.update({ where: { id: demo.id }, data: { guardianEmail: DEMO_EMAILS.parent } });
   await db.student.update({ where: { id: demo.id }, data: { about: "Third-year CSE student interested in backend engineering and distributed systems. Built a college event portal used by 800+ students.", skills: "Java, Spring Boot, SQL, React, Git, Linux", linkedin: "https://www.linkedin.com/", github: "https://github.com/" } });
 }
 

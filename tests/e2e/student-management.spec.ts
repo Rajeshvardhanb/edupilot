@@ -1,5 +1,6 @@
 import { expect,test } from "@playwright/test";
-import identities from "../../prisma/sviet-students.json";
+import collegeData from "../../college-data.json";
+const identities = collegeData.students;
 import { db,fixtures,reseed,session } from "./helpers";
 
 test.beforeAll(() => reseed());

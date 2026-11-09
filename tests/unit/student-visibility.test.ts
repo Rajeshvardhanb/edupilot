@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import sampleRolls from "../../src/lib/sample-student-rolls.json";
-import identities from "../../prisma/sviet-students.json";
+import collegeData from "../../college-data.json";
+const identities = collegeData.students;
 import { presentationRead, visibleStudentWhere } from "../../src/lib/student-visibility";
 
 describe("presentation student visibility", () => {

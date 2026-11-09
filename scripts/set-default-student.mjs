@@ -6,7 +6,7 @@ import { resolve, join } from "node:path";
 try { loadEnvFile('.env'); } catch {}
 const { PrismaClient } = createRequire(resolve('package.json'))('@prisma/client');
 const db = new PrismaClient();
-const identities=JSON.parse(readFileSync(new URL('../prisma/sviet-students.json',import.meta.url),'utf8'));
+const identities=JSON.parse(readFileSync(new URL('../college-data.json',import.meta.url),'utf8')).students;
 const ownerEmail=identities.find(s=>s.rollNo==='24MQ5A0509').email;
 try {
  const result = await db.$transaction(async tx => {
