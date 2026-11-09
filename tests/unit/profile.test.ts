@@ -7,15 +7,15 @@ vi.mock("bcryptjs", () => ({ default: { compare: m.compare } }));
 import { updateMyProfile } from "@/actions/profile";
 import { personalProfileSchema } from "@/lib/profile-validation";
 function form(extra: Record<string, string> = {}) {
- const values = { name: "LANKE SANDHYA", email: "student@edupilot.edu", phone: "9876543210", dob: "2004-01-01", gender: "FEMALE", bloodGroup: "", address: "Updated address", guardianName: "", guardianPhone: "", guardianEmail: "", about: "", skills: "", linkedin: "", github: "", ...extra };
+ const values = { name: "LANKE SANDHYA", email: "sandhya.lanke@edupilot.edu", phone: "9876543210", dob: "2004-01-01", gender: "FEMALE", bloodGroup: "", address: "Updated address", guardianName: "", guardianPhone: "", guardianEmail: "", about: "", skills: "", linkedin: "", github: "", ...extra };
  const fd = new FormData(); Object.entries(values).forEach(([k,v])=>fd.set(k,v)); return fd;
 }
-beforeEach(() => { vi.clearAllMocks(); m.auth.mockResolvedValue({ id:"owner", role:"STUDENT", studentId:"owner-student" }); m.current.mockResolvedValue({ email:"student@edupilot.edu", passwordHash:"hash" }); m.compare.mockResolvedValue(false); });
+beforeEach(() => { vi.clearAllMocks(); m.auth.mockResolvedValue({ id:"owner", role:"STUDENT", studentId:"owner-student" }); m.current.mockResolvedValue({ email:"sandhya.lanke@edupilot.edu", passwordHash:"hash" }); m.compare.mockResolvedValue(false); });
 describe("profile ownership and validation", () => {
  it("uses the authenticated student and ignores forged role, student ID and academic fields", async () => {
   const result=await updateMyProfile({},form({id:"victim",studentId:"victim-student",role:"ADMIN",rollNo:"FORGED",batchId:"wrong"}));
   expect(result.ok).toBe(true);
-  expect(m.userUpdate).toHaveBeenCalledWith({where:{id:"owner"},data:{name:"LANKE SANDHYA",email:"student@edupilot.edu",phone:"9876543210"}});
+  expect(m.userUpdate).toHaveBeenCalledWith({where:{id:"owner"},data:{name:"LANKE SANDHYA",email:"sandhya.lanke@edupilot.edu",phone:"9876543210"}});
   expect(m.studentUpdate.mock.calls[0][0].where).toEqual({id:"owner-student",userId:"owner"});
   expect(m.studentUpdate.mock.calls[0][0].data).not.toHaveProperty("rollNo");
   expect(m.studentUpdate.mock.calls[0][0].data.guardianName).toBeNull();

@@ -38,17 +38,17 @@ test('student registration sends a welcome without a password', async ({ browser
 });
 
 test('leave sends a receipt, scoped review notices, and a decision to student and linked parent', async ({ browser, request }) => {
- const f = await fixtures(); const p = await session(browser, 'student@edupilot.edu'); await p.goto('/leave');
+ const f = await fixtures(); const p = await session(browser, 'sandhya.lanke@edupilot.edu'); await p.goto('/leave');
  await p.locator('[name=fromDate]').fill('2026-11-12'); await p.locator('[name=toDate]').fill('2026-11-12');
  await p.locator('[name=reason]').fill('Private medical information for notification privacy test'); await p.getByRole('button', { name: 'Submit request', exact: true }).click();
- await waitMail(request, 'Your leave request was received', 'student@edupilot.edu');
+ await waitMail(request, 'Your leave request was received', 'sandhya.lanke@edupilot.edu');
  await waitMail(request, 'A student leave request needs review', 'hod.cse@edupilot.edu');
  const reviewMails = (await messages(request)).filter(m => m.raw.includes('Subject: A student leave request needs review'));
  expect(reviewMails.every(m => !m.raw.includes('Private medical information'))).toBe(true);
  await db.leaveRequest.findFirstOrThrow({ where: { studentId: f.studentId, reason: { startsWith: 'Private medical information' } } });
  const a = await session(browser, 'admin@edupilot.edu'); await a.goto('/leave');
  await a.getByRole('row').filter({ hasText: 'Private medical information for notification privacy test' }).getByRole('button', { name: 'Approve', exact: true }).click();
- await waitMail(request, 'Your leave request has been reviewed', 'student@edupilot.edu');
+ await waitMail(request, 'Your leave request has been reviewed', 'sandhya.lanke@edupilot.edu');
  await waitMail(request, 'Your leave request has been reviewed', 'parent@edupilot.edu');
  const stored = await db.emailLog.findFirstOrThrow({ where: { to: 'parent@edupilot.edu', subject: 'Your leave request has been reviewed' } }); expect(stored.body).not.toContain('Private medical information');
  await p.context().close(); await a.context().close();
@@ -59,16 +59,16 @@ test('assignment publication, receipt and grading use the correct course and lea
  const publish = p.locator('form').filter({ has: p.locator('input[name=title]') });
  await publish.locator('[name=kind]').selectOption('ASSIGNMENT'); await publish.locator('[name=title]').fill('Email integration assignment');
  await publish.locator('[name=maxMarks]').fill('10'); await publish.locator('[name=dueDate]').fill('2026-12-01'); await publish.getByRole('button', { name: 'Publish', exact: true }).click();
- await waitMail(request, 'A new assignment is available', 'student@edupilot.edu');
+ await waitMail(request, 'A new assignment is available', 'sandhya.lanke@edupilot.edu');
  const m = await db.material.findFirstOrThrow({ where: { title: 'Email integration assignment' } });
- const s = await session(browser, 'student@edupilot.edu'); await s.goto('/materials');
+ const s = await session(browser, 'sandhya.lanke@edupilot.edu'); await s.goto('/materials');
  const submit = s.locator('form').filter({ has: s.locator(`input[name=materialId][value="${m.id}"]`) });
  await submit.locator('[name=note]').fill('My integration test answer'); await submit.getByRole('button', { name: /Submit/ }).click();
- await waitMail(request, 'Your assignment submission was received', 'student@edupilot.edu');
+ await waitMail(request, 'Your assignment submission was received', 'sandhya.lanke@edupilot.edu');
  const sub = await db.submission.findUniqueOrThrow({ where: { materialId_studentId: { materialId: m.id, studentId: f.studentId } } });
  await p.reload(); const grade = p.locator('form').filter({ has: p.locator(`input[name=id][value="${sub.id}"]`) });
  await grade.locator('[name=marks]').fill('8'); await grade.locator('[name=feedback]').fill('Private grade feedback'); await grade.getByRole('button', { name: /Save|Grade/ }).click();
- const mail = await waitMail(request, 'Your assignment feedback is ready', 'student@edupilot.edu'); expect(mail.raw).not.toContain('Private grade feedback');
+ const mail = await waitMail(request, 'Your assignment feedback is ready', 'sandhya.lanke@edupilot.edu'); expect(mail.raw).not.toContain('Private grade feedback');
  expect((await messages(request)).some(m => m.to.includes('parent@edupilot.edu') && m.raw.includes('Subject: A new assignment is available'))).toBe(false);
  await p.context().close(); await s.context().close();
 });
@@ -78,22 +78,22 @@ test('publication notifies linked learners without emailing marks', async ({ bro
  const offering = await db.courseOffering.findFirstOrThrow({ where: { batchId: f.batchId, resultsPublished: true, assessments: { some: { type: 'END_SEM' } } } });
  const p = await session(browser, 'admin@edupilot.edu'); await p.goto(`/exams/${offering.id}`);
  await p.getByRole('button', { name: 'Unpublish', exact: true }).click(); await confirm(p);
- await waitMail(request, 'Your academic record has been updated', 'student@edupilot.edu');
+ await waitMail(request, 'Your academic record has been updated', 'sandhya.lanke@edupilot.edu');
  await p.getByRole('button', { name: 'Publish results', exact: true }).click(); await confirm(p);
- await waitMail(request, 'Your course results are available', 'student@edupilot.edu'); await waitMail(request, 'Your course results are available', 'parent@edupilot.edu');
- const row = await db.emailLog.findFirstOrThrow({ where: { subject: 'Your course results are available', to: 'student@edupilot.edu' } }); expect(row.body).toContain('Marks are not included');
+ await waitMail(request, 'Your course results are available', 'sandhya.lanke@edupilot.edu'); await waitMail(request, 'Your course results are available', 'parent@edupilot.edu');
+ const row = await db.emailLog.findFirstOrThrow({ where: { subject: 'Your course results are available', to: 'sandhya.lanke@edupilot.edu' } }); expect(row.body).toContain('Marks are not included');
  const count = await db.emailLog.count({ where: { subject: 'Your course results are available' } }); await p.reload(); await expect(p.getByRole('button', { name: 'Publish results', exact: true })).toHaveCount(0); expect(await db.emailLog.count({ where: { subject: 'Your course results are available' } })).toBe(count);
  await p.context().close();
 });
 
 test('password recovery renders a real link but redacts it from the admin outbox', async ({ browser, request }) => {
- const p = await fresh(browser); await p.goto('/forgot-password'); await p.locator('input[name=email]').fill('student@edupilot.edu'); await p.getByRole('button', { name: /Send/ }).click();
- const mail = await waitMail(request, 'Reset your password', 'student@edupilot.edu'); const raw = decoded(mail.raw);
+ const p = await fresh(browser); await p.goto('/forgot-password'); await p.locator('input[name=email]').fill('sandhya.lanke@edupilot.edu'); await p.getByRole('button', { name: /Send/ }).click();
+ const mail = await waitMail(request, 'Reset your password', 'sandhya.lanke@edupilot.edu'); const raw = decoded(mail.raw);
  const link = /http:\/\/localhost:3100\/reset-password\?token=([a-f0-9]+)/.exec(raw); expect(link).not.toBeNull();
- const row = await db.emailLog.findFirstOrThrow({ where: { subject: 'Reset your password', to: 'student@edupilot.edu' }, orderBy: { createdAt: 'desc' } });
+ const row = await db.emailLog.findFirstOrThrow({ where: { subject: 'Reset your password', to: 'sandhya.lanke@edupilot.edu' }, orderBy: { createdAt: 'desc' } });
  expect(row.body).not.toContain(link![1]); expect(row.body).not.toContain('token=');
  await p.goto(link![0]); const password = 'CobaltRiver!2026'; await p.locator('input[name=password]').fill(password); await p.locator('input[name=confirm]').fill(password); await p.getByRole('button', { name: 'Set new password', exact: true }).click();
- await waitMail(request, 'Your account security settings changed', 'student@edupilot.edu');
+ await waitMail(request, 'Your account security settings changed', 'sandhya.lanke@edupilot.edu');
  await p.context().close();
 });
 

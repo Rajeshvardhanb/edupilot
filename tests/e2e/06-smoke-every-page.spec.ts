@@ -19,7 +19,7 @@ async function openAllGroups(p: Page) {
   for (let i = 0; i < 12 && (await folded.count()); i++) await folded.first().click();
 }
 
-const ROLES = ["admin", "hod.cse", "faculty", "accounts", "office", "student", "parent"].map((r) => `${r}@edupilot.edu`);
+const ROLES = ["admin", "hod.cse", "faculty", "accounts", "office", "sandhya.lanke", "parent"].map((r) => `${r}@edupilot.edu`);
 /** Links that download a file or deliberately fail are not pages to open. */
 const NOT_A_PAGE = /export|\.csv|\/pdf|\/file|template|download|test-error|\/logout|^\/pay\//;
 
@@ -61,7 +61,7 @@ test("smoke: every page on every role's menu opens without an error, and so does
 
 test("smoke on a phone: every menu page fits a phone screen without sideways scrolling", async ({ browser }) => {
   test.setTimeout(1_200_000);
-  for (const email of ["admin@edupilot.edu", "student@edupilot.edu", "parent@edupilot.edu", "faculty@edupilot.edu"]) {
+  for (const email of ["admin@edupilot.edu", "sandhya.lanke@edupilot.edu", "parent@edupilot.edu", "faculty@edupilot.edu"]) {
     const p = await session(browser, email, { viewport: { width: 360, height: 760 } });
     p.setDefaultNavigationTimeout(30_000);
     await p.click('button[aria-label="Open menu"]');

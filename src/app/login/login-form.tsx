@@ -12,7 +12,7 @@ const DEMO = [
   { role: "Faculty", email: "faculty@edupilot.edu", icon: BookOpen, chip: "chip-pink" },
   { role: "Accounts", email: "accounts@edupilot.edu", icon: Wallet, chip: "chip-success" },
   { role: "Office", email: "office@edupilot.edu", icon: ClipboardList, chip: "chip-warning" },
-  { role: "Student", email: "student@edupilot.edu", icon: GraduationCap, chip: "chip-info" },
+  { role: "Student", email: "sandhya.lanke@edupilot.edu", icon: GraduationCap, chip: "chip-info" },
   { role: "Parent", email: "parent@edupilot.edu", icon: HeartHandshake, chip: "chip-danger" },
 ];
 

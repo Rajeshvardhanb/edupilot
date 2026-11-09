@@ -6,7 +6,7 @@ import { loadEnvFile } from "node:process";
 import { pathToFileURL } from "node:url";
 
 /**
- * @param {{rollNo: string, name: string}[]} identities
+ * @param {{rollNo: string, name: string, email: string}[]} identities
  * @param {{id: string, userId: string, rollNo: string, user: {name: string, email: string, role: string}, batch: {program: {code: string}, admissionYear: number, section: string}}[]} records
  */
 export function identityPlan(identities, records) {
@@ -17,10 +17,10 @@ export function identityPlan(identities, records) {
     const matches = records.filter(s => [legacyRoll, identity.rollNo].includes(s.rollNo));
     if (matches.length !== 1) throw new Error(`Missing or conflicting record for ${identity.rollNo}; stopped without guessing.`);
     const row = matches[0];
-    const allowedEmails = ["student@edupilot.edu", `${legacyRoll.toLowerCase()}@student.edupilot.edu`, `${identity.rollNo.toLowerCase()}@student.edupilot.edu`];
+    const allowedEmails = [identity.email, "student@edupilot.edu", `${legacyRoll.toLowerCase()}@student.edupilot.edu`, `${identity.rollNo.toLowerCase()}@student.edupilot.edu`];
     if (row.user.role !== "STUDENT" || row.batch.program.code !== "BTCSE" || row.batch.admissionYear !== 2024 || row.batch.section !== "A" || !allowedEmails.includes(row.user.email))
       throw new Error(`Record ${row.rollNo} does not match the original demo class; stopped.`);
-    const email = row.user.email === "student@edupilot.edu" ? row.user.email : `${identity.rollNo.toLowerCase()}@student.edupilot.edu`;
+    const email = identity.email;
     return { id: row.id, userId: row.userId, oldRollNo: row.rollNo, oldName: row.user.name, oldEmail: row.user.email, rollNo: identity.rollNo, name: identity.name, email,
       changed: row.rollNo !== identity.rollNo || row.user.name !== identity.name || row.user.email !== email };
   });

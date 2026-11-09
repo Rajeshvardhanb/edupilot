@@ -183,7 +183,7 @@ node scripts/sync-student-identities.mjs
 node scripts/sync-student-identities.mjs --apply
 ```
 
-This matches the original 21 demo student records to the supplied names and roll numbers, preserving IDs, marks, attendance, results and passwords. It also updates roll-based sample login addresses; `student@edupilot.edu` stays available. It saves an identity snapshot under `backups/` and sends no email. A repeat run changes nothing once the identities match. Stop if a conflict is reported; do not reset or reseed to fix it. Only names/roll numbers supplied by the client are treated as real; academic/contact data remains illustrative. The 403 original generated student identities are hidden from the application presentation, including lists, counts, exports and related academic views. Their records remain in MySQL and backups. The 21 supplied students and newly registered students remain visible.
+This matches the original 21 demo student records to the supplied names and roll numbers, preserving IDs, marks, attendance, results and passwords. It also assigns the configured `firstname.lastname@edupilot.edu` login IDs. Old generic and roll-based usernames are replaced. It saves an identity snapshot under `backups/` and sends no email. A repeat run changes nothing once the identities match. Stop if a conflict is reported; do not reset or reseed to fix it. Only names/roll numbers supplied by the client are treated as real; academic/contact data remains illustrative. The 403 original generated student identities are hidden from the application presentation, including lists, counts, exports and related academic views. Their records remain in MySQL and backups. The 21 supplied students and newly registered students remain visible.
 
 <!-- pagebreak -->
 
@@ -261,7 +261,7 @@ Press **Ctrl+C** in the app terminal. If asked to terminate the batch job, answe
 - **Administrator:** `admin@edupilot.edu` — academic setup, student management, exams and administration.
 - **HOD:** `hod.cse@edupilot.edu` — department academic review and permitted management.
 - **Faculty:** `faculty@edupilot.edu` — assigned-course attendance, marks and teaching workflows.
-- **Student demo:** `student@edupilot.edu` — **LANKE SANDHYA (24MQ5A0509)**, with sample academic history.
+- **Student demo:** `sandhya.lanke@edupilot.edu` — **LANKE SANDHYA (24MQ5A0509)**, with sample academic history.
 - **Parent:** `parent@edupilot.edu` — records of the student linked by the seed.
 - **Office:** `office@edupilot.edu` — student registration and permitted student-record work.
 - **Accountant:** `accounts@edupilot.edu` — retained login and permitted student-record views; finance modules are removed.
@@ -270,10 +270,40 @@ Press **Ctrl+C** in the app terminal. If asked to terminate the batch job, answe
 
 - **Name:** LANKE SANDHYA
 - **Roll number:** `24MQ5A0509`
-- **Email:** `24mq5a0509@student.edupilot.edu`
+- **Email:** `sandhya.lanke@edupilot.edu`
 - **Seeded password:** `password123`
 
-Sandhya's student account is separate from the generic `student@edupilot.edu` account. The default parent account is linked to the generic demo student; it is not automatically Sandhya's parent account. Do not expect their results or linked-child screens to be identical.
+This is the same account opened by the Student demo button. The seeded parent account is linked to Sandhya. Login IDs do not create actual email mailboxes.
+
+### All supplied student logins
+
+Password for every account in this table immediately after seed: `password123`.
+
+| Student | Login username |
+|---|---|
+| P. BHARGAV NAGA SAI SAMPATH | `bhargav.p@edupilot.edu` |
+| BORRA ABHINAYA | `abhinaya.borra@edupilot.edu` |
+| KUNAPAREDDY SYAMKUMAR | `syamkumar.kunapareddy@edupilot.edu` |
+| N. SIVA KANAKA NAGA SANDHYA | `siva.n@edupilot.edu` |
+| KUNAPAREDDY PREMITH | `premith.kunapareddy@edupilot.edu` |
+| LANKE SANDHYA | `sandhya.lanke@edupilot.edu` |
+| TURAKA SRILAKSHMI | `srilakshmi.turaka@edupilot.edu` |
+| MADALA REVANTH KUMAR | `revanth.madala@edupilot.edu` |
+| PEDDINTI YOGESH | `yogesh.peddinti@edupilot.edu` |
+| NARAGAM KAVYA | `kavya.naragam@edupilot.edu` |
+| GOLLA SRIVIDYA | `srividya.golla@edupilot.edu` |
+| G.LAKSHMANA SIVA SAI | `lakshmana.g@edupilot.edu` |
+| BOORADA SHANMUKHA | `shanmukha.boorada@edupilot.edu` |
+| PARIMKAYALA AMRUTHA | `amrutha.parimkayala@edupilot.edu` |
+| MATHI VARSHITHA DURGA BHAVANI | `varshitha.mathi@edupilot.edu` |
+| YARLAGADDA JYOSHNA DEVI | `jyoshna.yarlagadda@edupilot.edu` |
+| MURARI GANESH VENKATA RATNAM | `ganesh.murari@edupilot.edu` |
+| KAGITA DURGA BHAVANI | `durga.kagita@edupilot.edu` |
+| PINNENTI JHANSI | `jhansi.pinnenti@edupilot.edu` |
+| DANDAY SHARON PRADEEPA | `sharon.danday@edupilot.edu` |
+| BEZAWADA JAGADEESH | `jagadeesh.bezawada@edupilot.edu` |
+
+For an existing database, take a backup using Section 10, preview with `node scripts/sync-student-emails.mjs`, then apply with `node scripts/sync-student-emails.mjs --apply`. This changes only the 21 supplied students' login emails and invalidates their outstanding recovery/sign-in codes. Names, passwords, IDs and academic records remain unchanged. Sign out and sign in using the new username.
 
 Use a normal browser window for one account and an InPrivate/Incognito window for another. Tabs in the same browser profile share a login, so signing in as a second role there also changes the first tab's session. Sign out between additional roles.
 

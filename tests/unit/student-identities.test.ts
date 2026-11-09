@@ -10,12 +10,12 @@ const legacy = () => identities.map((_, index) => {
 });
 
 describe("client-supplied student identity migration", () => {
-  it("maps the exact legacy slots while preserving record IDs and the demo login", () => {
+  it("maps the exact legacy slots while preserving record IDs and assigns the named logins", () => {
     const rows = legacy();
     const plan = identityPlan(identities, rows);
     expect(plan).toHaveLength(21);
-    expect(plan[0]).toMatchObject({ id: "student-0", userId: "user-0", email: "student@edupilot.edu", name: identities[0].name });
-    expect(plan[5]).toMatchObject({ id: "student-5", rollNo: "24MQ5A0509", name: "LANKE SANDHYA", email: "24mq5a0509@student.edupilot.edu" });
+    expect(plan[0]).toMatchObject({ id: "student-0", userId: "user-0", email: "bhargav.p@edupilot.edu", name: identities[0].name });
+    expect(plan[5]).toMatchObject({ id: "student-5", rollNo: "24MQ5A0509", name: "LANKE SANDHYA", email: "sandhya.lanke@edupilot.edu" });
     expect(rows[5].rollNo).toBe("24BTCSE006");
   });
   it("is idempotent after applying the identities", () => {

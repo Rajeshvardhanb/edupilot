@@ -13,7 +13,7 @@ export function reseed() {
 
 /** Records the seed uses throughout: the demo student, one of the demo teacher's courses, and so on. */
 export async function fixtures() {
-  const student = await db.student.findFirstOrThrow({ where: { user: { email: "student@edupilot.edu" } } });
+  const student = await db.student.findFirstOrThrow({ where: { user: { email: "sandhya.lanke@edupilot.edu" } } });
   const offering = await db.courseOffering.findFirstOrThrow({ where: { batchId: student.batchId, term: { isCurrent: true }, faculty: { user: { email: "faculty@edupilot.edu" } } } });
   return { studentId: student.id, batchId: student.batchId, offeringId: offering.id };
 }

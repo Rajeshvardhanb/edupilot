@@ -1,4 +1,5 @@
 import { expect,test } from "@playwright/test";
+import identities from "../../prisma/sviet-students.json";
 import { db,fixtures,reseed,session } from "./helpers";
 
 test.beforeAll(() => reseed());
@@ -31,7 +32,7 @@ test("student names, search, profile, results, and timetable remain", async ({ b
   await page.goto(`/students/${studentId}`);
   await expect(page.getByRole("heading", { name: "Academic record" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fees", exact: true })).toHaveCount(0);
-  const student = await session(browser, "student@edupilot.edu");
+  const student = await session(browser, "sandhya.lanke@edupilot.edu");
   for (const path of ["/results", "/attendance", "/timetable", "/leave", "/materials", "/exams/supplementary", "/exams/revaluation", "/placements", "/calendar"]) {
     const response = await student.goto(path);
     expect(response?.status(), path).toBe(200);
@@ -102,9 +103,9 @@ test("presentation shows the supplied roster and hides preserved sample records"
 });
 
 test("default student owns the profile editor; admins have student CRUD controls", async ({ browser }) => {
-  const owner=await db.student.findFirstOrThrow({where:{user:{email:"student@edupilot.edu"}},include:{user:true}});
+  const owner=await db.student.findFirstOrThrow({where:{user:{email:"sandhya.lanke@edupilot.edu"}},include:{user:true}});
   expect(owner.rollNo).toBe("24MQ5A0509");expect(owner.user.name).toBe("LANKE SANDHYA");
-  const student=await session(browser,"student@edupilot.edu");await student.goto("/profile");
+  const student=await session(browser,"sandhya.lanke@edupilot.edu");await student.goto("/profile");
   await student.getByLabel("Phone number",{exact:true}).fill("9876543210");
   await student.getByLabel("Address",{exact:true}).fill("SVIET profile edit test");
   await student.getByRole("button",{name:"Save profile",exact:true}).click();
@@ -129,4 +130,16 @@ test("default student owns the profile editor; admins have student CRUD controls
   const archived=await db.student.findUniqueOrThrow({where:{id:registered.student!.id},include:{user:true}});
   expect(archived.archivedAt).not.toBeNull();expect(archived.user.isActive).toBe(false);expect(await db.student.count()).toBe(before);
   await admin.context().close();await student.context().close();
+});
+
+
+test("all 21 supplied students can use their firstname.lastname usernames", async ({ browser }) => {
+  test.setTimeout(180_000);
+  for(const identity of identities){
+    const student=await session(browser,identity.email);
+    await expect(student.getByRole("heading",{name:`Welcome, ${identity.name}`,exact:true})).toBeVisible();
+    await student.goto("/profile");
+    await expect(student.getByLabel("Login email",{exact:true})).toHaveValue(identity.email);
+    await student.context().close();
+  }
 });

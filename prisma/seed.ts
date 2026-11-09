@@ -249,7 +249,7 @@ async function main() {
       const ability = demo ? 0.82 : Math.min(0.97, Math.max(0.4, between(0.52, 0.95) + (rand() < 0.08 ? -0.15 : 0)));
       const user = await db.user.create({
         data: {
-          email: demo ? "student@edupilot.edu" : `${rollNo.toLowerCase()}@student.edupilot.edu`,
+          email: supplied?.email ?? `${rollNo.toLowerCase()}@student.edupilot.edu`,
           name: supplied?.name ?? `${first} ${last}`, role: "STUDENT", passwordHash: hash, phone: `9${String(Math.floor(rand() * 1e9)).padStart(9, "0")}`,
           student: {
             create: {
@@ -436,7 +436,7 @@ async function main() {
 async function seedModules() {
   const hash = await bcrypt.hash("password123", 10);
   const term = await db.term.findFirstOrThrow({ where: { isCurrent: true } });
-  const demo = await db.student.findFirstOrThrow({ where: { user: { email: "student@edupilot.edu" } }, include: { batch: true } });
+  const demo = await db.student.findFirstOrThrow({ where: { rollNo: "24MQ5A0509" }, include: { batch: true } });
   const facultyUser = await db.user.findUniqueOrThrow({ where: { email: "faculty@edupilot.edu" }, include: { faculty: true } });
   const classmates = await db.student.findMany({ where: { batchId: demo.batchId }, orderBy: { rollNo: "asc" } });
 
