@@ -75,6 +75,6 @@ test("major profile changes require exact, single-use OTP; demo email can be ver
  const after = await db.user.findUniqueOrThrow({ where: { id: before.userId } });expect(after.email).toBe(email);expect(after.emailVerifiedAt).not.toBeNull();expect(after.passwordHash).toBe(before.user.passwordHash);
  expect((await db.emailChallenge.findUniqueOrThrow({ where: { id: challenge.id } })).usedAt).not.toBeNull();
  await student.getByLabel("Address", { exact: true }).fill("Replayed OTP address");await student.getByRole("button", { name: "Save profile", exact: true }).click();await expect(student.getByText(/Request and enter a valid email OTP/)).toBeVisible();
- await student.reload();expect(await student.locator('input[type=file]').count()).toBe(0);expect((await student.request.get(`/photo/${before.userId}`)).status()).toBe(404);
+ await student.reload();expect(await student.getByLabel('Profile photo file',{exact:true}).count()).toBe(1);expect((await student.request.get(`/photo/${before.userId}`)).status()).toBe(404);
  await student.context().close();
 });

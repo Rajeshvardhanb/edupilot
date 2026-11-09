@@ -8,7 +8,7 @@ import { ChevronDown, LogOut, X } from "lucide-react";
 import { NAV, activeHref } from "./nav";
 import { cn } from "@/lib/utils";
 import { logout } from "@/actions/auth";
-import { initials } from "./avatar";
+import { Avatar } from "./avatar";
 import type { Brand, ShellTerm, ShellUser } from "./app-shell";
 
 /** Each menu group's colour (CSS variables defined in globals.css). */
@@ -86,7 +86,7 @@ export function Sidebar({ user, open, onClose, term, brand, t }: { user: ShellUs
         {/* Phone: the whole menu as a grid of tiles, with who is signed in on top. Rendered only while the menu is open. */}
         {open && <nav aria-label="Main menu" className="flex-1 overflow-y-auto px-3 pt-3 pb-4 lg:hidden">
           <div className="brand-gradient mb-4 flex items-center gap-3 rounded-2xl p-3 text-white shadow-[var(--shadow-brand)]">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/20 text-sm font-bold">{initials(user.name)}</span>
+            <Avatar name={user.name} userId={user.id} hasPhoto={user.hasPhoto} photoVersion={user.photoVersion} size={44} />
             <span className="min-w-0"><span className="block truncate font-semibold">{user.name}</span><span className="block truncate text-xs text-white/80">{user.subtitle}</span></span>
           </div>
           {groups.map((g) => (

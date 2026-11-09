@@ -1,3 +1,4 @@
+import { PhotoUpload } from "@/components/photo-upload";
 import { logout } from "@/actions/auth";
 import { Avatar } from "@/components/avatar";
 import { ROLE_LABEL } from "@/components/nav";
@@ -29,7 +30,7 @@ export default async function ProfilePage() {
       <PageHeader title="My profile" />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Account">
-          <div className="mb-5 border-b border-line pb-5"><Avatar name={user.name} size={80} /></div>
+          <div className="mb-5 border-b border-line pb-5"><PhotoUpload key={user.updatedAt.getTime()} userId={user.id} hasPhoto={!!user.photoType} current={<Avatar name={user.name} userId={user.id} hasPhoto={!!user.photoType} photoVersion={String(user.updatedAt.getTime())} size={80} />} /></div>
           <dl className="divide-y divide-line text-sm">
             {rows.map(([k, v]) => <div key={k} className="flex justify-between gap-4 py-2"><dt className="text-muted">{k}</dt><dd>{v}</dd></div>)}
           </dl>

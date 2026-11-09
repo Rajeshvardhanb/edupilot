@@ -20,7 +20,7 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
   /** Attendance thresholds from the college rules. */
   required: number; condonable: number;
   offeringId: string; date: string; period: number; topic: string; label: string;
-  students: { id: string; rollNo: string; name: string; pct: number }[];
+  students: { id: string; userId?: string; hasPhoto?: boolean; photoVersion?: string; rollNo: string; name: string; pct: number }[];
   initial: Record<string, Status>;
   /** Approved requests covering this date: on-duty students default to OD, students on leave to absent. */
   leave: Record<string, "ON_DUTY" | "LEAVE">;
@@ -91,7 +91,7 @@ export function AttendanceSheet({ offeringId, date, period, topic, students, ini
             >
               <input type="hidden" name={`s_${s.id}`} value={marks[s.id]} />
               <button type="button" className="flex min-w-0 flex-1 items-center gap-2.5 text-left sm:w-full" onClick={() => set(s.id, marks[s.id] === "ABSENT" ? "PRESENT" : "ABSENT")}>
-                <Avatar name={s.name} size={32} />
+                <Avatar userId={s.userId} hasPhoto={s.hasPhoto} photoVersion={s.photoVersion} name={s.name} size={32} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{s.name}</span>
                   <span className="block font-mono text-[11px] text-muted">{s.rollNo}</span>

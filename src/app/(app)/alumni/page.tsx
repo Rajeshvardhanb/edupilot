@@ -31,7 +31,7 @@ export default async function AlumniPage(props: PageProps<"/alumni">) {
     ...(q && { OR: [{ rollNo: { contains: q } }, { user: { name: { contains: q } } }, { alumni: { company: { contains: q } } }, { alumni: { location: { contains: q } } }] }),
   };
   const [rows, total, all, programs] = await Promise.all([
-    db.student.findMany({ where, include: { user: { select: { id: true, name: true, email: true } }, alumni: true, batch: { include: { program: true } }, applications: { where: { status: "SELECTED" }, include: { drive: { include: { company: true } } } } }, orderBy: [{ batch: { admissionYear: "desc" } }, { rollNo: "asc" }], skip: (page - 1) * PAGE, take: PAGE }),
+    db.student.findMany({ where, include: { user: { select: { id: true, name: true, email: true, photoType: true, updatedAt: true } }, alumni: true, batch: { include: { program: true } }, applications: { where: { status: "SELECTED" }, include: { drive: { include: { company: true } } } } }, orderBy: [{ batch: { admissionYear: "desc" } }, { rollNo: "asc" }], skip: (page - 1) * PAGE, take: PAGE }),
     db.student.count({ where }),
     db.student.findMany({ where: base, select: { alumni: { select: { graduationYear: true, company: true, higherStudies: true } }, batch: { select: { admissionYear: true, program: { select: { durationYears: true } } } } } }),
     db.program.findMany({ where: programScope(user), orderBy: { code: "asc" } }),
@@ -67,7 +67,7 @@ export default async function AlumniPage(props: PageProps<"/alumni">) {
                 return (
                   <div key={s.id} className="rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-card">
                     <div className="flex items-center gap-3">
-                      <Avatar name={s.user.name} size={44} />
+                      <Avatar userId={s.user.id} hasPhoto={!!s.user.photoType} photoVersion={String(s.user.updatedAt.getTime())} name={s.user.name} size={44} />
                       <div className="min-w-0"><Link href={`/students/${s.id}`} className="block truncate font-medium hover:text-brand">{s.user.name}</Link><p className="text-xs text-muted">{s.batch.program.code} · Class of {s.alumni?.graduationYear ?? s.batch.admissionYear + s.batch.program.durationYears}</p></div>
                     </div>
                     <div className="mt-3 space-y-1 text-sm">

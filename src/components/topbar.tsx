@@ -9,7 +9,7 @@ import Link from "next/link";
 import { usePathname,useRouter } from "next/navigation";
 import { useEffect,useRef,useState } from "react";
 import type { ShellUser } from "./app-shell";
-import { initials } from "./avatar";
+import { Avatar } from "./avatar";
 import { BrandMark,Wordmark } from "./brand-mark";
 import { CommandPalette } from "./command-palette";
 import { TextSizeToggle } from "./theme";
@@ -25,7 +25,7 @@ function useOutside(onOut: () => void) {
 }
 
 function UserAvatar({ user, size = 34 }: { user: ShellUser; size?: number }) {
-  return <span aria-hidden style={{ width: size, height: size }} className="brand-gradient grid place-items-center rounded-lg text-[11px] font-bold text-white">{initials(user.name)}</span>;
+  return <Avatar name={user.name} userId={user.id} hasPhoto={user.hasPhoto} photoVersion={user.photoVersion} size={size} />;
 }
 
 export function Topbar({ user, onMenu, t, title }: {

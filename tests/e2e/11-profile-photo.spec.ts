@@ -1,0 +1,32 @@
+import { expect, test } from "@playwright/test";
+import sharp from "sharp";
+import { db, fixtures, reseed, session, fresh, confirm } from "./helpers";
+test.beforeAll(()=>reseed());
+const picture=async(color:string)=>sharp({create:{width:48,height:64,channels:3,background:color}}).png().toBuffer();
+test("student can upload, replace and remove a photo; private access and other data stay protected",async({browser})=>{
+ const f=await fixtures(),before=await db.student.findUniqueOrThrow({where:{id:f.studentId},include:{user:true}}),other=await db.student.findFirstOrThrow({where:{rollNo:"23MQ1A05B5"},include:{user:true}});
+ const student=await session(browser,"sandhya.lanke@edupilot.edu");await student.goto('/profile');await expect(student.getByRole('button',{name:'Choose photo',exact:true})).toBeVisible();await expect(student.getByRole('button',{name:'Remove photo',exact:true})).toHaveCount(0);
+ await student.getByLabel('Profile photo file',{exact:true}).setInputFiles({name:'portrait.png',mimeType:'image/png',buffer:await picture('#6335d8')});await student.getByRole('button',{name:'Save photo',exact:true}).click();await expect(student.getByRole('button',{name:'Remove photo',exact:true})).toBeVisible();
+ const first=await db.user.findUniqueOrThrow({where:{id:before.userId}});expect(first.photoType).toBe('image/webp');expect(first.photo!.length).toBeGreaterThan(0);const image=student.locator(`img[src^="/photo/${before.userId}"]`).first();await expect(image).toBeVisible();const oldUrl=await image.getAttribute('src');
+ const response=await student.request.get(`/photo/${before.userId}`);expect(response.status()).toBe(200);expect(response.headers()['content-type']).toBe('image/webp');expect(response.headers()['cache-control']).toContain('no-store');expect((await sharp(await response.body()).metadata()).format).toBe('webp');
+ const outsider=await session(browser,other.user.email);expect((await outsider.request.get(`/photo/${before.userId}`)).status()).toBe(404);
+ const parent=await session(browser,'parent@edupilot.edu');expect((await parent.request.get(`/photo/${before.userId}`)).status()).toBe(200);
+ const anon=await fresh(browser);expect((await anon.request.get(`/photo/${before.userId}`)).status()).toBe(401);
+ await student.getByLabel('Profile photo file',{exact:true}).setInputFiles({name:'new.png',mimeType:'image/png',buffer:await picture('#00aa88')});await student.getByRole('button',{name:'Save photo',exact:true}).click();await expect.poll(async()=>Buffer.from((await db.user.findUniqueOrThrow({where:{id:before.userId}})).photo!).equals(Buffer.from(first.photo!))).toBe(false);await expect(image).not.toHaveAttribute('src',oldUrl!);
+ // A forged target ID must not let a student upload to another account.
+ await student.getByLabel('Profile photo file',{exact:true}).setInputFiles({name:'forged.png',mimeType:'image/png',buffer:await picture('red')});
+ await student.locator('form').filter({has:student.getByLabel('Profile photo file',{exact:true})}).locator('[name=userId]').evaluate((el,id)=>{(el as HTMLInputElement).value=id;},other.userId);
+ await student.getByRole('button',{name:'Save photo',exact:true}).click();await expect(student.getByText("You cannot change this user's photo.",{exact:true})).toBeVisible();expect((await db.user.findUniqueOrThrow({where:{id:other.userId}})).photo).toBeNull();
+ await student.reload();await student.getByRole('button',{name:'Remove photo',exact:true}).click();await confirm(student);await expect(student.getByRole('button',{name:'Remove photo',exact:true})).toHaveCount(0);const after=await db.user.findUniqueOrThrow({where:{id:before.userId}});expect(after.photo).toBeNull();expect(after.photoType).toBeNull();expect(after.passwordHash).toBe(before.user.passwordHash);expect(after.email).toBe(before.user.email);const {user: ignoredUser, ...originalStudent}=before;void ignoredUser;expect(await db.student.findUniqueOrThrow({where:{id:f.studentId}})).toEqual(originalStudent);
+ expect((await student.request.get(oldUrl!)).status()).toBe(404);await expect(student.locator(`img[src^="/photo/${before.userId}"]`)).toHaveCount(0);
+ for(const page of [student,outsider,parent,anon])await page.context().close();
+});
+test("Office and Admin can manage student photos; invalid uploads cannot replace an existing image",async({browser})=>{
+ const f=await fixtures(),student=await db.student.findUniqueOrThrow({where:{id:f.studentId}}),office=await session(browser,'office@edupilot.edu');await office.goto(`/students/${f.studentId}`);
+ await expect(office.getByRole('button',{name:/^(Choose|Change) photo$/})).toBeEnabled();await office.getByLabel('Profile photo file',{exact:true}).setInputFiles({name:'student.png',mimeType:'image/png',buffer:await picture('blue')});await office.getByRole('button',{name:'Save photo',exact:true}).click();await expect(office.getByRole('button',{name:'Remove photo',exact:true})).toBeVisible();const saved=await db.user.findUniqueOrThrow({where:{id:student.userId}});
+ for(const buffer of [Buffer.from('not an image'),new Uint8Array(1000001)]){
+  await office.getByLabel('Profile photo file',{exact:true}).setInputFiles({name:'bad.jpg',mimeType:'image/jpeg',buffer:Buffer.from(buffer)});await office.getByRole('button',{name:'Save photo',exact:true}).click();await expect(office.getByRole('alert').filter({hasText:buffer.length>1000000?'Photo must be 1 MB or smaller.':'Choose a valid, still JPEG, PNG or WebP photo'})).toBeVisible();expect(Buffer.from((await db.user.findUniqueOrThrow({where:{id:student.userId}})).photo!).equals(Buffer.from(saved.photo!))).toBe(true);
+ }
+ const admin=await session(browser,'admin@edupilot.edu');await admin.goto(`/students?q=${encodeURIComponent('24MQ5A0509')}`);await expect(admin.locator(`img[src^="/photo/${student.userId}"]`).filter({visible:true}).first()).toBeVisible();await admin.goto(`/students/${f.studentId}`);await admin.getByRole('button',{name:'Remove photo',exact:true}).click();await confirm(admin);await expect.poll(async()=>(await db.user.findUniqueOrThrow({where:{id:student.userId}})).photoType).toBeNull();
+ const teacher=await session(browser,'faculty@edupilot.edu');await teacher.goto(`/students/${f.studentId}`);await expect(teacher.getByRole('button',{name:'Choose photo',exact:true})).toHaveCount(0);await expect(teacher.getByRole('button',{name:'Remove photo',exact:true})).toHaveCount(0);for(const p of [office,admin,teacher])await p.context().close();
+});

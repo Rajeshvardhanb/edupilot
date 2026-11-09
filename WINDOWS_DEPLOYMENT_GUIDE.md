@@ -233,6 +233,8 @@ The supplied student names/roll numbers are real project inputs; marks, attendan
 
 Students can update their personal and contact details under **My profile → Edit my details**. Changing a login email requires the current password. Roll numbers, batches and academic status are managed by the administrator.
 
+Users can manage their picture under **My Profile → Choose/Change photo → Save photo** and **Remove photo**. Admin/Office can manage student photos from a student record. JPEG, PNG or WebP up to 1 MB is supported; removal restores initials and keeps other records unchanged.
+
 Administrators use **Students → Add student**, **View**, **Edit**, and **Delete**. Delete asks for explicit confirmation and permanently removes the student login and related records, including marks and attendance. The email and roll number can then be registered again. Shared parent accounts and the administrator's deletion audit entry remain. Use Edit → status changes when you want to keep a student's history instead of permanently deleting it.
 
 ### Optional college logo

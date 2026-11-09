@@ -1,3 +1,4 @@
+import { PhotoUpload } from "@/components/photo-upload";
 import { resendAccountSetup } from "@/actions/account-setup";
 import { createParentLogin } from "@/actions/services";
 import { updateStudentContact, deleteStudent } from "@/actions/students";
@@ -61,7 +62,9 @@ export default async function StudentProfile(props: PageProps<"/students/[id]">)
       <section className="tile mb-6 animate-fade-up">
         <div className="flex flex-wrap items-center gap-4 p-5 sm:p-6">
           <div className="shrink-0">
-            <Avatar name={s.user.name} size={72} />
+            {isOffice(user) || user.id === s.userId
+              ? <PhotoUpload key={s.user.updatedAt.getTime()} userId={s.userId} hasPhoto={!!s.user.photoType} current={<Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} photoVersion={String(s.user.updatedAt.getTime())} size={72} />} />
+              : <Avatar name={s.user.name} userId={s.userId} hasPhoto={!!s.user.photoType} photoVersion={String(s.user.updatedAt.getTime())} size={72} />}
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold sm:text-2xl">{s.user.name}</h1>

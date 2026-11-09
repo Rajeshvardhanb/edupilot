@@ -17,7 +17,7 @@ export const metadata = { title: "Hall ticket" };
 export default async function HallTicketPage(props: PageProps<"/exams/hall-tickets/[studentId]">) {
   const user = await requireUser(["ADMIN", "HOD", "STUDENT"]);
   const { studentId } = await props.params;
-  const s = await db.student.findFirst({ where: { AND: [{ id: studentId }, studentScope(user)] }, include: { user: { select: { id: true, name: true } }, batch: { include: { program: true } } } });
+  const s = await db.student.findFirst({ where: { AND: [{ id: studentId }, studentScope(user)] }, include: { user: { select: { id: true, name: true, photoType: true, updatedAt: true } }, batch: { include: { program: true } } } });
   if (!s) notFound();
   const term = await currentTerm();
   const st = (await hallTicketStatus([s.id], term?.id)).get(s.id)!;
@@ -50,7 +50,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
       <Sheet>
         <Letterhead title="Hall Ticket" serial={term?.name} />
         <div className="mt-5 flex gap-5">
-          <Avatar name={s.user.name} size={96} className="!rounded-xl" />
+          <Avatar userId={s.user.id} hasPhoto={!!s.user.photoType} photoVersion={String(s.user.updatedAt.getTime())} name={s.user.name} size={96} className="!rounded-xl" />
           <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
             <dt className="text-muted">Name</dt><dd className="font-semibold">{s.user.name}</dd>
             <dt className="text-muted">Hall ticket no.</dt><dd className="font-mono font-semibold">{s.rollNo}</dd>
@@ -96,7 +96,7 @@ export default async function HallTicketPage(props: PageProps<"/exams/hall-ticke
             <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">Valid</span>
           </div>
           <div className="flex items-center gap-3 p-4">
-            <Avatar name={s.user.name} size={64} />
+            <Avatar userId={s.user.id} hasPhoto={!!s.user.photoType} photoVersion={String(s.user.updatedAt.getTime())} name={s.user.name} size={64} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold">{s.user.name}</p>
               <p className="font-mono text-xs font-semibold text-brand">{s.rollNo}</p>

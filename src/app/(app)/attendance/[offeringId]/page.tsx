@@ -46,7 +46,7 @@ export default async function MarkAttendancePage(props: PageProps<"/attendance/[
     .filter((s) => offering.subject.semester >= s.entrySemester)
     .map((s) => {
       const v = summary.get(`${s.id}:${offeringId}`);
-      return { id: s.id, rollNo: s.rollNo, name: s.user.name, pct: v ? pct(v.attended, v.total) : 100 };
+      return { id: s.id, userId: s.userId, hasPhoto: !!s.user.photoType, photoVersion: String(s.user.updatedAt.getTime()), rollNo: s.rollNo, name: s.user.name, pct: v ? pct(v.attended, v.total) : 100 };
     });
   const total = await db.attendanceSession.count({ where: { offeringId } });
 
